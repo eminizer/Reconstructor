@@ -1,0 +1,18 @@
+import glob
+import os
+from optparse import OptionParser
+
+parser = OptionParser()
+parser.add_option('-d','--directory', metavar='F', type='string', action='store',dest='directory',help='') ## Sets which files to run on
+(options, args) = parser.parse_args()
+
+FILES = options.directory + '/*.root'
+print FILES
+files = glob.glob(FILES)
+for fname in files :
+	filename = fname
+	if fname.startswith('/eos/uscms/') :
+		filename = 'root://cmseos.fnal.gov//'+fname[fname.find('/eos/uscms/')+len('/eos/uscms/'):]
+	cmd = 'echo '+filename+' >> input.txt'
+	print cmd
+	os.system(cmd)
