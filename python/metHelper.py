@@ -1,26 +1,16 @@
-#metHelper: contains helper functions for dealing with the MET/neutrino
-#NICK EMINIZER JOHNS HOPKINS UNIVERSITY JANUARY 2015 nick.eminizer@gmail.com
-#This code available on github at https://github.com/eminizer/TTBar_FB_Asym
-
-import ROOT
-from math import *
-
 #Global variables
 #constants
 MW = 80.4
 
-#setupMET
-#takes in the fourvector of the selected lepton and the list of 
-#variables describing the MET
-#returns the a tuple of the two possible fourvectors of the neutrino 
-#assuming just the WMass constraint
-def setupMET(lep_vec,metVars) :
-	met1 = ROOT.TLorentzVector(1.0,0.0,0.0,1.0)
-	met2 = ROOT.TLorentzVector(1.0,0.0,0.0,1.0)
-	met1.SetPtEtaPhiM(metVars[0][0],0.0,metVars[1][0],0.0)
-	met2.SetPtEtaPhiM(metVars[0][0],0.0,metVars[1][0],0.0)
-	pTv    = metVars[0][0]
-	phivec = [cos(metVars[1][0]),sin(metVars[1][0])]
+#Imports
+import copy
+from math import *
+
+#finds the two possible neutrino fourvectors based on the lep and met without pZ
+def setupMET(lep_vec,metvec) :
+	met1 = copy.deepcopy(metvec); met2 = copy.deepcopy(metvec)
+	pTv    = metvec.Pt()
+	phivec = [cos(metvec.Phi()),sin(metvec.Phi())]
 	Elep   = lep_vec.E()
 	plep   = lep_vec.Vect().Mag()
 	pZlep  = lep_vec.Pz()
@@ -41,4 +31,3 @@ def setupMET(lep_vec,metVars) :
 		met2.SetPz(pzv2)
 		met2.SetE(sqrt(met2.Px()*met2.Px()+met2.Py()*met2.Py()+met2.Pz()*met2.Pz()))
 	return (met1,met2)
-	#return (ROOT.TLorentzVector(1.0,0.0,0.0,1.0),ROOT.TLorentzVector(1.0,0.0,0.0,1.0)) #DEBUG RETURN
