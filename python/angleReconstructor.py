@@ -1,21 +1,15 @@
-#angleReconstructor calculates differential cross section observables given event fourvectors
-#NICK EMINIZER JOHNS HOPKINS UNIVERSITY JANUARY 2015 nick.eminizer@gmail.com
-#This code available on github at https://github.com/eminizer/TTBar_FB_Asym
-
-import ROOT
-from math import *
+#Imports
+from ROOT import TLorentzRotation
 
 #Global variables
 #Alpha value for adjustment due to longitudinal gluon polarization
-#ALPHA = -0.106 #This is the value for 8TeV, all masses
 ALPHA = -0.155 #This is the value for 8TeV, M>750
 #epsilon value for gg cross section correction
-#EPSILON = 0.740 #This is the value for 8TeV, all masses
 EPSILON = 1.324 #This is the value for 8TeV, M>750
 #Default Lorentz Rotation
-S = ROOT.TLorentzRotation()
+S = TLorentzRotation()
 #Beam energy
-SQRT_S=8000.0
+SQRT_S=13000.0
 BEAM_ENERGY=SQRT_S/2.0
 #Exotic gluon reweight constants
 #universal constants
@@ -46,21 +40,15 @@ ggc = alphas*mg/12.*(4.*fL2pR2c+2.*gL2pR2c)
 gg2a = gga*gga
 gg2c = ggc*ggc
 
-#getObservables takes in the reconstructed top quark vectors and lepton charge
-#returns a 3-tuple of:
-#	1) costheta
-#	2) feynman x
-#	3) ttbar mass
+#given the top quark vectors and lepton charge, returns the observables
 def getObservables(lept_vec,hadt_vec,lepton_charge) :
 	#find which of the leptonic/hadronic top vectors is the t/tbar
 	if lepton_charge == 1 :
-		Top = lept_vec
-		ATop = hadt_vec
+		Top = lept_vec; ATop = hadt_vec
 	elif lepton_charge == -1 :
-		ATop = lept_vec
-		Top = hadt_vec
+		ATop = lept_vec; Top = hadt_vec
 	#initialize the rotation to the identity
-	R = ROOT.TLorentzRotation()
+	R = TLorentzRotation()
 	#Make the 4-vector of the ttbar pair, get its mass, calculate x_F
 	Q = Top+ATop
 	ttbar_mass=Q.Mag()
@@ -75,8 +63,8 @@ def getObservables(lept_vec,hadt_vec,lepton_charge) :
 	#Doing the boost
 	R = R.Boost(Bx,By,Bz)
 	Top = R*Top; ATop = R*ATop
-	Proton1 = R*ROOT.TLorentzVector(0.0,0.0,sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY)
-	Proton2 = R*ROOT.TLorentzVector(0.0,0.0,-1.0*sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY)
+	Proton1 = R*TLorentzVector(0.0,0.0,sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY)
+	Proton2 = R*TLorentzVector(0.0,0.0,-1.0*sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY)
 	#Reset the boost
 	R=S
 	#Define three-vectors for the top and protons in the ttbar rest frame
@@ -94,16 +82,11 @@ def getObservables(lept_vec,hadt_vec,lepton_charge) :
 	#find the CS angle
 	cos_theta_cs=cos(top.Angle(bisector))
 	return (cos_theta_cs,x_f,ttbar_mass)
-	#return (0.0,0.2,450.) #DEBUG RETURN
 
-#getMCObservables takes in the MC TRUTH initial parton, t, and tbar fourvectors
-#returns a 13-tuple of:
-#	1-3) MC truth costheta, feynman x, and ttbar mass
-#	4-8) antisymmetric, symmetric/antisymmetric xi, and symmetric/antisymmetic delta reweighting factors
-#	9-13) the same reweighting factors calculated with the opposite sign angle
+#Given the fourvectors of the initial state partons and the MC tops, and the event type, returns the MC truth observables and a ton of reweights
 def getMCObservables(q_vec,qbar_vec,t_vec,tbar_vec,eventtype) :
 	#initialize the rotation to the identity
-	R = ROOT.TLorentzRotation()
+	R = TLorentzRotation()
 	#Make the 4-vector of the ttbar pair, get its mass, calculate x_F
 	Q = t_vec+tbar_vec
 	ttbar_mass=Q.Mag()
@@ -181,4 +164,3 @@ def getMCObservables(q_vec,qbar_vec,t_vec,tbar_vec,eventtype) :
 
 	return (cos_theta_cs,x_f,ttbar_mass,wg1,wg2,wg3,wg4,wqs1,wqs2,wqa0,wqa1,wqa2,
 		wg1_opp,wg2_opp,wg3_opp,wg4_opp,wqs1_opp,wqs2_opp,wqa0_opp,wqa1_opp,wqa2_opp,wega,wegc)
-	#return (0.0,0.2,450.,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0) #DEBUG RETURN

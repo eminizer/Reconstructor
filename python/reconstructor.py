@@ -16,6 +16,7 @@ from jet import AK4Jet, AK8Jet
 from lepton import Muon, Electron
 from metHelper import setupMET
 from ttbarReconstructor import reconstruct
+from angleReconstructor import getObservables, getMCObservables
 from mc_corrector import MC_corrector
 
 ################################   addBranch function  #################################
@@ -441,25 +442,41 @@ class Reconstructor(object) :
 		self.__setFourVectorBranchValues__('scaled_lept',scaledlep+scaledmet+scaledlepb)
 		self.__setFourVectorBranchValues__('scaled_hadt',scaledhadt)
 
-#		#reconstruct the observables using both the scaled and unscaled vectors
-#		if self.lep_type == 0 :
-#			self.cstar[0], self.x_F[0], self.M[0] = getObservables(muons[0].vec+met1_vec+jets[1].vec,jets[0].vec,self.Q_l[0]) 
-#		elif self.lep_type == 1 :
-#			self.cstar[0], self.x_F[0], self.M[0] = getObservables(electrons[0].vec+met1_vec+jets[1].vec,jets[0].vec,self.Q_l[0]) 
-#		( self.cstar_scaled[0], self.x_F_scaled[0], 
-#			self.M_scaled[0] ) = getObservables(scaledlep+scaledmet+scaledlepb,scaledhadt,self.Q_l[0]) 
-#		#above function in angleReconstructor.py
+		#reconstruct the observables using both the scaled and unscaled vectors
+		cstar,xF,M = getObservables(lep.getFourVector()+met1_vec+lepbCandJet.getFourVector(),hadtCandJet.getFourVector(),lep.getQ()) 
+		self.cstar.setWriteValue(cstar); self.x_F.setWriteValue(xF); self.M.setWriteValue(M)
+		cstar_s,xF_s,M_s = getObservables(scaledlep+scaledmet+scaledlepb,scaledhadt,lep.getQ()) 
+		self.cstar_scaled.setWriteValue(cstar_s); self.x_F_scaled.setWriteValue(xF_s); self.M_scaled.setWriteValue(M_s)
 
-#		#MC Truth observable and reweighting calculation
-#		if self.is_data==0 :
-#			if self.event_type!=4 :
-#				( self.cstar_MC[0],self.x_F_MC[0],self.M_MC[0],
-#					self.wg1[0],self.wg2[0],self.wg3[0],self.wg4[0],
-#					self.wqs1[0],self.wqs2[0],self.wqa0[0],self.wqa1[0],self.wqa2[0],
-#					self.wg1_opp[0],self.wg2_opp[0],self.wg3_opp[0],self.wg4_opp[0],
-#					self.wqs1_opp[0],self.wqs2_opp[0],
-#					self.wqa0_opp[0],self.wqa1_opp[0],self.wqa2_opp[0],
-#					self.wega[0], self.wegc[0] ) = getMCObservables(q_vec,qbar_vec,MCt_vec,MCtbar_vec,self.event_type) 
+		#MC Truth observable and reweighting calculation
+		if not self.is_data :
+			if self.event_type!=4 :
+				( cstar_MC,x_F_MC,M_MC,wg1,wg2,wg3,wg4,wqs1,wqs2,wqa0,wqa1,wqa2,
+					wg1_opp,wg2_opp,wg3_opp,wg4_opp,wqs1_opp,wqs2_opp,wqa0_opp,wqa1_opp,wqa2_opp,
+					wega, wegc ) = getMCObservables(q_vec,qbar_vec,MCt_vec,MCtbar_vec,self.event_type) 
+			self.cstar_MC.setWriteValue(cstar_MC)
+			self.x_F_MC.setWriteValue(x_F_MC)
+			self.M_MC.setWriteValue(M_MC)
+			self.wg1.setWriteValue(wg1)
+			self.wg2.setWriteValue(wg2)
+			self.wg3.setWriteValue(wg3)
+			self.wg4.setWriteValue(wg4)
+			self.wqs1.setWriteValue(wqs1)
+			self.wqs2.setWriteValue(wqs2)
+			self.wqa0.setWriteValue(wqa0)
+			self.wqa1.setWriteValue(wqa1)
+			self.wqa2.setWriteValue(wqa2)
+			self.wg1_opp.setWriteValue(wg1_opp)
+			self.wg2_opp.setWriteValue(wg2_opp)
+			self.wg3_opp.setWriteValue(wg3_opp)
+			self.wg4_opp.setWriteValue(wg4_opp)
+			self.wqs1_opp.setWriteValue(wqs1_opp)
+			self.wqs2_opp.setWriteValue(wqs2_opp)
+			self.wqa0_opp.setWriteValue(wqa0_opp)
+			self.wqa1_opp.setWriteValue(wqa1_opp)
+			self.wqa2_opp.setWriteValue(wqa2_opp)
+			self.wega.setWriteValue(wega)
+			self.wegc.setWriteValue(wegc)
 #			#scale factor and reweighting calculations
 #			if self.lep_type==0 :
 #				meas_lep_pt=muons[0].vec.Pt(); meas_lep_eta=muons[0].vec.Eta()
