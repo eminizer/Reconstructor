@@ -17,7 +17,7 @@ from lepton import Muon, Electron
 from metHelper import setupMET
 from ttbarReconstructor import reconstruct
 from angleReconstructor import getObservables, getMCObservables
-from mc_corrector import MC_corrector
+from corrector import Corrector
 
 ################################   addBranch function  #################################
 def AddBranch(readname=None,writename=None,ttreetype='F',inival=-900.,size='1',dictlist=None) :
@@ -35,9 +35,13 @@ class Reconstructor(object) :
 
 	##################################  Branches  ##################################
 	allBranches = {}
+	ak4JetBranches = {}
+	ak8JetBranches = {}
 	#GenWeight info
 	genWeight = AddBranch('evt_Gen_Weight','genWeight','F',1.0,'1',[allBranches])
 	xsec 	  = AddBranch('evt_XSec','xsec','F',1.0,'1',[allBranches])
+	rho 	  = AddBranch('evt_rho','rho','D',1.0,'1',[allBranches,ak4JetBranches,ak8JetBranches])
+	npv 	  = AddBranch('evt_npv','npv','I',-1,'1',[allBranches,ak4JetBranches,ak8JetBranches])
 	#MC GenEvent info
 	mcGenEventBranches = {}
 	thisdictlist = [allBranches,mcGenEventBranches]
@@ -104,39 +108,31 @@ class Reconstructor(object) :
 	el_misshits = AddBranch(readname='el_missHits',size='el_size',dictlist=thisdictlist)
 	el_vidLoose = AddBranch(readname='el_vidLoose',size='el_size',dictlist=thisdictlist)
 	#AK4 Jets
-	ak4JetBranches = {}
 	thisdictlist = [allBranches,ak4JetBranches]
 	ak4_size 	   = AddBranch(readname='jetAK4_size',ttreetype='i',dictlist=thisdictlist)
 	ak4_pts 	   = AddBranch(readname='jetAK4_Pt',size='jetAK4_size',dictlist=thisdictlist)
 	ak4_etas 	   = AddBranch(readname='jetAK4_Eta',size='jetAK4_size',dictlist=thisdictlist)
 	ak4_phis 	   = AddBranch(readname='jetAK4_Phi',size='jetAK4_size',dictlist=thisdictlist)
 	ak4_es 		   = AddBranch(readname='jetAK4_E',size='jetAK4_size',dictlist=thisdictlist)
-	ak4_smpts 	   = AddBranch(readname='jetAK4_SmearedPt',size='jetAK4_size',dictlist=thisdictlist)
-	ak4_smetas 	   = AddBranch(readname='jetAK4_SmearedPEta',size='jetAK4_size',dictlist=thisdictlist)
-	ak4_smphis 	   = AddBranch(readname='jetAK4_SmearedPhi',size='jetAK4_size',dictlist=thisdictlist)
-	ak4_smes 	   = AddBranch(readname='jetAK4_SmearedE',size='jetAK4_size',dictlist=thisdictlist)
+	ak4_genpts 	   = AddBranch(readname='jetAK4_GenJetPt',size='jetAK4_size',dictlist=thisdictlist)
+	ak4_genetas    = AddBranch(readname='jetAK4_GenJetEta',size='jetAK4_size',dictlist=thisdictlist)
+	ak4_genphis    = AddBranch(readname='jetAK4_GenJetPhi',size='jetAK4_size',dictlist=thisdictlist)
 	ak4_csvv2s 	   = AddBranch(readname='jetAK4_CSVv2',size='jetAK4_size',dictlist=thisdictlist)
-	ak4_jecuncs    = AddBranch(readname='jetAK4_jecUncertainty',size='jetAK4_size',dictlist=thisdictlist)
-	ak4_JERSFs 	   = AddBranch(readname='jetAK4_JERSF',size='jetAK4_size',dictlist=thisdictlist)
-	ak4_JERSFUps   = AddBranch(readname='jetAK4_JERSFUp',size='jetAK4_size',dictlist=thisdictlist)
-	ak4_JERSFDowns = AddBranch(readname='jetAK4_JERSFDown',size='jetAK4_size',dictlist=thisdictlist)
+	ak4_jec0s 	   = AddBranch(readname='jetAK4_jecFactor0',size='jetAK4_size',dictlist=thisdictlist)
+	ak4_jetAs 	   = AddBranch(readname='jetAK4_jetArea',size='jetAK4_size',dictlist=thisdictlist)
 	#AK8 Jets
-	ak8JetBranches = {}
 	thisdictlist = [allBranches,ak8JetBranches]
 	ak8_size 	   = AddBranch(readname='jetAK8_size',ttreetype='i',dictlist=thisdictlist)
 	ak8_pts 	   = AddBranch(readname='jetAK8_Pt',size='jetAK8_size',dictlist=thisdictlist)
 	ak8_etas 	   = AddBranch(readname='jetAK8_Eta',size='jetAK8_size',dictlist=thisdictlist)
 	ak8_phis 	   = AddBranch(readname='jetAK8_Phi',size='jetAK8_size',dictlist=thisdictlist)
 	ak8_es 		   = AddBranch(readname='jetAK8_E',size='jetAK8_size',dictlist=thisdictlist)
-	ak8_smpts 	   = AddBranch(readname='jetAK8_SmearedPt',size='jetAK8_size',dictlist=thisdictlist)
-	ak8_smetas 	   = AddBranch(readname='jetAK8_SmearedPEta',size='jetAK8_size',dictlist=thisdictlist)
-	ak8_smphis 	   = AddBranch(readname='jetAK8_SmearedPhi',size='jetAK8_size',dictlist=thisdictlist)
-	ak8_smes 	   = AddBranch(readname='jetAK8_SmearedE',size='jetAK8_size',dictlist=thisdictlist)
+	ak8_genpts 	   = AddBranch(readname='jetAK8_GenJetPt',size='jetAK8_size',dictlist=thisdictlist)
+	ak8_genetas    = AddBranch(readname='jetAK8_GenJetEta',size='jetAK8_size',dictlist=thisdictlist)
+	ak8_genphis    = AddBranch(readname='jetAK8_GenJetPhi',size='jetAK8_size',dictlist=thisdictlist)
 	ak8_csvv2s 	   = AddBranch(readname='jetAK8_CSVv2',size='jetAK8_size',dictlist=thisdictlist)
-	ak8_jecuncs    = AddBranch(readname='jetAK8_jecUncertainty',size='jetAK8_size',dictlist=thisdictlist)
-	ak8_JERSFs 	   = AddBranch(readname='jetAK8_JERSF',size='jetAK8_size',dictlist=thisdictlist)
-	ak8_JERSFUps   = AddBranch(readname='jetAK8_JERSFUp',size='jetAK8_size',dictlist=thisdictlist)
-	ak8_JERSFDowns = AddBranch(readname='jetAK8_JERSFDown',size='jetAK8_size',dictlist=thisdictlist)
+	ak8_jec0s 	   = AddBranch(readname='jetAK8_jecFactor0',size='jetAK8_size',dictlist=thisdictlist)
+	ak8_jetAs 	   = AddBranch(readname='jetAK8_jetArea',size='jetAK8_size',dictlist=thisdictlist)
 	ak8_tau1s 	   = AddBranch(readname='jetAK8_tau1',size='jetAK8_size',dictlist=thisdictlist)
 	ak8_tau2s 	   = AddBranch(readname='jetAK8_tau2',size='jetAK8_size',dictlist=thisdictlist)
 	ak8_tau3s 	   = AddBranch(readname='jetAK8_tau3',size='jetAK8_size',dictlist=thisdictlist)
@@ -349,38 +345,21 @@ class Reconstructor(object) :
 
 		#For the record, trigger information is handled automatically
 
-		#Copy over and populate objects
 		#MET
 		met = TLorentzVector(); met.SetPtEtaPhiM(self.met_pts.getReadValue(), 0., self.met_phis.getReadValue(), 0.)
 		self.__setFourVectorBranchValues__('met',met)
-		#jets
-		ak4jets = []; ak8jets = [];
-		for i in range(ak4jetsize) :
-			ak4jets.append(AK4Jet(self.ak4JetBranches,i,self.JEC))
-		for i in range(ak8jetsize) :
-			ak8jets.append(AK8Jet(self.ak8JetBranches,i,self.JEC))
-		ak4jets.sort(key=lambda x: x.getPt(), reverse=True)
-		ak8jets.sort(key=lambda x: x.getPt(), reverse=True)
+
 		#muons
 		muons = []
 		for i in range(musize) :
-			muons.append(Muon(self.muonBranches,i,ak4jets))
+			muons.append(Muon(self.muonBranches,i))
 		muons.sort(key=lambda x: x.getPt(), reverse=True)
-		mulen = len(muons)
-		if mulen>0 :
-			self.__setLeptonBranchValues__('muon1',muons[0])
-			if mulen>1 :
-				self.__setLeptonBranchValues__('muon2',muons[1])
+
 		#electrons
 		electrons = []
 		for i in range(elsize) :
-			electrons.append(Electron(self.electronBranches,i,ak4jets))
+			electrons.append(Electron(self.electronBranches,i))
 		electrons.sort(key=lambda x: x.getPt(), reverse=True)
-		ellen = len(electrons)
-		if ellen>0 :
-			self.__setLeptonBranchValues__('ele1',electrons[0])
-			if ellen>1 :
-				self.__setLeptonBranchValues__('ele2',electrons[1])
 
 		#figure out whether the event is muonic or electronic, assign lep
 		lep = None
@@ -389,6 +368,41 @@ class Reconstructor(object) :
 		elif len(electrons)>0 and (len(muons)==0 or electrons[0].getPt()>muons[0].getPt()) :
 			lep = electrons[0]
 		self.Q_l.setWriteValue(int(lep.getQ()))
+
+		#jets
+		ak4jets = []; ak8jets = [];
+		for i in range(ak4jetsize) :
+			newJet = AK4Jet(self.ak4JetBranches,i,self.JES,self.JER,lep,self.corrector,self.is_data)
+			if newJet.getFourVector()!=None :
+				ak4jets.append(newJet)
+		for i in range(ak8jetsize) :
+			newJet = AK8Jet(self.ak8JetBranches,i,self.JES,self.JER,lep,self.corrector,self.is_data)
+			if newJet.getFourVector()!=None :
+				ak8jets.append(newJet)
+		#if the lepton cleaning got rid of too many jets, toss the event
+		if not (len(ak4jets)>0 and len(ak8jets)>0) :
+			print 'EVENT NUMBER %d NOT VALID; MISSING JETS (# AK4jets = %d, # AK8Jets = %d)'%(eventnumber,len(ak4jets),len(ak8jets)) #DEBUG
+			return
+		ak4jets.sort(key=lambda x: x.getPt(), reverse=True)
+		ak8jets.sort(key=lambda x: x.getPt(), reverse=True)
+
+		#Calculate isolations for leptons
+		for muon in muons :
+			muon.calculateIsolation(ak4jets)
+		for electron in electrons :
+			electron.calculateIsolation(ak4jets)
+
+		#Set Lepton Fourvectors
+		mulen = len(muons)
+		if mulen>0 :
+			self.__setLeptonBranchValues__('muon1',muons[0])
+			if mulen>1 :
+				self.__setLeptonBranchValues__('muon2',muons[1])
+		ellen = len(electrons)
+		if ellen>0 :
+			self.__setLeptonBranchValues__('ele1',electrons[0])
+			if ellen>1 :
+				self.__setLeptonBranchValues__('ele2',electrons[1])
 
 		#neutrino handling and setup for fit
 		met1_vec, met2_vec = setupMET(lep.getFourVector(),met)
@@ -415,8 +429,8 @@ class Reconstructor(object) :
 				lepbCandJet = ak4jet
 				break
 		if lepbCandJet == None :
-			print 'EVENT NUMBER %d NOT VALID; NO AK4 JET IN LEPTONIC HEMISPHERE (furthest jet is %.2f away, index %d of %d)'%(eventnumber,
-				furthest_distance,furthest_index,len(ak4jets))
+		#	print 'EVENT NUMBER %d NOT VALID; NO AK4 JET IN LEPTONIC HEMISPHERE (furthest jet is %.2f away, index %d of %d)'%(eventnumber, #DEBUG
+		#		furthest_distance,furthest_index,len(ak4jets)) #DEBUG
 			return
 		#and fill the uncorrected fourvectors and other attributes
 		self.__setFourVectorBranchValues__('hadt',hadtCandJet.getFourVector())
@@ -483,18 +497,18 @@ class Reconstructor(object) :
 #			elif self.lep_type==1 :
 #				meas_lep_pt=electrons[0].vec.Pt(); meas_lep_eta=electrons[0].vec.Eta()
 #			#8TeV numbers
-#			self.sf_top_pT[0], self.sf_top_pT_low[0], self.sf_top_pT_hi[0] = self.corrector.getToppT_reweight(MCt_vec,MCtbar_vec,self.Q_l[0])
-#			self.sf_top_pT_new[0], self.sf_top_pT_new_low[0], self.sf_top_pT_new_hi[0] = self.corrector.getNewToppT_reweight(MCt_vec,MCtbar_vec)
-#			self.sf_pileup[0], self.sf_pileup_low[0], self.sf_pileup_hi[0] = self.corrector.getpileup_reweight(MCpileup)
+#			self.sf_top_pT[0], self.sf_top_pT_low[0], self.sf_top_pT_hi[0] = self.MCcorrector.getToppT_reweight(MCt_vec,MCtbar_vec,self.Q_l[0])
+#			self.sf_top_pT_new[0], self.sf_top_pT_new_low[0], self.sf_top_pT_new_hi[0] = self.MCcorrector.getNewToppT_reweight(MCt_vec,MCtbar_vec)
+#			self.sf_pileup[0], self.sf_pileup_low[0], self.sf_pileup_hi[0] = self.MCcorrector.getpileup_reweight(MCpileup)
 #			( self.sf_lep_ID[0], self.sf_lep_ID_low[0], 
-#				self.sf_lep_ID_hi[0] ) = self.corrector.getID_eff(pileup,meas_lep_pt,meas_lep_eta,self.lep_type)
+#				self.sf_lep_ID_hi[0] ) = self.MCcorrector.getID_eff(pileup,meas_lep_pt,meas_lep_eta,self.lep_type)
 #			( self.sf_trig_eff[0], self.sf_trig_eff_low[0], 
-#				self.sf_trig_eff_hi[0] ) = self.corrector.gettrig_eff(pileup,meas_lep_pt,meas_lep_eta,self.lep_type)
+#				self.sf_trig_eff_hi[0] ) = self.MCcorrector.gettrig_eff(pileup,meas_lep_pt,meas_lep_eta,self.lep_type)
 
 		self.__closeout__() #yay! A complete event!
 
 	##################################  #__init__ function  ##################################
-	def __init__(self,fileName,tree,isData,generator,jec,onGrid,totweight) :
+	def __init__(self,fileName,tree,isData,generator,jes,jer,onGrid,totweight) :
 		#output file
 		self.outfile_name = fileName
 		self.outfile = TFile(self.outfile_name,'recreate')
@@ -534,11 +548,12 @@ class Reconstructor(object) :
 		elif gen == 'none' :
 			self.MC_generator = 'none'
 		#JEC systematics?
-		self.JEC = jec
+		self.JES = jes
+		self.JER = jer
 		#Set the total weight
 		self.totalweight = totweight
-		#Set Monte Carlo reweighter
-		self.corrector = MC_corrector(self.MC_generator,self.event_type,onGrid)
+		#Set the corrector that does event weights and JEC calculations
+		self.corrector = Corrector(self.is_data,self.MC_generator,self.event_type,onGrid)
 
 	##################################   reset function   ##################################
 	#########  sets all relevant values back to initial values to get ready for next event  ##########

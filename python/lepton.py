@@ -3,13 +3,15 @@ from ROOT import TLorentzVector
 
 class Lepton(object) :
 
-	def __init__(self,branches,index,jets,pp) :
+	def __init__(self,branches,index,pp) :
 		self.__pt = branches[pp+'_Pt'].getReadValue(index)
 		eta = branches[pp+'_Eta'].getReadValue(index)
 		phi = branches[pp+'_Phi'].getReadValue(index)
 		E = branches[pp+'_E'].getReadValue(index)
 		self.__fourvec = TLorentzVector(); self.__fourvec.SetPtEtaPhiE(self.__pt,eta,phi,E)
 		self.__Q = branches[pp+'_Charge'].getReadValue(index)
+
+	def calculateIsolation(self,jets) :
 		nearestJet = findNearestJet(self.__fourvec,jets)
 		nearestJetvec = nearestJet.getFourVector()
 		self.__relPt = nearestJetvec.Pt(self.__fourvec.Vect())
@@ -28,8 +30,8 @@ class Lepton(object) :
 
 class Muon(Lepton) :
 
-	def __init__(self,branches,index,jets) :
-		Lepton.__init__(self,branches,index,jets,'mu')
+	def __init__(self,branches,index) :
+		Lepton.__init__(self,branches,index,'mu')
 		self.__ID = branches['mu_IsLooseMuon'].getReadValue(index)
 
 	def getID(self) :
@@ -37,8 +39,8 @@ class Muon(Lepton) :
 
 class Electron(Lepton) :
 
-	def __init__(self,branches,index,jets) :
-		Lepton.__init__(self,branches,index,jets,'el')
+	def __init__(self,branches,index) :
+		Lepton.__init__(self,branches,index,'el')
 		self.__ID = branches['el_vidLoose'].getReadValue(index)
 
 	def getID(self) :

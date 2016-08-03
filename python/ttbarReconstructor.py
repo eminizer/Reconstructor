@@ -123,7 +123,7 @@ def fcn(npar, deriv, f, par, flag) :
 	if pdf > 0.0 :
 		lnL += log(pdf)    #need positive f
 	else :
-		print('WARNING -- pdf is negative!!!')
+		print 'WARNING -- pdf is negative!!!'
 		pdf = 1.e-50
 		lnL += log(pdf)
 	f[0] = ( -2.0*lnL+(par[1]-1.)*(par[1]-1.)/(SIGMAL*SIGMAL)+(par[2]-1.)*(par[2]-1.)/(SIGMAJ*SIGMAJ)

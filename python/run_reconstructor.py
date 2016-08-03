@@ -31,8 +31,10 @@ parser.add_option('--name', 		 type='string', action='store', 			  	dest='name',
 	help='Name of sample or process (used to name output files, etc.)')
 parser.add_option('--generator', 	 type='string', action='store', default='none', dest='generator', 		
 	help='Monte Carlo generator for this file (powheg, madgraph, pythia8, mcatnlo); default is "none"')
-parser.add_option('--JEC', type='string', action='store', default='nominal',  dest='JEC',  
-	help='JEC systematics: shift JEC up or down (default is nominal)')
+parser.add_option('--JES', type='string', action='store', default='nominal',  dest='JES',  
+	help='JES systematics: shift JES up or down (default is nominal)')
+parser.add_option('--JER', type='string', action='store', default='nominal',  dest='JER',  
+	help='JER systematics: shift JER up or down (default is nominal)')
 (options, args) = parser.parse_args()
 
 ##########							Set Up Event Loop								##########
@@ -66,8 +68,10 @@ print 'TOTAL SUM OF EVENT WEIGHTS = '+str(totweight)
 ntotalevents = chain.GetEntries()
 #Set filename for analyzer from sample name
 filename = options.name
-if options.JEC.lower() != 'nominal' :
-	filename+='_JEC_'+options.JEC.lower()
+if options.JES.lower() != 'nominal' :
+	filename+='_JES_'+options.JES.lower()
+if options.JER.lower() != 'nominal' :
+	filename+='_JER_'+options.JER.lower()
 if options.n_jobs>1 :
 	filename+='_'+str(options.i_job)
 filename+='_tree.root'
@@ -75,7 +79,7 @@ filename+='_tree.root'
 data=False
 if options.name.lower().find('singlemu')!=-1 or options.name.lower().find('singleel')!=-1 :
 	data=True
-analyzer = Reconstructor(filename, chain, data, options.generator, options.JEC.lower(), options.on_grid, totweight)
+analyzer = Reconstructor(filename, chain, data, options.generator, options.JES.lower(), options.JER.lower(), options.on_grid, totweight)
 
 #Counters
 real_count = 0
