@@ -31,9 +31,15 @@ class AK8Jet(Jet) :
 		self.__sdm  = branches['jetAK8_softDropMass'].getReadValue(index)
 
 	def getTau32(self) :
-		return self.__tau3/self.__tau2
+		if self.__tau2!=0 :
+			return self.__tau3/self.__tau2
+		else :
+			return 9999.
 	def getTau21(self) :
-		return self.__tau2/self.__tau1
+		if self.__tau1!=0 :
+			return self.__tau2/self.__tau1
+		else :
+			return 9999.
 	def getSDM(self) :
 		return self.__sdm
 
@@ -44,20 +50,26 @@ def getfourvec(branches,index,jes,jer,lep,corrector,isdata,pp) :
 	phi = branches[pp+'_Phi'].getReadValue(index)
 	E   = branches[pp+'_E'].getReadValue(index)
 	rawjet = TLorentzVector(); rawjet.SetPtEtaPhiE(pt,eta,phi,E)
+	jetkeys = branches[pp+'_Keys'].getReadValue(index)
 	jec0 = branches[pp+'_jecFactor0'].getReadValue(index)
+	jecunc = branches[pp+'_jecUncertainty'].getReadValue(index)
 	#roll back the jec to get the raw jet
 	rawjet*=(1./jec0)
-	cleanjet = cleanJet(rawjet,lep.getFourVector())
+	cleanjet, subtracted = cleanJet(rawjet,jetkeys,lep.getFourVector(),lep.getKey(),pp)
 	if cleanjet == None :
 	#	print 'CLEANED JET WAS "NONE"' #DEBUG
 		return None
-	#get and apply the new jec
-	jetArea = branches[pp+'_jetArea'].getReadValue(index)
-	rho = branches['rho'].getReadValue()
-	npv = branches['npv'].getReadValue()
-	newJEC = corrector.getJECforJet(cleanjet,jetArea,rho,npv,pp)
-	#If this is data, don't apply any smearing or systematics, just return the corrected, cleaned jet
+	nominalJet = cleanjet
+	newJEC = jec0
+	#if there was a lepton subtracted from the jet
+	if subtracted :
+		#get and apply the new jec
+		jetArea = branches[pp+'_jetArea'].getReadValue(index)
+		rho = branches['rho'].getReadValue()
+		npv = branches['npv'].getReadValue()
+		newJEC = corrector.getJECforJet(cleanjet,jetArea,rho,npv,pp)
 	nominalJet = cleanjet*newJEC
+	#If this is data, don't apply any smearing or systematics, just return the corrected, cleaned jet
 	if isdata :
 		return nominalJet
 	#The rest depends on whether we're doing JEC systematics
@@ -70,7 +82,9 @@ def getfourvec(branches,index,jes,jer,lep,corrector,isdata,pp) :
 		newJet=corrector.smearJet(nominalJet,jer,genPt,genEta,genPhi)
 	else :
 		#otherwise get the new jec uncertainty
-		newJECuncDown, newJECuncUp = corrector.getJECuncForJet(cleanjet,pp)
+		newJECuncDown, newJECuncUp = jecunc, jecunc
+		if subtracted :
+			newJECuncDown, newJECuncUp = corrector.getJECuncForJet(cleanjet,pp)
 		#And scale the fourvector up or down if we're looking for JES corrections
 		if jes=='up' :
 			jecUpJet = cleanjet*(newJEC+newJECuncUp)
@@ -80,18 +94,30 @@ def getfourvec(branches,index,jes,jer,lep,corrector,isdata,pp) :
 			newJet=corrector.smearJet(jecDownJet,jer,genPt,genEta,genPhi)
 	return newJet
 
-def cleanJet(jetvec,lepvec) :
-	#if the lepton is within 0.4 of the jet, remove it
-	if jetvec.DeltaR(lepvec) < 0.4 :
-		if lepvec.E() > jetvec.E() :
-	#		print 'THIS JET WAS BASICALLY JUST A LEPTON!!' #DEBUG
-			return None
-	#	print 'REMOVING LEPTON FROM JET' #DEBUG
-	#	print 'Jet Before = (pT, eta, phi, M) = (%.2f, %.2f, %.2f, %.2f)'%(jetvec.Pt(),jetvec.Eta(),jetvec.Phi(),jetvec.M()) #DEBUG
-		jetvec-=lepvec
-	#	print 'Jet After = (pT, eta, phi, M) = (%.2f, %.2f, %.2f, %.2f)'%(jetvec.Pt(),jetvec.Eta(),jetvec.Phi(),jetvec.M()) #DEBUG
-	#print 'NO LEPTON CLEANING NEEDED' #DEBUG
+def cleanJet(jetvec,jetkeys,lepvec,lepkey,pp) :
+	subtracted = False
+	check=None
+	if pp.find('AK4') != -1 :
+		check = 0.2
+	elif pp.find('AK8') != -1 :
+		check=0.4
+	#if the lepton is within the radius of the jet, remove it
+	#print 'deltaR = %.4f'%(jetvec.DeltaR(lepvec)) #DEBUG
+	if jetvec.DeltaR(lepvec) < check :
+	#	print 'lepton is within jet radius' #DEBUG
+		if lepkey in jetkeys :
+	#		print 'found matching key %d'%(lepkey) #DEBUG
+			if lepvec.E() > jetvec.E() :
+	#			print 'THIS JET WAS BASICALLY JUST A LEPTON!!' #DEBUG
+				return None, subtracted
+	#		print 'REMOVING LEPTON FROM JET' #DEBUG
+	#		print 'Jet Before = (pT, eta, phi, M) = (%.2f, %.2f, %.2f, %.2f)'%(jetvec.Pt(),jetvec.Eta(),jetvec.Phi(),jetvec.M()) #DEBUG
+			jetvec-=lepvec
+			subtracted = True
+	#		print 'Jet After = (pT, eta, phi, M) = (%.2f, %.2f, %.2f, %.2f)'%(jetvec.Pt(),jetvec.Eta(),jetvec.Phi(),jetvec.M()) #DEBUG
+	#else : #DEBUG
+	#	print 'NO LEPTON CLEANING NEEDED' #DEBUG
 	if jetvec.Pt()==0. :
 	#	print 'RESULTING JET HAS NO PT' #DEBUG
-		return None
-	return jetvec
+		return None, subtracted
+	return jetvec, subtracted

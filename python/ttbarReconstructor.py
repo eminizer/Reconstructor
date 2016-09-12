@@ -69,7 +69,7 @@ def reconstruct(lepton,met1,met2,lepb,hadt) :
 		finalChi2s[iFit] = tmp1
 	#if neither fit converged, return garbage
 	if errflags[0]!=0 and errflags[1]!=0 :
-		return None, None, None, None, None
+		return None, None, None, None, 1000000000., -900., -900., -900., -900.
 	#find which pZ solution gave better results and record best parameter values
 #	print 'finalChi2s = '+str(finalChi2s)+'' #DEBUGGING
 	final_par_vals = []
@@ -97,7 +97,7 @@ def reconstruct(lepton,met1,met2,lepb,hadt) :
 	final_met.SetPx(newmetx); final_met.SetPy(newmety); final_met.SetPz(final_par_vals[0])
 	final_met.SetE(final_met.Vect().Mag())
 	#return everything
-	return (lep_return,final_met,lepb_return,hadt_return,finalChi2s[0])
+	return (lep_return,final_met,lepb_return,hadt_return,finalChi2s[0],final_par_vals[0],final_par_vals[1],final_par_vals[2],final_par_vals[3])
 
 #top fitting function
 def fcn(npar, deriv, f, par, flag) :

@@ -15,6 +15,14 @@ for outputfile in outputfilelist :
 			continue
 		if jobend.find('Xrd: CheckErrorStatus: Server [cmseos.fnal.gov:')!=-1 :
 			continue
+		if jobend.find('NOT VALID; MISSING JETS (# AK4jets = ')!=-1 :
+			continue
+		if jobend.find('WARNING -- pdf is negative!!!')!=-1 :
+			continue
+		if jobend.find('NOT VALID; MISSING JETS AFTER CLEANING (# AK4jets = ')!=-1 :
+			continue
+		if jobend.find('NOT VALID; NEITHER KINEMATIC FIT CONVERGED')!=-1 :
+			continue
 		jobnumber = outputfile.rstrip('.log').split('_')[len(outputfile.rstrip('.log').split('_'))-1]
 		print 'Job '+jobnumber+' failed with last line "'+jobend.rstrip('\n')+'"'
 		failedjobnumbers.append(int(jobnumber))
@@ -29,7 +37,7 @@ for rootfile in rootfilelist :
 	if filesize/expected_contribution<0.95 :
 		print 'File '+rootfile+' is too small, its size is '+str(filesize)+' bytes, contributing '+str(filesize/expected_contribution)+' of its expectation'
 		jobnumber = int(rootfile.rstrip('_tree.root').split('_')[len(rootfile.rstrip('_tree.root').split('_'))-1])
-		if not 'Run2012' in rootfile :
+		if (not 'singleel' in rootfile.lower() and not 'singlemu' in rootfile.lower()) :
 			jobnumber *= 5
 			if rootfile.find('JES_up')!=-1 :
 				jobnumber+=1
@@ -46,7 +54,7 @@ if len(outputfilelist) > len(rootfilelist) :
 	rootfilejobnumbers = []
 	for rootfile in rootfilelist :
 		rootfilejobnumber = int(rootfile.rstrip('_tree.root').split('_')[len(rootfile.rstrip('_tree.root').split('_'))-1])
-		if not 'Run2012' in rootfile :
+		if (not 'singleel' in rootfile.lower() and not 'singlemu' in rootfile.lower()) :
 			rootfilejobnumber *= 5
 			if rootfile.find('JES_up')!=-1 :
 				rootfilejobnumber+=1

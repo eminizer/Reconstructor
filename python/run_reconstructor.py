@@ -29,6 +29,8 @@ parser.add_option('--i_job', 	  type='int',    action='store', default=0,		  des
 #Sample options
 parser.add_option('--name', 		 type='string', action='store', 			  	dest='name', 		    
 	help='Name of sample or process (used to name output files, etc.)')
+parser.add_option('--xSec', 		 type='float', action='store', 			  	dest='xSec', 		    
+	help="Cross section of sample's process")
 parser.add_option('--generator', 	 type='string', action='store', default='none', dest='generator', 		
 	help='Monte Carlo generator for this file (powheg, madgraph, pythia8, mcatnlo); default is "none"')
 parser.add_option('--JES', type='string', action='store', default='nominal',  dest='JES',  
@@ -79,7 +81,7 @@ filename+='_tree.root'
 data=False
 if options.name.lower().find('singlemu')!=-1 or options.name.lower().find('singleel')!=-1 :
 	data=True
-analyzer = Reconstructor(filename, chain, data, options.generator, options.JES.lower(), options.JER.lower(), options.on_grid, totweight)
+analyzer = Reconstructor(filename, chain, data, options.xSec, options.generator, options.JES.lower(), options.JER.lower(), options.on_grid, totweight)
 
 #Counters
 real_count = 0

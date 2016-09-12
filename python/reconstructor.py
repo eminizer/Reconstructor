@@ -8,7 +8,7 @@ EL_TRIG_PATH = 'HLT_Ele35_CaloIdVT_GsfTrkIdT_PFJet150_PFJet50'
 
 ##########								   Imports  								##########
 
-from math import pi
+from math import pi, log
 from ROOT import TFile, TTree, TLorentzVector
 from branch import Branch
 from eventTypeHelper import keepEventType, findInitialPartons, findMCTops
@@ -39,7 +39,6 @@ class Reconstructor(object) :
 	ak8JetBranches = {}
 	#GenWeight info
 	genWeight = AddBranch('evt_Gen_Weight','genWeight','F',1.0,'1',[allBranches])
-	xsec 	  = AddBranch('evt_XSec','xsec','F',1.0,'1',[allBranches])
 	rho 	  = AddBranch('evt_rho','rho','D',1.0,'1',[allBranches,ak4JetBranches,ak8JetBranches])
 	npv 	  = AddBranch('evt_npv','npv','I',-1,'1',[allBranches,ak4JetBranches,ak8JetBranches])
 	#MC GenEvent info
@@ -75,38 +74,53 @@ class Reconstructor(object) :
 	thisdictlist = [allBranches,metBranches]
 	met_size 	= AddBranch(readname='met_size',ttreetype='i',dictlist=thisdictlist)
 	met_pts 	= AddBranch(readname='met_Pt',size='met_size',dictlist=thisdictlist)
-	met_pxs 	= AddBranch(readname='met_Px',size='met_size',dictlist=thisdictlist)
-	met_pys 	= AddBranch(readname='met_Py',size='met_size',dictlist=thisdictlist)
 	met_phis 	= AddBranch(readname='met_Phi',size='met_size',dictlist=thisdictlist)
 	#muons
 	muonBranches = {}
 	thisdictlist = [allBranches,muonBranches]
-	mu_size 	= AddBranch(readname='mu_size',ttreetype='i',dictlist=thisdictlist)
-	mu_pts 		= AddBranch(readname='mu_Pt',size='mu_size',dictlist=thisdictlist)
-	mu_etas 	= AddBranch(readname='mu_Eta',size='mu_size',dictlist=thisdictlist)
-	mu_phis 	= AddBranch(readname='mu_Phi',size='mu_size',dictlist=thisdictlist)
-	mu_es 		= AddBranch(readname='mu_E',size='mu_size',dictlist=thisdictlist)
-	mu_charges 	= AddBranch(readname='mu_Charge',size='mu_size',dictlist=thisdictlist)
-	mus_isLoose = AddBranch(readname='mu_IsLooseMuon',size='mu_size',dictlist=thisdictlist)
+	mu_size 	  = AddBranch(readname='mu_size',ttreetype='i',dictlist=thisdictlist)
+	mu_pts 		  = AddBranch(readname='mu_Pt',size='mu_size',dictlist=thisdictlist)
+	mu_etas 	  = AddBranch(readname='mu_Eta',size='mu_size',dictlist=thisdictlist)
+	mu_phis 	  = AddBranch(readname='mu_Phi',size='mu_size',dictlist=thisdictlist)
+	mu_es 		  = AddBranch(readname='mu_E',size='mu_size',dictlist=thisdictlist)
+	mu_charges 	  = AddBranch(readname='mu_Charge',size='mu_size',dictlist=thisdictlist)
+	mus_isLoose   = AddBranch(readname='mu_IsLooseMuon',size='mu_size',dictlist=thisdictlist)
+	mu_Keys 	  = AddBranch(readname='mu_Key',size='mu_size',dictlist=thisdictlist)
+	mu_ak4v1dR 	  = AddBranch(readname='mu_AK4JetV1DR',size='mu_size',dictlist=thisdictlist)
+	mu_ak4v2dR 	  = AddBranch(readname='mu_AK4JetV2DR',size='mu_size',dictlist=thisdictlist)
+	mu_ak4v3dR 	  = AddBranch(readname='mu_AK4JetV3DR',size='mu_size',dictlist=thisdictlist)
+	mu_ak8v1dR 	  = AddBranch(readname='mu_AK8JetV1DR',size='mu_size',dictlist=thisdictlist)
+	mu_ak8v2dR 	  = AddBranch(readname='mu_AK8JetV2DR',size='mu_size',dictlist=thisdictlist)
+	mu_ak8v3dR 	  = AddBranch(readname='mu_AK8JetV3DR',size='mu_size',dictlist=thisdictlist)
+	mu_ak4v1relpt = AddBranch(readname='mu_AK4JetV1PtRel',size='mu_size',dictlist=thisdictlist)
+	mu_ak4v2relpt = AddBranch(readname='mu_AK4JetV2PtRel',size='mu_size',dictlist=thisdictlist)
+	mu_ak4v3relpt = AddBranch(readname='mu_AK4JetV3PtRel',size='mu_size',dictlist=thisdictlist)
+	mu_ak8v1relpt = AddBranch(readname='mu_AK8JetV1PtRel',size='mu_size',dictlist=thisdictlist)
+	mu_ak8v2relpt = AddBranch(readname='mu_AK8JetV2PtRel',size='mu_size',dictlist=thisdictlist)
+	mu_ak8v3relpt = AddBranch(readname='mu_AK8JetV3PtRel',size='mu_size',dictlist=thisdictlist)
 	#electrons
 	electronBranches = {}
 	thisdictlist = [allBranches,electronBranches]
-	el_size 	= AddBranch(readname='el_size',ttreetype='i',dictlist=thisdictlist)
-	el_pts 		= AddBranch(readname='el_Pt',size='el_size',dictlist=thisdictlist)
-	el_etas 	= AddBranch(readname='el_Eta',size='el_size',dictlist=thisdictlist)
-	el_phis 	= AddBranch(readname='el_Phi',size='el_size',dictlist=thisdictlist)
-	el_es 		= AddBranch(readname='el_E',size='el_size',dictlist=thisdictlist)
-	el_charges 	= AddBranch(readname='el_Charge',size='el_size',dictlist=thisdictlist)
-	el_detas_in = AddBranch(readname='el_dEtaIn',size='el_size',dictlist=thisdictlist)
-	el_dphis_in = AddBranch(readname='el_dPhiIn',size='el_size',dictlist=thisdictlist)
-	el_5x5siees = AddBranch(readname='el_full5x5siee',size='el_size',dictlist=thisdictlist)
-	el_HoEs 	= AddBranch(readname='el_HoE',size='el_size',dictlist=thisdictlist)
-	el_D0s 		= AddBranch(readname='el_D0',size='el_size',dictlist=thisdictlist)
-	el_Dzs 		= AddBranch(readname='el_Dz',size='el_size',dictlist=thisdictlist)
-	el_ooEmooPs = AddBranch(readname='el_ooEmooP',size='el_size',dictlist=thisdictlist)
-	el_hasMCVs 	= AddBranch(readname='el_hasMatchedConVeto',size='el_size',dictlist=thisdictlist)
-	el_misshits = AddBranch(readname='el_missHits',size='el_size',dictlist=thisdictlist)
-	el_vidLoose = AddBranch(readname='el_vidLoose',size='el_size',dictlist=thisdictlist)
+	el_size 	  = AddBranch(readname='el_size',ttreetype='i',dictlist=thisdictlist)
+	el_pts 		  = AddBranch(readname='el_Pt',size='el_size',dictlist=thisdictlist)
+	el_etas 	  = AddBranch(readname='el_Eta',size='el_size',dictlist=thisdictlist)
+	el_phis 	  = AddBranch(readname='el_Phi',size='el_size',dictlist=thisdictlist)
+	el_es 		  = AddBranch(readname='el_E',size='el_size',dictlist=thisdictlist)
+	el_charges 	  = AddBranch(readname='el_Charge',size='el_size',dictlist=thisdictlist)
+	el_idLoose 	  = AddBranch(readname='el_IDLoose_NoIso',size='el_size',dictlist=thisdictlist)
+	el_Keys 	  = AddBranch(readname='el_Key',size='el_size',dictlist=thisdictlist)
+	el_ak4v1dR 	  = AddBranch(readname='el_AK4JetV1DR',size='el_size',dictlist=thisdictlist)
+	el_ak4v2dR 	  = AddBranch(readname='el_AK4JetV2DR',size='el_size',dictlist=thisdictlist)
+	el_ak4v3dR 	  = AddBranch(readname='el_AK4JetV3DR',size='el_size',dictlist=thisdictlist)
+	el_ak8v1dR 	  = AddBranch(readname='el_AK8JetV1DR',size='el_size',dictlist=thisdictlist)
+	el_ak8v2dR 	  = AddBranch(readname='el_AK8JetV2DR',size='el_size',dictlist=thisdictlist)
+	el_ak8v3dR 	  = AddBranch(readname='el_AK8JetV3DR',size='el_size',dictlist=thisdictlist)
+	el_ak4v1relpt = AddBranch(readname='el_AK4JetV1PtRel',size='el_size',dictlist=thisdictlist)
+	el_ak4v2relpt = AddBranch(readname='el_AK4JetV2PtRel',size='el_size',dictlist=thisdictlist)
+	el_ak4v3relpt = AddBranch(readname='el_AK4JetV3PtRel',size='el_size',dictlist=thisdictlist)
+	el_ak8v1relpt = AddBranch(readname='el_AK8JetV1PtRel',size='el_size',dictlist=thisdictlist)
+	el_ak8v2relpt = AddBranch(readname='el_AK8JetV2PtRel',size='el_size',dictlist=thisdictlist)
+	el_ak8v3relpt = AddBranch(readname='el_AK8JetV3PtRel',size='el_size',dictlist=thisdictlist)
 	#AK4 Jets
 	thisdictlist = [allBranches,ak4JetBranches]
 	ak4_size 	   = AddBranch(readname='jetAK4_size',ttreetype='i',dictlist=thisdictlist)
@@ -119,7 +133,9 @@ class Reconstructor(object) :
 	ak4_genphis    = AddBranch(readname='jetAK4_GenJetPhi',size='jetAK4_size',dictlist=thisdictlist)
 	ak4_csvv2s 	   = AddBranch(readname='jetAK4_CSVv2',size='jetAK4_size',dictlist=thisdictlist)
 	ak4_jec0s 	   = AddBranch(readname='jetAK4_jecFactor0',size='jetAK4_size',dictlist=thisdictlist)
+	ak4_jecuncs    = AddBranch(readname='jetAK4_jecUncertainty',size='jetAK4_size',dictlist=thisdictlist)
 	ak4_jetAs 	   = AddBranch(readname='jetAK4_jetArea',size='jetAK4_size',dictlist=thisdictlist)
+	ak4_keylists   = AddBranch(readname='jetAK4_Keys',ttreetype='vi',size='jetAK4_size',dictlist=thisdictlist)
 	#AK8 Jets
 	thisdictlist = [allBranches,ak8JetBranches]
 	ak8_size 	   = AddBranch(readname='jetAK8_size',ttreetype='i',dictlist=thisdictlist)
@@ -132,11 +148,13 @@ class Reconstructor(object) :
 	ak8_genphis    = AddBranch(readname='jetAK8_GenJetPhi',size='jetAK8_size',dictlist=thisdictlist)
 	ak8_csvv2s 	   = AddBranch(readname='jetAK8_CSVv2',size='jetAK8_size',dictlist=thisdictlist)
 	ak8_jec0s 	   = AddBranch(readname='jetAK8_jecFactor0',size='jetAK8_size',dictlist=thisdictlist)
+	ak8_jecuncs    = AddBranch(readname='jetAK8_jecUncertainty',size='jetAK8_size',dictlist=thisdictlist)
 	ak8_jetAs 	   = AddBranch(readname='jetAK8_jetArea',size='jetAK8_size',dictlist=thisdictlist)
 	ak8_tau1s 	   = AddBranch(readname='jetAK8_tau1',size='jetAK8_size',dictlist=thisdictlist)
 	ak8_tau2s 	   = AddBranch(readname='jetAK8_tau2',size='jetAK8_size',dictlist=thisdictlist)
 	ak8_tau3s 	   = AddBranch(readname='jetAK8_tau3',size='jetAK8_size',dictlist=thisdictlist)
 	ak8_sdms 	   = AddBranch(readname='jetAK8_softDropMass',size='jetAK8_size',dictlist=thisdictlist)
+	ak8_keylists   = AddBranch(readname='jetAK8_Keys',ttreetype='vi',size='jetAK8_size',dictlist=thisdictlist)
 	#PRODUCES
 	#Weights
 	weightBranches = {}
@@ -168,9 +186,6 @@ class Reconstructor(object) :
 	sf_top_pT 		  = AddBranch(writename='sf_top_pT',inival=1.,dictlist=thisdictlist)
 	sf_top_pT_low 	  = AddBranch(writename='sf_top_pT_low',inival=1.,dictlist=thisdictlist)
 	sf_top_pT_hi 	  = AddBranch(writename='sf_top_pT_hi',inival=1.,dictlist=thisdictlist)
-	sf_top_pT_new 	  = AddBranch(writename='sf_top_pT_new',inival=1.,dictlist=thisdictlist)
-	sf_top_pT_new_low = AddBranch(writename='sf_top_pT_new_low',inival=1.,dictlist=thisdictlist)
-	sf_top_pT_new_hi  = AddBranch(writename='sf_top_pT_new_hi',inival=1.,dictlist=thisdictlist)
 	sf_btag_eff 	  = AddBranch(writename='sf_btag_eff',inival=1.,dictlist=thisdictlist)
 	sf_btag_eff_low   = AddBranch(writename='sf_btag_eff_low',inival=1.,dictlist=thisdictlist)
 	sf_btag_eff_hi 	  = AddBranch(writename='sf_btag_eff_hi',inival=1.,dictlist=thisdictlist)
@@ -307,6 +322,38 @@ class Reconstructor(object) :
 	cstar_MC = AddBranch(writename='cstar_MC',dictlist=thisdictlist)
 	x_F_MC 	 = AddBranch(writename='x_F_MC',dictlist=thisdictlist)
 	M_MC 	 = AddBranch(writename='M_MC',dictlist=thisdictlist)
+	#debugging variables
+	hemi_debug_branches = {}
+	thisdictlist=[hemi_debug_branches,allBranches]
+	ak4_1_dr = AddBranch(writename='ak4_1_dR',dictlist=thisdictlist)
+	ak4_2_dr = AddBranch(writename='ak4_2_dR',dictlist=thisdictlist)
+	ak4_3_dr = AddBranch(writename='ak4_3_dR',dictlist=thisdictlist)
+	ak4_1_dphi = AddBranch(writename='ak4_1_dPhi',dictlist=thisdictlist)
+	ak4_2_dphi = AddBranch(writename='ak4_2_dPhi',dictlist=thisdictlist)
+	ak4_3_dphi = AddBranch(writename='ak4_3_dPhi',dictlist=thisdictlist)
+	ak4_1_dr_v2 = AddBranch(writename='ak4_1_dR_v2',dictlist=thisdictlist)
+	ak4_2_dr_v2 = AddBranch(writename='ak4_2_dR_v2',dictlist=thisdictlist)
+	ak4_3_dr_v2 = AddBranch(writename='ak4_3_dR_v2',dictlist=thisdictlist)
+	ak4_1_dphi_v2 = AddBranch(writename='ak4_1_dPhi_v2',dictlist=thisdictlist)
+	ak4_2_dphi_v2 = AddBranch(writename='ak4_2_dPhi_v2',dictlist=thisdictlist)
+	ak4_3_dphi_v2 = AddBranch(writename='ak4_3_dPhi_v2',dictlist=thisdictlist)
+	ak4_1_pt = AddBranch(writename='ak4_1_pt',dictlist=thisdictlist)
+	ak4_2_pt = AddBranch(writename='ak4_2_pt',dictlist=thisdictlist)
+	ak4_3_pt = AddBranch(writename='ak4_3_pt',dictlist=thisdictlist)
+	lepb_cand_index = AddBranch(writename='lepb_cand_index',dictlist=thisdictlist)
+	kinfit_debug_branches = {}
+	thisdictlist=[kinfit_debug_branches,allBranches]
+	par_0 = AddBranch(writename='par_0',dictlist=thisdictlist)
+	par_1 = AddBranch(writename='par_1',dictlist=thisdictlist)
+	par_2 = AddBranch(writename='par_2',dictlist=thisdictlist)
+	par_3 = AddBranch(writename='par_3',dictlist=thisdictlist)
+	lnLtl = AddBranch(writename='lnLtl',dictlist=thisdictlist)
+	lnLth = AddBranch(writename='lnLth',dictlist=thisdictlist)
+	lnLw = AddBranch(writename='lnLw',dictlist=thisdictlist)
+	lnLlsf = AddBranch(writename='lnLlsf',dictlist=thisdictlist)
+	lnLblsf = AddBranch(writename='lnLblsf',dictlist=thisdictlist)
+	lnLthsf = AddBranch(writename='lnLthsf',dictlist=thisdictlist)
+
 
 	##################################  ANALYZE FUNCTION  ##################################
 	def analyze(self,eventnumber) :
@@ -333,7 +380,7 @@ class Reconstructor(object) :
 			#set the addTwice value
 			self.addTwice.setWriteValue(addtwice)
 			#set the eventweight
-			eventweight = self.genWeight.getReadValue()*(self.xsec.getReadValue()/self.totalweight)
+			eventweight = self.genWeight.getReadValue()*(self.xsec/self.totalweight)
 			self.weight.setWriteValue(eventweight)
 			#Mother particle and MC truth top assignment
 			q_vec, qbar_vec = findInitialPartons(self.mcGenEventBranches,self.MC_generator)
@@ -361,6 +408,18 @@ class Reconstructor(object) :
 			electrons.append(Electron(self.electronBranches,i))
 		electrons.sort(key=lambda x: x.getPt(), reverse=True)
 
+		#Set Lepton Fourvectors
+		mulen = len(muons)
+		if mulen>0 :
+			self.__setLeptonBranchValues__('muon1',muons[0])
+			if mulen>1 :
+				self.__setLeptonBranchValues__('muon2',muons[1])
+		ellen = len(electrons)
+		if ellen>0 :
+			self.__setLeptonBranchValues__('ele1',electrons[0])
+			if ellen>1 :
+				self.__setLeptonBranchValues__('ele2',electrons[1])
+
 		#figure out whether the event is muonic or electronic, assign lep
 		lep = None
 		if len(muons)>0 and (len(electrons)==0 or muons[0].getPt()>electrons[0].getPt()) :
@@ -386,24 +445,6 @@ class Reconstructor(object) :
 		ak4jets.sort(key=lambda x: x.getPt(), reverse=True)
 		ak8jets.sort(key=lambda x: x.getPt(), reverse=True)
 
-		#Calculate isolations for leptons
-		for muon in muons :
-			muon.calculateIsolation(ak4jets)
-		for electron in electrons :
-			electron.calculateIsolation(ak4jets)
-
-		#Set Lepton Fourvectors
-		mulen = len(muons)
-		if mulen>0 :
-			self.__setLeptonBranchValues__('muon1',muons[0])
-			if mulen>1 :
-				self.__setLeptonBranchValues__('muon2',muons[1])
-		ellen = len(electrons)
-		if ellen>0 :
-			self.__setLeptonBranchValues__('ele1',electrons[0])
-			if ellen>1 :
-				self.__setLeptonBranchValues__('ele2',electrons[1])
-
 		#neutrino handling and setup for fit
 		met1_vec, met2_vec = setupMET(lep.getFourVector(),met)
 		self.nFits.setWriteValue(2)
@@ -419,14 +460,25 @@ class Reconstructor(object) :
 		furthest_index = 0
 		for i in range(len(ak4jets)) :
 			ak4jet = ak4jets[i]
+			dPhicheck = ak4jet.getFourVector().DeltaPhi(hadtCandJet.getFourVector())
 			dRcheck = ak4jet.getFourVector().DeltaR(hadtCandJet.getFourVector())
-			if dRcheck>furthest_distance :
-				furthest_distance=dRcheck
+			dPhicheck_v2 = (ak4jet.getFourVector()+lep.getFourVector()+met1_vec).DeltaPhi(hadtCandJet.getFourVector())
+			dRcheck_v2 = (ak4jet.getFourVector()+lep.getFourVector()+met1_vec).DeltaR(hadtCandJet.getFourVector())
+			if i<3 :
+				pp='ak4_'+str(i+1)+'_'
+				self.hemi_debug_branches[pp+'dR'].setWriteValue(dRcheck)
+				self.hemi_debug_branches[pp+'dPhi'].setWriteValue(dPhicheck)
+				self.hemi_debug_branches[pp+'dR_v2'].setWriteValue(dRcheck_v2)
+				self.hemi_debug_branches[pp+'dPhi_v2'].setWriteValue(dPhicheck_v2)
+				self.hemi_debug_branches[pp+'pt'].setWriteValue(ak4jet.getPt())
+			if dRcheck_v2>furthest_distance :
+				furthest_distance=dRcheck_v2
 				furthest_index=i
-			if dRcheck < pi :
+			if dRcheck_v2 < pi/2. :
 				continue
 			else :
 				lepbCandJet = ak4jet
+				self.lepb_cand_index.setWriteValue(i)
 				break
 		if lepbCandJet == None :
 		#	print 'EVENT NUMBER %d NOT VALID; NO AK4 JET IN LEPTONIC HEMISPHERE (furthest jet is %.2f away, index %d of %d)'%(eventnumber, #DEBUG
@@ -442,11 +494,26 @@ class Reconstructor(object) :
 		#event reconstruction with kinematic fit
 		scaledlep = TLorentzVector(); scaledmet = TLorentzVector() 
 		scaledlepb = TLorentzVector(); scaledhadt = TLorentzVector()
-		scaledlep, scaledmet, scaledlepb, scaledhadt, fitchi2 = reconstruct(lep.getFourVector(),met1_vec,met2_vec,lepbCandJet.getFourVector(),hadtCandJet.getFourVector())
+		scaledlep, scaledmet, scaledlepb, scaledhadt, fitchi2, par0, par1, par2, par3 = reconstruct(lep.getFourVector(),met1_vec,met2_vec,lepbCandJet.getFourVector(),
+																										hadtCandJet.getFourVector())
 		if scaledlep==None :
 			print 'EVENT NUMBER '+str(eventnumber)+' NOT VALID; NEITHER KINEMATIC FIT CONVERGED'
 			return
+		#Kinematic fit debugging variables
 		self.chi2.setWriteValue(fitchi2)
+		self.par_0.setWriteValue(par0)
+		self.par_1.setWriteValue(par1)
+		self.par_2.setWriteValue(par2)
+		self.par_3.setWriteValue(par3)
+		MW = 80.4; MT = 172.5; WW = 2.0; WT = 1.4; SIGMAJ  = 0.10; SIGMAL  = 0.03
+		wl = scaledmet + scaledlep; tl = wl + scaledlepb
+		mwl2 = wl.M2(); mtl2 = tl.M2(); mth2 = scaledhadt.M2();
+		self.lnLtl.setWriteValue(-2.*log(1./((mtl2-MT*MT)**2+MT*MT*WT*WT)))
+		self.lnLth.setWriteValue(-2.*log(1./((mth2-MT*MT)**2+MT*MT*WT*WT)))
+		self.lnLw.setWriteValue(-2.*log(((MT*MT-mwl2)*(MT*MT-mwl2)*(2*MT*MT+mwl2))/((mwl2-MW*MW)*(mwl2-MW*MW)+MW*MW*WW*WW)))
+		self.lnLlsf.setWriteValue((par1-1.)*(par1-1.)/(SIGMAL*SIGMAL))
+		self.lnLblsf.setWriteValue((par2-1.)*(par2-1.)/(SIGMAJ*SIGMAJ))
+		self.lnLthsf.setWriteValue((par3-1.)*(par3-1.)/(SIGMAJ*SIGMAJ))
 
 		#fill the TTree with the scaled fourvector variables
 		self.__setFourVectorBranchValues__('scaled_lep',scaledlep)
@@ -508,7 +575,7 @@ class Reconstructor(object) :
 		self.__closeout__() #yay! A complete event!
 
 	##################################  #__init__ function  ##################################
-	def __init__(self,fileName,tree,isData,generator,jes,jer,onGrid,totweight) :
+	def __init__(self,fileName,tree,isData,xsec,generator,jes,jer,onGrid,totweight) :
 		#output file
 		self.outfile_name = fileName
 		self.outfile = TFile(self.outfile_name,'recreate')
@@ -537,6 +604,8 @@ class Reconstructor(object) :
 			branch.initialize(self.inputTree,self.tree)
 		#data or MC?
 		self.is_data = isData
+		#cross section
+		self.xsec = xsec
 		#MC generator?
 		gen = generator.lower()
 		if gen == 'powheg' or gen == 'madgraph' or gen == 'pythia8' or gen == 'mcatnlo' :
@@ -585,6 +654,6 @@ class Reconstructor(object) :
 	################################## __del__ function  ###################################
 	def __del__(self) :
 		self.outfile.cd()
-		self.tree.Write()
+		#self.tree.Write()
 		self.outfile.Write()
 		self.outfile.Close()

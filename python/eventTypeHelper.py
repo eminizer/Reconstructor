@@ -162,16 +162,18 @@ def findInitialPartonsPowheg(branches) :
 def findInitialPartonsMCAtNLO(branches) :
 	#print '------------------------------------------------' #DEBUG
 	for i in range(branches['gen_size'].getReadValue()) :
-	#	thisID = branches['gen_ID'].getReadValue(i) #DEBUG
-	#	Mom0ID = branches['gen_Mom0ID'].getReadValue(i) #DEBUG
-	#	Mom1ID = branches['gen_Mom1ID'].getReadValue(i) #DEBUG
-	#	Dau0ID = branches['gen_Dau0ID'].getReadValue(i) #DEBUG
+		thisID = branches['gen_ID'].getReadValue(i)
+		Mom0ID = branches['gen_Mom0ID'].getReadValue(i)
+		Mom1ID = branches['gen_Mom1ID'].getReadValue(i)
+		Dau0ID = branches['gen_Dau0ID'].getReadValue(i)
 	#	print '[%d + %d] = %d -> (%d + %d)'%(Mom0ID,Mom1ID,thisID,Dau0ID,branches['gen_Dau1ID'].getReadValue(i)) #DEBUG
-		if abs(branches['gen_Dau0ID'].getReadValue(i)) == TOP_ID and abs(branches['gen_Dau1ID'].getReadValue(i)) == TOP_ID and branches['gen_ID'].getReadValue(i) > 0 :
+		if abs(Mom0ID)!=TOP_ID and abs(Mom1ID)!=TOP_ID and abs(thisID)==TOP_ID and abs(Dau0ID)==TOP_ID :
+	#		print '	eta = %.4f'%(branches['gen_Eta'].getReadValue(i)) #DEBUG
 			factor = 0.0
-			if branches['gen_Eta'] > 0 :
+			if branches['gen_Eta'].getReadValue(i) > 0 :
 				factor = 1.0
 			else :
 				factor = -1.0
-			return TLorentzVector(1.0,0.0,factor*sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY)
-	return TLorentzVector(1.0,0.0,sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY), TLorentzVector(1.0,0.0,-1.*sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY) #DEBUG RETURN UNTIL NEW NTUPLES
+			factor*=abs(thisID)/thisID
+			return TLorentzVector(1.0,0.0,factor*sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY), TLorentzVector(1.0,0.0,-1.*factor*sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY)
+	#Note that this will crash if the above algorithm doesn't find what it's looking for

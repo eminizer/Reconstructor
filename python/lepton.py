@@ -10,12 +10,11 @@ class Lepton(object) :
 		E = branches[pp+'_E'].getReadValue(index)
 		self.__fourvec = TLorentzVector(); self.__fourvec.SetPtEtaPhiE(self.__pt,eta,phi,E)
 		self.__Q = branches[pp+'_Charge'].getReadValue(index)
-
-	def calculateIsolation(self,jets) :
-		nearestJet = findNearestJet(self.__fourvec,jets)
-		nearestJetvec = nearestJet.getFourVector()
-		self.__relPt = nearestJetvec.Pt(self.__fourvec.Vect())
-		self.__dR = nearestJetvec.DeltaR(self.__fourvec)
+		self.__Key = branches[pp+'_Key'].getReadValue(index)
+		self.__relPt = min([branches[pp+'_AK4JetV1PtRel'].getReadValue(),branches[pp+'_AK4JetV2PtRel'].getReadValue(),branches[pp+'_AK4JetV3PtRel'].getReadValue(),
+							branches[pp+'_AK8JetV1PtRel'].getReadValue(),branches[pp+'_AK8JetV2PtRel'].getReadValue(),branches[pp+'_AK8JetV3PtRel'].getReadValue()])
+		self.__dR = min([branches[pp+'_AK4JetV1DR'].getReadValue(),branches[pp+'_AK4JetV2DR'].getReadValue(),branches[pp+'_AK4JetV3DR'].getReadValue(),
+							branches[pp+'_AK8JetV1DR'].getReadValue(),branches[pp+'_AK8JetV2DR'].getReadValue(),branches[pp+'_AK8JetV3DR'].getReadValue()])
 
 	def getPt(self) :
 		return self.__pt
@@ -23,6 +22,8 @@ class Lepton(object) :
 		return self.__fourvec
 	def getQ(self) :
 		return self.__Q
+	def getKey(self) :
+		return self.__Key
 	def getRelPt(self) :
 		return self.__relPt
 	def getDR(self) :
@@ -41,7 +42,7 @@ class Electron(Lepton) :
 
 	def __init__(self,branches,index) :
 		Lepton.__init__(self,branches,index,'el')
-		self.__ID = branches['el_vidLoose'].getReadValue(index)
+		self.__ID = branches['el_IDLoose_NoIso'].getReadValue(index)
 
 	def getID(self) :
 		return self.__ID

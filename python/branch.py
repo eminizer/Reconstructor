@@ -1,13 +1,14 @@
 #Global Variables
-MAX_GEN_ARRAY_LENGTH = 150
+MAX_GEN_ARRAY_LENGTH = 300
 MAX_MET_ARRAY_LENGTH = 1
-MAX_MU_ARRAY_LENGTH = 20
-MAX_EL_ARRAY_LENGTH = 10
-MAX_AK4_JET_ARRAY_LENGTH = 20
-MAX_AK8_JET_ARRAY_LENGTH = 10
+MAX_MU_ARRAY_LENGTH = 40
+MAX_EL_ARRAY_LENGTH = 20
+MAX_AK4_JET_ARRAY_LENGTH = 40
+MAX_AK8_JET_ARRAY_LENGTH = 20
 
 #Imports
 from array import array
+from ROOT import std
 
 class Branch(object) :
 
@@ -25,10 +26,13 @@ class Branch(object) :
 		self.__arraylength = get_array_length(size)
 		#Set the array to read into
 		if readname!=None :
-			if self.__arraylength>1 :
-				self.__readArray = array(self.__arraytype,self.__arraylength*[self.__inival])
+			if ttreetype!='vi' :
+				if self.__arraylength>1 :
+					self.__readArray = array(self.__arraytype,self.__arraylength*[self.__inival])
+				else :
+					self.__readArray = array(self.__arraytype,[self.__inival])
 			else :
-				self.__readArray = array(self.__arraytype,[self.__inival])
+				self.__readArray = std.vector(std.vector('int'))()
 		#Set the array to write into
 		if writename!=None :
 			#If we're just copying over, use the same array to read and write
@@ -40,7 +44,7 @@ class Branch(object) :
 				self.__writeArray = array(self.__arraytype,[self.__inival])
 
 	def reset(self) :
-		if self.__readname!=None :
+		if self.__readname!=None and self.__arraytype!='vi' :
 			for i in range(self.__arraylength) :
 				self.__readArray[i]=self.__inival
 		if self.__writename!=None :
@@ -64,6 +68,8 @@ class Branch(object) :
 		return self.__readArray[index]
 
 def get_array_type(ttreetype) :
+	if ttreetype=='vi' :
+		return 'vi'
 	if ttreetype=='F' :
 		return 'f'
 	elif ttreetype=='D' :
