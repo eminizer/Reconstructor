@@ -9,8 +9,6 @@ failedjobnumbers = []
 for outputfile in outputfilelist :
 	jobend = os.popen('tail -n 5 '+outputfile+' | head -n 1').read()
 	if not jobend.startswith('Count at ') :
-		if jobend.find('PROBLEM IN FIT: ierflag = 4')!=-1 :
-			continue
 		if jobend.find(' Xrd: XrdClientMessage::ReadRaw: Failed to read header')!=-1 :
 			continue
 		if jobend.find('Xrd: CheckErrorStatus: Server [cmseos.fnal.gov:')!=-1 :
@@ -19,9 +17,13 @@ for outputfile in outputfilelist :
 			continue
 		if jobend.find('WARNING -- pdf is negative!!!')!=-1 :
 			continue
-		if jobend.find('NOT VALID; MISSING JETS AFTER CLEANING (# AK4jets = ')!=-1 :
+		if jobend.find('IS NOT MATCHABLE')!=-1 :
 			continue
-		if jobend.find('NOT VALID; NEITHER KINEMATIC FIT CONVERGED')!=-1 :
+		if jobend.find('has a correct assignment hypothesis at index')!=-1 :
+			continue
+		if jobend.find('NOT VALID; NO AK4 JET ASSIGNMENT CREATES HEMISPHERICALLY SEPARATED TOPS')!=-1 :
+			continue
+		if jobend.find('NOT VALID; NO KINEMATIC FITS CONVERGED')!=-1 :
 			continue
 		jobnumber = outputfile.rstrip('.log').split('_')[len(outputfile.rstrip('.log').split('_'))-1]
 		print 'Job '+jobnumber+' failed with last line "'+jobend.rstrip('\n')+'"'
@@ -34,7 +36,7 @@ for rootfile in rootfilelist :
 expected_contribution = totalsize/len(rootfilelist)
 for rootfile in rootfilelist :
 	filesize = os.path.getsize(rootfile)
-	if filesize/expected_contribution<0.95 :
+	if filesize/expected_contribution<0.90 :
 		print 'File '+rootfile+' is too small, its size is '+str(filesize)+' bytes, contributing '+str(filesize/expected_contribution)+' of its expectation'
 		jobnumber = int(rootfile.rstrip('_tree.root').split('_')[len(rootfile.rstrip('_tree.root').split('_'))-1])
 		if (not 'singleel' in rootfile.lower() and not 'singlemu' in rootfile.lower()) :

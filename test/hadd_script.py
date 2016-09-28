@@ -6,10 +6,12 @@ sample_names = []
 #sample_names.append('Powheg_qq_semilep_TT_Mtt_700_to_1000')
 #sample_names.append('Powheg_qq_semilep_TT_Mtt_1000_to_Inf')
 sample_names.append('mcatnlo_qq_semilep_TT')
+#sample_names.append('mcatnlo_qq_semilep_TT_no_W_contribs')
 #sample_names.append('Powheg_gg_semilep_TT')
 #sample_names.append('Powheg_gg_semilep_TT_Mtt_700_to_1000')
 #sample_names.append('Powheg_gg_semilep_TT_Mtt_1000_to_Inf')
 sample_names.append('mcatnlo_gg_semilep_TT')
+#sample_names.append('mcatnlo_gg_semilep_TT_no_W_contribs')
 #sample_names.append('Powheg_dilep_TT')
 #sample_names.append('Powheg_dilep_TT_Mtt_700_to_1000')
 #sample_names.append('Powheg_dilep_TT_Mtt_1000_to_Inf')
@@ -49,10 +51,10 @@ for name in sample_names :
     
     os.chdir(name)
 
-#    #get rid of old files
-#    os.system('bash cleanup.bash')
-#    os.system('rm -rf output *.root')
-#    os.system('mv ana.listOfJobs_all ana.listOfJobs')
+    #get rid of old files
+    os.system('bash cleanup.bash')
+    os.system('rm -rf output *.root')
+    os.system('mv ana.listOfJobs_all ana.listOfJobs')
 
 #    #clean out the input and ana.listOfJobs, even
 #    os.system('rm -rf input.txt')
@@ -81,47 +83,47 @@ for name in sample_names :
 #    cmd+= ' --generator '+generator+' --xSec '+xSec
 #    os.system(cmd)
     
-#    #submit jobs
-#    os.system('tcsh grid_sub.csh')
+    #submit jobs
+    os.system('tcsh grid_sub.csh')
  
 #    #make list of failed jobs
 #    os.system('python ../make_failed_job_list.py')
 
-    #skim files
-    os.system('rm -rf *_skim_tree.root')
-    filelist = glob.glob('*_tree.root')
-    for i in range(len(filelist)) :
-        print ' '+str(i)+''
-        f = TFile(filelist[i]); t = f.Get('tree')
-        newname = filelist[i].replace('_tree.root','')+'_skim_tree.root'
-        newFile = TFile(newname,'recreate')
-        newTree = t.CopyTree('hadt_pt>300.')
-        newTree.Write()
-        newFile.Close()
-    i = 0
-    while i<len(filelist) :
-        if filelist[i].find('JES')!=-1 or filelist[i].find('JER')!=-1 or filelist[i].find('skim')!=-1 :
-            filelist.pop(i)
-        else :
-            i+=1
-    cmd = 'hadd -f '+name+'_skim_all.root '+name+'_?_skim_tree.root'
-    if len(filelist) > 10 :
-        cmd += ' '+name+'_??_skim_tree.root'
-        if len(filelist) > 100 :
-            cmd += ' '+name+'_???_skim_tree.root'
-            if len(filelist) > 1000 :
-                cmd += ' '+name+'_????_skim_tree.root'
-    os.system(cmd)
-    if name.find('Run2012')==-1 :
-        cmd = 'hadd -f '+name+'_JES_up_skim_all.root '+name+'_JES_up_*_skim_tree.root'
-        os.system(cmd)
-        cmd = 'hadd -f '+name+'_JES_down_skim_all.root '+name+'_JES_down_*_skim_tree.root'
-        os.system(cmd)
-        cmd = 'hadd -f '+name+'_JER_up_skim_all.root '+name+'_JER_up_*_skim_tree.root'
-        os.system(cmd)
-        cmd = 'hadd -f '+name+'_JER_down_skim_all.root '+name+'_JER_down_*_skim_tree.root'
-        os.system(cmd)
-    os.system('mv *_all.root ../total_ttree_files')
+#    #skim files
+#    os.system('rm -rf *_skim_tree.root')
+#    filelist = glob.glob('*_tree.root')
+#    for i in range(len(filelist)) :
+#        print ' '+str(i)+''
+#        f = TFile(filelist[i]); t = f.Get('tree')
+#        newname = filelist[i].replace('_tree.root','')+'_skim_tree.root'
+#        newFile = TFile(newname,'recreate')
+#        newTree = t.CopyTree('hadt_pt>300.')
+#        newTree.Write()
+#        newFile.Close()
+#    i = 0
+#    while i<len(filelist) :
+#        if filelist[i].find('JES')!=-1 or filelist[i].find('JER')!=-1 or filelist[i].find('skim')!=-1 :
+#            filelist.pop(i)
+#        else :
+#            i+=1
+#    cmd = 'hadd -f '+name+'_skim_all.root '+name+'_?_skim_tree.root'
+#    if len(filelist) > 10 :
+#        cmd += ' '+name+'_??_skim_tree.root'
+#        if len(filelist) > 100 :
+#            cmd += ' '+name+'_???_skim_tree.root'
+#            if len(filelist) > 1000 :
+#                cmd += ' '+name+'_????_skim_tree.root'
+#    os.system(cmd)
+#    if name.find('Run2012')==-1 :
+#        cmd = 'hadd -f '+name+'_JES_up_skim_all.root '+name+'_JES_up_*_skim_tree.root'
+#        os.system(cmd)
+#        cmd = 'hadd -f '+name+'_JES_down_skim_all.root '+name+'_JES_down_*_skim_tree.root'
+#        os.system(cmd)
+#        cmd = 'hadd -f '+name+'_JER_up_skim_all.root '+name+'_JER_up_*_skim_tree.root'
+#        os.system(cmd)
+#        cmd = 'hadd -f '+name+'_JER_down_skim_all.root '+name+'_JER_down_*_skim_tree.root'
+#        os.system(cmd)
+#    os.system('mv *_all.root ../total_ttree_files')
 
 #    #skim files (e/mu selection)
 #    filelist = glob.glob('*_tree.root')

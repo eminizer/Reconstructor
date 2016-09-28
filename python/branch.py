@@ -5,6 +5,7 @@ MAX_MU_ARRAY_LENGTH = 40
 MAX_EL_ARRAY_LENGTH = 20
 MAX_AK4_JET_ARRAY_LENGTH = 40
 MAX_AK8_JET_ARRAY_LENGTH = 20
+MAX_AK8_SUBJET_ARRAY_LENGTH = 10
 
 #Imports
 from array import array
@@ -44,6 +45,7 @@ class Branch(object) :
 				self.__writeArray = array(self.__arraytype,[self.__inival])
 
 	def reset(self) :
+		#print 'resetting branch with readname %s and writename %s'%(self.__readname,self.__writename) #DEBUG
 		if self.__readname!=None and self.__arraytype!='vi' :
 			for i in range(self.__arraylength) :
 				self.__readArray[i]=self.__inival
@@ -66,6 +68,10 @@ class Branch(object) :
 		self.__writeArray[index]=value
 	def getReadValue(self,index=0) :
 		return self.__readArray[index]
+	def getReadArray(self) :
+		return self.__readArray
+	def getWriteValue(self,index=0) :
+		return self.__writeArray[index]
 
 def get_array_type(ttreetype) :
 	if ttreetype=='vi' :
@@ -96,5 +102,7 @@ def get_array_length(size) :
 		return MAX_AK4_JET_ARRAY_LENGTH
 	elif size=='jetAK8_size' :
 		return MAX_AK8_JET_ARRAY_LENGTH
+	elif size=='subjetAK8_size' :
+		return MAX_AK8_SUBJET_ARRAY_LENGTH
 	else :
 		return None

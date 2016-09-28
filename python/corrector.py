@@ -96,7 +96,7 @@ def setupJECCorrector(onGrid,isdata,jetType) :
 		L3JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV6_MC_L3Absolute_'+jetType+'.txt')
 		jetUncertainty = JetCorrectionUncertainty(pp+'Spring16_25nsV6_MC_Uncertainty_'+jetType+'.txt')
 	else :
-		print 'I do not know where to get the corrections for data right now; this will likely crash.'
+		print 'I do not know where to get the corrections for data right now; this will crash.'
 	#Load the JetCorrectorParameter objects into a vector, IMPORTANT: THE ORDER MATTERS HERE !!!! 
 	vParJec = vector('JetCorrectorParameters')()
 	vParJec.push_back(L1JetPar)
@@ -115,10 +115,10 @@ def getJER(jetEta, sysType) :
         print "ERROR: Can't get JER! use type=0 (nom), -1 (down), +1 (up)"
         return float(jerSF)
     # Values from https://twiki.cern.ch/twiki/bin/view/CMS/JetResolution
-    etamin = [0.0,0.8,1.3,1.9,2.5,3.0,3.2]
-    etamax = [0.8,1.3,1.9,2.5,3.0,3.2,5.0]
-    scale_nom =    [1.061,1.088,1.106,1.126,1.343,1.303,1.320]
-    scale_uncert = [0.023,0.029,0.030,0.094,0.123,0.111,0.286]
+    etamin = [0.0,0.5,0.8,1.1,1.3,1.7,1.9,2.1,2.3,2.5,2.8,3.0,3.2]
+    etamax = [0.5,0.8,1.1,1.3,1.7,1.9,2.1,2.3,2.5,2.8,3.0,3.2,5.0]
+    scale_nom =    [1.122,1.167,1.168,1.029,1.115,1.041,1.167,1.094,1.168,1.266,1.595,0.998,1.226]
+    scale_uncert = [0.026,0.048,0.046,0.066,0.030,0.062,0.086,0.093,0.120,0.132,0.175,0.066,0.145]
     for iSF in range(0,len(scale_nom)) :
         if abs(jetEta) >= etamin[iSF] and abs(jetEta) < etamax[iSF] :
             if sysType < 0 :
