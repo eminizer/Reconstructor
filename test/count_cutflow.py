@@ -3,50 +3,34 @@ from array import array
 from math import *
 import os, glob
 
-#cutflow_filename = 'cutflow_table_muons_second_half.txt'
-#cutflow_filename = 'cutflow_table_electrons_second_half.txt'
+#leptype='muons'
+#leptype='electrons'
+leptype='all_leptons'
 
-#cutflow_filename = 'cutflow_event_yields_muons.txt'
-cutflow_filename = 'cutflow_event_yields_electrons.txt'
+cutflow_filename = 'cutflow_count'
+cutflow_filename+='_'+leptype+'.txt'
 
 filenames = []
 shortnames = []
 weights = []
-#POWHEG TT
+#MCATNLO TTJETS
 #semileptonic qq
-#filenames.append('Powheg_qq_semilep_TT');					shortnames.append('Semileptonic TTBar')
-filenames.append('Powheg_qq_semilep_TT_Mtt_700_to_1000');	shortnames.append('Semileptonic TTBar')
-filenames.append('Powheg_qq_semilep_TT_Mtt_1000_to_Inf');	shortnames.append('Semileptonic TTBar')
+filenames.append('mcatnlo_qq_semilep_TT');					shortnames.append('Semileptonic TTBar')
 #semileptonic gg
-#filenames.append('Powheg_gg_semilep_TT');					shortnames.append('Semileptonic TTBar')
-filenames.append('Powheg_gg_semilep_TT_Mtt_700_to_1000');	shortnames.append('Semileptonic TTBar')
-filenames.append('Powheg_gg_semilep_TT_Mtt_1000_to_Inf');	shortnames.append('Semileptonic TTBar')
+filenames.append('mcatnlo_gg_semilep_TT');					shortnames.append('Semileptonic TTBar')
 #dileptonic 
-#filenames.append('Powheg_dilep_TT');						shortnames.append('Dileptonic TTBar')
-filenames.append('Powheg_dilep_TT_Mtt_700_to_1000'); 		shortnames.append('Dileptonic TTBar')
-filenames.append('Powheg_dilep_TT_Mtt_1000_to_Inf'); 		shortnames.append('Dileptonic TTBar')
+filenames.append('mcatnlo_dilep_TT');						shortnames.append('Dileptonic TTBar')
 #hadronic
-#filenames.append('Powheg_had_TT');							shortnames.append('Hadronic TTBar')
-filenames.append('Powheg_had_TT_Mtt_700_to_1000'); 			shortnames.append('Hadronic TTBar')
-filenames.append('Powheg_had_TT_Mtt_1000_to_Inf'); 			shortnames.append('Hadronic TTBar')
-#Single top
-filenames.append('T_s');		shortnames.append('Single Top')
-filenames.append('T_t');		shortnames.append('Single Top')
-filenames.append('T_tW');		shortnames.append('Single Top')
-filenames.append('Tbar_s');		shortnames.append('Single Top')
-filenames.append('Tbar_t');		shortnames.append('Single Top')
-filenames.append('Tbar_tW');	shortnames.append('Single Top')
+filenames.append('mcatnlo_had_TT');							shortnames.append('Hadronic TTBar')
 
 muon_data_filenames = []; ele_data_filenames = []
 #data
-muon_data_filenames.append('SingleMu_Run2012A')
-muon_data_filenames.append('SingleMu_Run2012B')
-muon_data_filenames.append('SingleMu_Run2012C')
-muon_data_filenames.append('SingleMu_Run2012D')
-ele_data_filenames.append('SingleEl_Run2012A')
-ele_data_filenames.append('SingleEl_Run2012B')
-ele_data_filenames.append('SingleEl_Run2012C')
-ele_data_filenames.append('SingleEl_Run2012D')
+#muon_data_filenames.append('SingleMu_Run2016B')
+#muon_data_filenames.append('SingleMu_Run2016C')
+#muon_data_filenames.append('SingleMu_Run2016D')
+#ele_data_filenames.append('SingleEl_Run2016B')
+#ele_data_filenames.append('SingleEl_Run2016C')
+#ele_data_filenames.append('SingleEl_Run2016D')
 
 #Chain up the files
 MC_chains = []
@@ -61,104 +45,74 @@ for i in range(len(filenames)) :
 		shortnames_done.append(shortnames[i])
 	else :
 		index = shortnames_done.index(shortnames[i])
-#	filenamelist = glob.glob('../'+filenames[i]+'/'+filenames[i]+'*_skim_tree.root')
-	filenamelist = glob.glob('../total_ttree_files/'+filenames[i]+'_skim_all.root')
+	#filenamelist = glob.glob('../total_ttree_files/'+filenames[i]+'_skim_all.root')
+	filenamelist = glob.glob('../total_ttree_files/'+filenames[i]+'_all.root')
 	for filename in filenamelist :
 		if filename.find('JES')==-1 and filename.find('JER')==-1 :
 			MC_chains[index].Add(filename)
 for muon_data_filename in muon_data_filenames :
-#	filenamelist = glob.glob('../'+muon_data_filename+'/'+muon_data_filename+'*_skim_tree.root')
-	filenamelist = glob.glob('../total_ttree_files/'+muon_data_filename+'_skim_all.root')
+	#filenamelist = glob.glob('../total_ttree_files/'+muon_data_filename+'_skim_all.root')
+	filenamelist = glob.glob('../total_ttree_files/'+muon_data_filename+'_all.root')
 	for filename in filenamelist :
 		muon_data_chain.Add(filename)
 for ele_data_filename in ele_data_filenames :
-#	filenamelist = glob.glob('../'+ele_data_filename+'/'+ele_data_filename+'*_skim_tree.root')
-	filenamelist = glob.glob('../total_ttree_files/'+ele_data_filename+'_skim_all.root')
+	#filenamelist = glob.glob('../total_ttree_files/'+ele_data_filename+'_skim_all.root')
+	filenamelist = glob.glob('../total_ttree_files/'+ele_data_filename+'_all.root')
 	for filename in filenamelist :
 		ele_data_chain.Add(filename)
 
-
 #Cut details
 cutnames = []; cutstrings = []; prior_cutstrings = []
-muon_preselection = 'mu_trigger==1 && muon1_pt>ele1_pt && hadt_pt>300. && hadt_M>50.'
-muon_kinematics = 'muon1_pt>40. && abs(muon1_eta)<2.4'
-muon_ID = 'muon1_isLoose==1'
-muon_2D = '(muon1_relPt>25. || muon1_dR>0.5)'
-ele_preselection = 'el_trigger==1 && ele1_pt>muon1_pt && hadt_pt>300. && hadt_M>50.'
-ele_kinematics = 'ele1_pt>40. && abs(ele1_eta)<2.4'
-ele_ID = 'ele1_isLoose==1'
-ele_2D = '(ele1_relPt>25. || ele1_dR>0.5)'
-lep_top_mass = 'lept_M>140. && lept_M<250.'
-muon_full_leptonic = muon_preselection+' && '+muon_kinematics+' && '+muon_ID+' && '+muon_2D+' && '+lep_top_mass
-muon_hadronic_pretag = muon_full_leptonic+' && hadt_tau21>0.1 && M_scaled>750.'
-ele_full_leptonic = ele_preselection+' && '+ele_kinematics+' && '+ele_ID+' && '+ele_2D+' && '+lep_top_mass
-ele_hadronic_pretag = ele_full_leptonic+' && hadt_tau21>0.1 && M_scaled>750.'
-signal_mass = 'hadt_M>140. && hadt_M<250.'
-sideband_mass = '(hadt_M>60. && hadt_M<140.) || (hadt_M>250. && hadt_M<300.)'
-antitag_tau32 = 'hadt_tau32>0.55' 
-signal_tau32 = 'hadt_tau32<0.55' 
+metfilters = 'metfilters==1'
+onelepton = 'onelepton==1'
+isolepton = 'isolepton==1'
+jetcuts = 'jetcuts==1'
+fullselection = 'fullselection==1'
+signalregion = fullselection+' && hadt_isttagged==1 '
 
-#cutnames.append('muon skim'); 					 cutstrings.append('(muon1_pt>ele1_pt)'); 													  prior_cutstrings.append('(muon1_pt>ele1_pt)')
-#cutnames.append('muon preselection'); 			 cutstrings.append('('+muon_preselection+')'); 												  prior_cutstrings.append('(muon1_pt>ele1_pt)')
-#cutnames.append('muon kinematics'); 			 cutstrings.append('('+muon_preselection+') && ('+muon_kinematics+')'); 					  prior_cutstrings.append('('+muon_preselection+')')
-#cutnames.append('muon ID'); 					 cutstrings.append('('+muon_preselection+') && ('+muon_ID+')'); 							  prior_cutstrings.append('('+muon_preselection+')')
-#cutnames.append('muon 2D cut'); 				 cutstrings.append('('+muon_preselection+') && ('+muon_2D+')'); 							  prior_cutstrings.append('('+muon_preselection+')')
-#cutnames.append('muon leptonic top mass'); 		 cutstrings.append('('+muon_preselection+') && ('+lep_top_mass+')'); 						  prior_cutstrings.append('('+muon_preselection+')')
-##cutnames.append('muon full leptonic'); 			 cutstrings.append('('+muon_full_leptonic+')'); 											  prior_cutstrings.append('('+muon_preselection+')')
-#cutnames.append('muon hadronic pretag'); 		 cutstrings.append('('+muon_hadronic_pretag+')'); 											  prior_cutstrings.append('('+muon_preselection+')')
-#cutnames.append('muon signal mass'); 			 cutstrings.append('('+muon_hadronic_pretag+') && ('+signal_mass+')'); 						  prior_cutstrings.append('('+muon_hadronic_pretag+')')
-#cutnames.append('muon signal tau32'); 			 cutstrings.append('('+muon_hadronic_pretag+') && ('+signal_tau32+')'); 					  prior_cutstrings.append('('+muon_hadronic_pretag+')')
-##cutnames.append('muon sideband mass'); 			 cutstrings.append('('+muon_hadronic_pretag+') && ('+sideband_mass+')'); 					  prior_cutstrings.append('('+muon_hadronic_pretag+')')
-#cutnames.append('muon antitag'); 				 cutstrings.append('('+muon_hadronic_pretag+') && ('+antitag_tau32+')'); 					  prior_cutstrings.append('('+muon_hadronic_pretag+')')
-#cutnames.append('muon full signal selection'); 	 cutstrings.append('('+muon_hadronic_pretag+') && ('+signal_mass+') && ('+signal_tau32+')');  prior_cutstrings.append('('+muon_preselection+')')
-#cutnames.append('muon full antitag selection');  cutstrings.append('('+muon_hadronic_pretag+') && ('+signal_mass+') && ('+antitag_tau32+')'); prior_cutstrings.append('('+muon_preselection+')')
-#cutnames.append('muon full sideband selection'); cutstrings.append('('+muon_hadronic_pretag+') && ('+sideband_mass+')'); 					  prior_cutstrings.append('('+muon_preselection+')')
+cutnames.append('preselection'); 	  cutstrings.append('weight!=0.'); 		prior_cutstrings.append('weight!=0.')
+cutnames.append('metfilters'); 		  cutstrings.append(metfilters); 		prior_cutstrings.append('weight!=0.')
+cutnames.append('onelepton'); 		  cutstrings.append(onelepton); 		prior_cutstrings.append('weight!=0.')
+cutnames.append('isolepton'); 		  cutstrings.append(isolepton); 		prior_cutstrings.append('weight!=0.')
+cutnames.append('jetcuts'); 		  cutstrings.append(jetcuts); 			prior_cutstrings.append('weight!=0.')
+cutnames.append('fullselection'); 	  cutstrings.append(fullselection); 	prior_cutstrings.append('weight!=0.')
+cutnames.append('signalregion'); 	  cutstrings.append(signalregion); 		prior_cutstrings.append(fullselection)
 
-cutnames.append('ele skim'); 					cutstrings.append('(ele1_pt>muon1_pt)'); 													prior_cutstrings.append('(ele1_pt>muon1_pt)')
-#cutnames.append('ele preselection'); 			cutstrings.append('('+ele_preselection+')'); 												prior_cutstrings.append('(ele1_pt>muon1_pt)')
-#cutnames.append('ele kinematics'); 				cutstrings.append('('+ele_preselection+') && ('+ele_kinematics+')'); 						prior_cutstrings.append('('+ele_preselection+')')
-#cutnames.append('ele ID'); 						cutstrings.append('('+ele_preselection+') && ('+ele_ID+')'); 								prior_cutstrings.append('('+ele_preselection+')')
-#cutnames.append('ele 2D cut'); 					cutstrings.append('('+ele_preselection+') && ('+ele_2D+')'); 								prior_cutstrings.append('('+ele_preselection+')')
-#cutnames.append('ele leptonic top mass'); 		cutstrings.append('('+ele_preselection+') && ('+lep_top_mass+')'); 							prior_cutstrings.append('('+ele_preselection+')')
-##cutnames.append('ele full leptonic'); 			cutstrings.append('('+ele_full_leptonic+')'); 												prior_cutstrings.append('('+ele_preselection+')')
-#cutnames.append('ele hadronic pretag'); 		cutstrings.append('('+ele_hadronic_pretag+')'); 											prior_cutstrings.append('('+ele_preselection+')')
-#cutnames.append('ele signal mass'); 			cutstrings.append('('+ele_hadronic_pretag+') && ('+signal_mass+')'); 						prior_cutstrings.append('('+ele_hadronic_pretag+')')
-#cutnames.append('ele signal tau32'); 			cutstrings.append('('+ele_hadronic_pretag+') && ('+signal_tau32+')'); 						prior_cutstrings.append('('+ele_hadronic_pretag+')')
-##cutnames.append('ele sideband mass'); 			cutstrings.append('('+ele_hadronic_pretag+') && ('+sideband_mass+')'); 						prior_cutstrings.append('('+ele_hadronic_pretag+')')
-#cutnames.append('ele antitag'); 				cutstrings.append('('+ele_hadronic_pretag+') && ('+antitag_tau32+')'); 						prior_cutstrings.append('('+ele_hadronic_pretag+')')
-cutnames.append('ele full signal selection'); 	cutstrings.append('('+ele_hadronic_pretag+') && ('+signal_mass+') && ('+signal_tau32+')'); 	prior_cutstrings.append('('+ele_preselection+')')
-#cutnames.append('ele full antitag selection'); 	cutstrings.append('('+ele_hadronic_pretag+') && ('+signal_mass+') && ('+antitag_tau32+')'); prior_cutstrings.append('('+ele_preselection+')')
-#cutnames.append('ele full sideband selection'); cutstrings.append('('+ele_hadronic_pretag+') && ('+sideband_mass+')'); 						prior_cutstrings.append('('+ele_preselection+')')
+#weight string
+weightstring = '12900.*weight'
 
 data_events_at_cut = []; data_events_at_prior_cut = []
 events_at_cut = []; events_at_prior_cut = []
-dist = TH1D('dist','distribution',20,-1.0,1.0)
+dist = TH1F('dist','distribution',20,-1.0,1.0)
 for i in range(len(cutnames)) :
-	print 'Getting numbers of data events for cut '+cutnames[i]+' ('+str(i+1)+' out of '+str(len(cutnames))+')'
-	if 'muon' in cutnames[i] :
-		tmp = dist.Clone('tmp')
-		muon_data_chain.CopyTree(cutstrings[i]).Draw('cstar>>tmp','weight')
-		data_events_at_cut.append(tmp.Integral())
-		tmp = dist.Clone('tmp')
-		muon_data_chain.CopyTree(prior_cutstrings[i]).Draw('cstar>>tmp','weight')
-		data_events_at_prior_cut.append(tmp.Integral())
-	elif 'ele' in cutnames[i] :
-		tmp = dist.Clone('tmp')
-		ele_data_chain.CopyTree(cutstrings[i]).Draw('cstar>>tmp','weight')
-		data_events_at_cut.append(tmp.Integral())
-		tmp = dist.Clone('tmp')
-		ele_data_chain.CopyTree(prior_cutstrings[i]).Draw('cstar>>tmp','weight')
-		data_events_at_prior_cut.append(tmp.Integral())
+	if (leptype=='muons' and len(muon_data_filenames)>0) or (leptype=='electrons' and len(ele_data_filenames)>0) :
+		print 'Getting numbers of data events for cut '+cutnames[i]+' ('+str(i+1)+' out of '+str(len(cutnames))+')'
+		if leptype=='muons' :
+			tmp = dist.Clone('tmp')
+			muon_data_chain.Draw('cstar>>tmp','weight!=0.*('+cutstrings[i]+')')
+			data_events_at_cut.append(tmp.Integral())
+			tmp = dist.Clone('tmp')
+			muon_data_chain.Draw('cstar>>tmp','weight!=0.*('+prior_cutstrings[i]+')')
+			data_events_at_prior_cut.append(tmp.Integral())
+		elif leptype=='electrons' :
+			tmp = dist.Clone('tmp')
+			ele_data_chain.Draw('cstar>>tmp','weight!=0.*('+cutstrings[i]+')')
+			data_events_at_cut.append(tmp.Integral())
+			tmp = dist.Clone('tmp')
+			ele_data_chain.Draw('cstar>>tmp','weight!=0.*('+prior_cutstrings[i]+')')
+			data_events_at_prior_cut.append(tmp.Integral())
 	events_at_cut.append([]); events_at_prior_cut.append([])
 	print 'Getting numbers of MC events for cut '+cutnames[i]+' ('+str(i+1)+' out of '+str(len(cutnames))+')'
 	for j in range(len(MC_chains)) :
 		print '	Doing '+shortnames_done[j]+' ('+str(j+1)+' out of '+str(len(MC_chains))+')'
 		tmp = dist.Clone('tmp')
-		MC_chains[j].CopyTree(cutstrings[i]).Draw('cstar>>tmp','weight*19748.*sf_pileup*sf_top_pT_new*sf_lep_ID*sf_trig_eff')
+		MC_chains[j].Draw('cstar>>tmp','('+weightstring+')*('+cutstrings[i]+')')
 		events_at_cut[i].append(tmp.Integral())
 		tmp = dist.Clone('tmp')
-		MC_chains[j].CopyTree(prior_cutstrings[i]).Draw('cstar>>tmp','weight*19748.*sf_pileup*sf_top_pT_new*sf_lep_ID*sf_trig_eff')
+		MC_chains[j].Draw('cstar>>tmp','('+weightstring+')*('+prior_cutstrings[i]+')')
 		events_at_prior_cut[i].append(tmp.Integral())
+		data_events_at_cut.append(1.)
+		data_events_at_prior_cut.append(1.)
 
 #print out the number of events in data and the efficiencies for the MC samples
 #first line is just table headings for each cutflow and each sample type

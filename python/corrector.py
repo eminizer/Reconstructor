@@ -64,9 +64,9 @@ class Corrector(object) :
 		#scale the eta/phi values
 		recoeta = ptsmearedjet.Eta()
 		if recoeta==0. :
-		#	print 'JET WITH 0 ETA = (pt,eta,phi,M) = (%.2f,%.2f,%.2f,%.2f)'%(ptsmearedjet.Pt(),ptsmearedjet.Eta(),ptsmearedjet.Phi(),ptsmearedjet.M()) #DEBUG
-		#	print 'Original jet vector = (pt,eta,phi,M) = (%.2f,%.2f,%.2f,%.2f)'%(jetvec.Pt(),jetvec.Eta(),jetvec.Phi(),jetvec.M()) #DEBUG
-		#	print 'ptsmear = %.2f, recopt = %.2f, genPt = %.2f, ptsmearfac = %.2f'%(ptsmear,recopt,genPt,ptsmearfac) #DEBUG
+			#print 'JET WITH 0 ETA = (pt,eta,phi,M) = (%.2f,%.2f,%.2f,%.2f)'%(ptsmearedjet.Pt(),ptsmearedjet.Eta(),ptsmearedjet.Phi(),ptsmearedjet.M()) #DEBUG
+			#print 'Original jet vector = (pt,eta,phi,M) = (%.2f,%.2f,%.2f,%.2f)'%(jetvec.Pt(),jetvec.Eta(),jetvec.Phi(),jetvec.M()) #DEBUG
+			#print 'ptsmear = %.2f, recopt = %.2f, genPt = %.2f, ptsmearfac = %.2f'%(ptsmear,recopt,genPt,ptsmearfac) #DEBUG
 			return None
 		deltaeta = (recoeta-genEta)*angsmearfac
 		etascale = max(0.0, (recoeta+deltaeta)/recoeta)

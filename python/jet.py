@@ -10,7 +10,7 @@ class Jet(object) :
 		self.__fourvec = getfourvec(branches,index,jes,jer,lep,corrector,isdata,pp)
 		self.__pt = self.__fourvec.Pt() if self.__fourvec!=None else None
 		self.__eta = self.__fourvec.Eta() if self.__fourvec!=None else None
-		self.__isIDed = self.__checkID__(branches,index,pp)
+		self.__isIDed = True #self.__checkID__(branches,index,pp)
 		self.__csvv2 = branches[pp+'_CSVv2'].getReadValue(index)
 
 	def __checkID__(self,branches,index,pp) :
@@ -153,13 +153,16 @@ def getfourvec(branches,index,jes,jer,lep,corrector,isdata,pp) :
 		newJEC = corrector.getJECforJet(cleanjet,jetArea,rho,npv,pp)
 	nominalJet = cleanjet*newJEC
 	#If this is data, don't apply any smearing or systematics, just return the corrected, cleaned jet
-	if isdata :
-		return nominalJet
+	#if isdata :
+	#	return nominalJet
+	return nominalJet #HEY CHANGE THIS BECAUSE IT'S SUPER WRONG BUT YOU NEED HELP WITH JET RESOLUTION CORRECTIONS
 	#The rest depends on whether we're doing JEC systematics
 	#Also we need the generated pt, eta, phi
 	genPt  = branches[pp+'_GenJetPt'].getReadValue(index)
 	genEta = branches[pp+'_GenJetEta'].getReadValue(index)
 	genPhi = branches[pp+'_GenJetPhi'].getReadValue(index)
+	if genPt==-900. or genEta==-900. or genPhi==-900. :
+		return None
 	newJet = None
 	if jes=='nominal' :
 		newJet=corrector.smearJet(nominalJet,jer,genPt,genEta,genPhi)

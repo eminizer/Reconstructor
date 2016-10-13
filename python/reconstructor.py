@@ -9,7 +9,6 @@ EL_TRIG_PATH = 'HLT_Ele35_CaloIdVT_GsfTrkIdT_PFJet150_PFJet50'
 ##########								   Imports  								##########
 
 from math import pi, log
-import copy
 from ROOT import TFile, TTree, TLorentzVector
 from branch import Branch
 from eventTypeHelper import keepEventType, findInitialPartons, findMCParticles
@@ -106,7 +105,7 @@ class Reconstructor(object) :
 	el_phis 	  = AddBranch(readname='el_Phi',size='el_size',dictlist=thisdictlist)
 	el_es 		  = AddBranch(readname='el_E',size='el_size',dictlist=thisdictlist)
 	el_charges 	  = AddBranch(readname='el_Charge',size='el_size',dictlist=thisdictlist)
-	el_idLoose 	  = AddBranch(readname='el_IDTight_NoIso',size='el_size',dictlist=thisdictlist)
+	el_id 		  = AddBranch(readname='el_IDTight_NoIso',ttreetype='I',size='el_size',dictlist=thisdictlist)
 	el_Keys 	  = AddBranch(readname='el_Key',size='el_size',dictlist=thisdictlist)
 	#AK4 Jets
 	thisdictlist = [allBranches,ak4JetBranches]
@@ -229,7 +228,7 @@ class Reconstructor(object) :
 		AddBranch(writename=fourvecname+'_phi',dictlist=thisdictlist)
 		AddBranch(writename=fourvecname+'_M',dictlist=thisdictlist)
 	#rescaled fourvectors
-	fourvectornames = ['lep','met','lepW','lepb','lept','hadW','hadb','hadt']
+	fourvectornames = ['lep','met','lepW','lepb','lept','hadt']
 	for fourvecname in fourvectornames :
 		AddBranch(writename='scaled_'+fourvecname+'_pt',dictlist=thisdictlist)
 		AddBranch(writename='scaled_'+fourvecname+'_eta',dictlist=thisdictlist)
@@ -243,17 +242,16 @@ class Reconstructor(object) :
 		AddBranch(writename=lepname+'_ID',ttreetype='i',inival=2,dictlist=thisdictlist)
 		AddBranch(writename=lepname+'_relPt',dictlist=thisdictlist)
 		AddBranch(writename=lepname+'_dR',dictlist=thisdictlist)
-	hadt_tau32 = AddBranch(writename='hadt_tau32',dictlist=thisdictlist)
-	hadt_tau21 = AddBranch(writename='hadt_tau21',dictlist=thisdictlist)
-	hadt_SDM   = AddBranch(writename='hadt_SDM',dictlist=thisdictlist)
-	hadW_tau32 = AddBranch(writename='hadW_tau32',dictlist=thisdictlist)
-	hadW_tau21 = AddBranch(writename='hadW_tau21',dictlist=thisdictlist)
-	hadW_SDM   = AddBranch(writename='hadW_SDM',dictlist=thisdictlist)
-	#kinematic fit stuff
+	hadt_tau32 	   = AddBranch(writename='hadt_tau32',dictlist=thisdictlist)
+	hadt_tau21 	   = AddBranch(writename='hadt_tau21',dictlist=thisdictlist)
+	hadt_SDM 	   = AddBranch(writename='hadt_SDM',dictlist=thisdictlist)
+	hadt_isttagged = AddBranch(writename='hadt_isttagged',ttreetype='i',inival=2,dictlist=thisdictlist)
+	#miscellaneous stuff
 	thisdictlist = [allBranches]
-	ttype = AddBranch(writename='ttype',ttreetype='i',inival=0,dictlist=thisdictlist)
-	chi2 = AddBranch(writename='chi2',inival=0.0,dictlist=thisdictlist)
-	nFits = AddBranch(writename='nFits',ttreetype='i',inival=0,dictlist=thisdictlist)
+	#lepton type in the event (1 for muon, 2 for electron)
+	lepflavor = AddBranch(writename='lepflavor',ttreetype='i',inival=0,dictlist=thisdictlist)
+	#how mamy unique MET solutions were there
+	nMETs = AddBranch(writename='nMETs',ttreetype='i',inival=0,dictlist=thisdictlist)
 	#whether or not this event should be added twice and have its weight halved based on its initial state
 	addTwice = AddBranch(writename='addTwice',ttreetype='i',inival=0,dictlist=thisdictlist)
 	#Obervables
@@ -261,15 +259,15 @@ class Reconstructor(object) :
 	thisdictlist = [allBranches,observableBranches]
 	#cosine(theta)
 	cstar 		 = AddBranch(writename='cstar',dictlist=thisdictlist)
-	cstar_scaled = AddBranch(writename='cstar_scaled',dictlist=thisdictlist)
+	cstar_prefit = AddBranch(writename='cstar_prefit',dictlist=thisdictlist)
 	cstar_corprefit = AddBranch(writename='cstar_corprefit',dictlist=thisdictlist)
 	#Feynman x
 	x_F 	   = AddBranch(writename='x_F',dictlist=thisdictlist)
-	x_F_scaled = AddBranch(writename='x_F_scaled',dictlist=thisdictlist)
+	x_F_prefit = AddBranch(writename='x_F_prefit',dictlist=thisdictlist)
 	x_F_corprefit = AddBranch(writename='x_F_corprefit',dictlist=thisdictlist)
 	#ttbar invariant mass
 	M 		 = AddBranch(writename='M',dictlist=thisdictlist)
-	M_scaled = AddBranch(writename='M_scaled',dictlist=thisdictlist)
+	M_prefit = AddBranch(writename='M_prefit',dictlist=thisdictlist)
 	M_corprefit = AddBranch(writename='M_corprefit',dictlist=thisdictlist)
 	#initial quark vector
 	mctruthBranches = {}
@@ -287,33 +285,30 @@ class Reconstructor(object) :
 	#cut variables
 	cut_branches = {}
 	thisdictlist = [allBranches,cut_branches]
-	cutnames = ['metfilters','onelepton','isolepton','smalljets','fullselection']
+	cutnames = ['metfilters','onelepton','isolepton','jetcuts','fullselection','topology','validminimization']
 	for cutname in cutnames :
 		AddBranch(writename=cutname,ttreetype='i',inival=2,dictlist=thisdictlist)
 	#debugging variables
 	kinfit_debug_branches = {}
 	thisdictlist=[kinfit_debug_branches,allBranches]
+	chi2 = AddBranch(writename='chi2',inival=0.0,dictlist=thisdictlist)
 	par_0 = AddBranch(writename='par_0',dictlist=thisdictlist)
 	par_1 = AddBranch(writename='par_1',dictlist=thisdictlist)
 	par_2 = AddBranch(writename='par_2',dictlist=thisdictlist)
 	par_3 = AddBranch(writename='par_3',dictlist=thisdictlist)
 	par_4 = AddBranch(writename='par_4',dictlist=thisdictlist)
-	par_5 = AddBranch(writename='par_5',dictlist=thisdictlist)
-	lnLtl = AddBranch(writename='lnLtl',dictlist=thisdictlist)
-	lnLth = AddBranch(writename='lnLth',dictlist=thisdictlist)
-	lnLwl = AddBranch(writename='lnLwl',dictlist=thisdictlist)
-	lnLwh = AddBranch(writename='lnLwh',dictlist=thisdictlist)
-	lnLlsf = AddBranch(writename='lnLlsf',dictlist=thisdictlist)
-	lnLblsf = AddBranch(writename='lnLblsf',dictlist=thisdictlist)
-	lnLhsf1 = AddBranch(writename='lnLhsf1',dictlist=thisdictlist)
-	lnLhsf2 = AddBranch(writename='lnLhsf2',dictlist=thisdictlist)
-	lnLhsf3 = AddBranch(writename='lnLhsf3',dictlist=thisdictlist)
+	pdftl = AddBranch(writename='pdftl',dictlist=thisdictlist)
+	pdfth = AddBranch(writename='pdfth',dictlist=thisdictlist)
+	pdfwl = AddBranch(writename='pdfwl',dictlist=thisdictlist)
+	pdflsf = AddBranch(writename='pdflsf',dictlist=thisdictlist)
+	pdfblsf = AddBranch(writename='pdfblsf',dictlist=thisdictlist)
+	pdfhsf1 = AddBranch(writename='pdfhsf1',dictlist=thisdictlist)
+	pdfhsf2 = AddBranch(writename='pdfhsf2',dictlist=thisdictlist)
 	nhypotheses = AddBranch(writename='nhypotheses',ttreetype='i',inival=0,dictlist=thisdictlist)
 	ismatchable = AddBranch(writename='ismatchable',ttreetype='i',inival=2,dictlist=thisdictlist)
 	iscorrect = AddBranch(writename='iscorrect',ttreetype='i',inival=2,dictlist=thisdictlist)
 	ismatchedpostfit = AddBranch(writename='ismatchedpostfit',ttreetype='i',inival=2,dictlist=thisdictlist)
 	lepWcorprefitM = AddBranch(writename='lepWcorprefitM',dictlist=thisdictlist)
-	hadWcorprefitM = AddBranch(writename='hadWcorprefitM',dictlist=thisdictlist)
 	leptcorprefitM = AddBranch(writename='leptcorprefitM',dictlist=thisdictlist)
 	hadtcorprefitM = AddBranch(writename='hadtcorprefitM',dictlist=thisdictlist)
 
@@ -321,6 +316,8 @@ class Reconstructor(object) :
 	def analyze(self,eventnumber) :
 		#get the event in the tree
 		self.inputTree.GetEntry(eventnumber)
+
+		#-----------------------------------------------------Below here is a bunch of preselection and object assignment-----------------------------------------------------#
 
 		#Make sure the event has some met, at least one lepton, and at least one of each type of jet
 		metsize = self.met_size.getReadValue()
@@ -381,9 +378,9 @@ class Reconstructor(object) :
 		#figure out whether the event is muonic or electronic, assign lep
 		lep = None
 		if len(muons)>0 and (len(electrons)==0 or muons[0].getPt()>electrons[0].getPt()) :
-			lep = muons[0]; leptype='mu'
+			lep = muons[0]; self.lepflavor.setWriteValue(1)
 		elif len(electrons)>0 and (len(muons)==0 or electrons[0].getPt()>muons[0].getPt()) :
-			lep = electrons[0]; leptype='el'
+			lep = electrons[0]; self.lepflavor.setWriteValue(2)
 		if lep==None :
 			#print 'EVENT NUMBER %d NOT VALID; NO LEPTONS'%(eventnumber) #DEBUG
 			return
@@ -397,16 +394,13 @@ class Reconstructor(object) :
 				ak4jets.append(newJet)
 		for i in range(ak8jetsize) :
 			newJet = AK8Jet(self.ak8JetBranches,i,self.JES,self.JER,lep,self.corrector,self.is_data)
-			if newJet.getFourVector()!=None and newJet.getPt()>500. and abs(newJet.getEta())<2.4 and newJet.isIDed() :
+			if newJet.getFourVector()!=None and newJet.getPt()>500. and abs(newJet.getEta())<2.4 and newJet.getNSubjets()>1 and newJet.isIDed() :
 				ak8jets.append(newJet)
 		ak4jets.sort(key=lambda x: x.getPt(), reverse=True)
 		ak8jets.sort(key=lambda x: x.getPt(), reverse=True)
-		#if the lepton cleaning got rid of too many jets, or if the AK8 jet doesn't have at least 2 subjets, toss the event
-		if not (len(ak4jets)>0 and len(ak8jets)>0 and ak8jets[0].getNSubjets()>1) :
-			#s = 'EVENT NUMBER %d NOT VALID; MISSING JETS (# AK4jets = %d, # AK8Jets = %d'%(eventnumber,len(ak4jets),len(ak8jets)) #DEBUG
-			#if (len(ak8jets)>0) : #DEBUG
-			#	s+= ', # AK8 subjets = %d'%(ak8jets[0].getNSubjets()) #DEBUG
-			#print s+')' #DEBUG
+		#if the lepton cleaning got rid of too many jets toss the event
+		if not (len(ak4jets)>0 and len(ak8jets)>0) :
+			#print 'EVENT NUMBER %d NOT VALID; MISSING JETS (# AK4jets = %d, # AK8Jets = %d)'%(eventnumber,len(ak4jets),len(ak8jets)) #DEBUG
 			return
 
 		#calculate lepton isolation variables
@@ -438,24 +432,20 @@ class Reconstructor(object) :
 			self.__setLeptonBranchValues__('ele1',electrons[0])
 			if ellen>1 :
 				self.__setLeptonBranchValues__('ele2',electrons[1])
-		ak4len = len(ak4jets)
-		if ak4len>0 :
-			self.__setFourVectorBranchValues__('ak41',ak4jets[0].getFourVector())
-			if ak4len>1 :
-				self.__setFourVectorBranchValues__('ak42',ak4jets[1].getFourVector())
+		self.__setFourVectorBranchValues__('ak41',ak4jets[0].getFourVector())
+		self.__setFourVectorBranchValues__('ak42',ak4jets[1].getFourVector())
 		self.__setFourVectorBranchValues__('ak8',ak8jets[0].getFourVector())
+		#and fill in the rest of the top jet stuff
 		self.hadt_tau32.setWriteValue(ak8jets[0].getTau32())
 		self.hadt_tau21.setWriteValue(ak8jets[0].getTau21())
 		self.hadt_SDM.setWriteValue(ak8jets[0].getSDM())
 
 		#neutrino handling and setup for fit
 		met1_vec, met2_vec = setupMET(lep.getFourVector(),met)
-		self.nFits.setWriteValue(2)
-		if met1_vec.Pz() == met2_vec.Pz() :
-			self.nFits.setWriteValue(1)
+		self.nMETs.setWriteValue(2) if met1_vec.Pz() != met2_vec.Pz() else self.nMETs.setWriteValue(1)
 
 		#--------------------------------------------------------------------Below here is event selection--------------------------------------------------------------------#
-		['metfilters','onelepton','isolepton','smalljets','fullselection']
+		
 		#met filtering
 		metfiltercuts = []
 		for branch in self.filterBranches.values() :
@@ -463,157 +453,141 @@ class Reconstructor(object) :
 				metfiltercuts.append(False)
 		if metfiltercuts.count(False)==0 : self.cut_branches['metfilters'].setWriteValue(1)
 		else : self.cut_branches['metfilters'].setWriteValue(0)
-		#exactly one lepton
-		other_leps = []
-		if leptype=='mu' :
-			other_leps+=electrons
-			for i in range(1,len(muons)) :
-				other_leps.append(muons[i])
-		elif leptype=='el' :
-			other_leps+=muons
-			for i in range(1,len(electrons)) :
-				other_leps.append(electrons[i])
-		if len(other_leps)==0 : self.cut_branches['onelepton'].setWriteValue(1)
-		else : self.cut_branches['onelepton'].setWriteValue(0)
 		#isolated lepton
 		if lep.getRelPt()>20. or lep.getDR()>0.4 : self.cut_branches['isolepton'].setWriteValue(1)
 		else : self.cut_branches['isolepton'].setWriteValue(0)
-		#two leading ak4 jets
-		if leptype=='mu' :
-			if ak4jets[0].getPt()>150. and abs(ak4jets[0].getEta())<2.4 and ak4jets[1].getPt()>50. and abs(ak4jets[1].getEta())<2.4 : self.cut_branches['smalljets'].setWriteValue(1)
-			else : self.cut_branches['smalljets'].setWriteValue(0)
-		elif leptype=='el' :
-			if ak4jets[0].getPt()>250. and abs(ak4jets[0].getEta())<2.4 and ak4jets[1].getPt()>70. and abs(ak4jets[1].getEta())<2.4 : self.cut_branches['smalljets'].setWriteValue(1)
-			else : self.cut_branches['smalljets'].setWriteValue(0)
-		#full selection
-		allcuts = []
-		for cutbranch in self.cut_branches.values() :
-			if cutbranch.getWriteValue()==0 :
-				allcuts.append(False)
-		if leptype=='mu' :
+		#other cuts are lepton flavor specific
+		other_leps = []; allcuts = []
+		if self.lepflavor.getWriteValue()==1 :
+			#exactly one lepton
+			other_leps+=electrons
+			for i in range(1,len(muons)) :
+				other_leps.append(muons[i])
+			if len(other_leps)==0 : self.cut_branches['onelepton'].setWriteValue(1)
+			else : self.cut_branches['onelepton'].setWriteValue(0)
+			#leading ak4 jets
+			if ak4jets[0].getPt()>150. and abs(ak4jets[0].getEta())<2.4  and ak4jets[1].getPt()>50. and abs(ak4jets[1].getEta())<2.4 : self.cut_branches['jetcuts'].setWriteValue(1)
+			else : self.cut_branches['jetcuts'].setWriteValue(0)
+			#add'l cuts
 			allcuts.append((lep.getPt()+met.E())>150.)
 			allcuts.append(met.E()>50.)
-		elif leptype=='el' :
+		elif self.lepflavor.getWriteValue()==2 :
+			other_leps+=muons
+			for i in range(1,len(electrons)) :
+				other_leps.append(electrons[i])
+			if len(other_leps)==0 : self.cut_branches['onelepton'].setWriteValue(1)
+			else : self.cut_branches['onelepton'].setWriteValue(0)
+			#leading ak4 jets
+			if ak4jets[0].getPt()>250. and abs(ak4jets[0].getEta())<2.4 and ak4jets[1].getPt()>70. and abs(ak4jets[1].getEta())<2.4 : self.cut_branches['jetcuts'].setWriteValue(1)
+			else : self.cut_branches['jetcuts'].setWriteValue(0)
+			#add'l cuts
 			allcuts.append(met.E()>120.)
+		#full selection
+		for cutbranch in self.cut_branches.values() :
+			if cutbranch.getWriteValue()==0 :
+				allcuts.append(False)			
 		if allcuts.count(False)==0 : self.cut_branches['fullselection'].setWriteValue(1)
 		else : self.cut_branches['fullselection'].setWriteValue(0)
+
 		#-----------------------------------------------------------------Below here is event reconstruction-----------------------------------------------------------------#
 		
 		#list of jet assignment hypotheses
 		hypotheses = []
 		met_options = [met1_vec,met2_vec]
-		#figure out whether the event is a type1 (fully merged) or type2 (partially merged) event
-		if ak8jets[0].isTopTagged() : #if the event has a top tag, it's fully merged
-			self.ttype.setWriteValue(1)
-			#top is the hardest ak8 jet
-			hadtCandJet = ak8jets[0]			
-			for i in range(self.nFits.getWriteValue()) :
-				thismet = met_options[i]
-				#leptonic b is an ak4 jet on the opposite hemisphere
-				for j in range(len(ak4jets)) :
-					ak4jet = ak4jets[j]
-					dRcheck = (ak4jet.getFourVector()+lep.getFourVector()+thismet).DeltaR(hadtCandJet.getFourVector())
-					if dRcheck > pi/2. : 
-						hypotheses.append([lep,thismet,ak4jet,hadtCandJet])
-		else : #otherwise it's partially merged
-			self.ttype.setWriteValue(2)
-			#hadronic W is the hardest ak8 jet
-			hadWCandJet = ak8jets[0]
-			#make the list of hypotheses
-			hypotheses = []; met_options = [met1_vec,met2_vec]
-			for i in range(self.nFits.getWriteValue()) :
-				thismet = met_options[i]
-				#hadronic/leptonic b's are the hardest ak4 jets on the appropriate hemisphere
-				hadbcands = []; lepbcands = []
-				for i in range(len(ak4jets)) : 
-					lepbak4jet = ak4jets[i]
-					for j in range(len(ak4jets)) :
-						if j==i : continue
-						hadbak4jet = ak4jets[j]
-						#make sure that the hadronic ak4 jet is outside the hadronic W jet
-						if hadbak4jet.getFourVector().DeltaR(hadWCandJet.getFourVector())<1.2 : continue
-						#if this jet combination produces a viable hypothesis, assign the candidates
-						leptopcandvec = lep.getFourVector()+thismet+ak4jets[i].getFourVector()
-						hadtopcandvec = hadWCandJet.getFourVector()+ak4jets[j].getFourVector()
-						if leptopcandvec.DeltaR(hadtopcandvec) > pi/2 :
-							hypotheses.append([lep,thismet,ak4jets[i],hadWCandJet,ak4jets[j]])
+		#top is the hardest ak8 jet
+		hadtCandJet = ak8jets[0]			
+		if hadtCandJet.isTopTagged() : self.hadt_isttagged.setWriteValue(1)
+		else : self.hadt_isttagged.setWriteValue(0)
+		for i in range(self.nMETs.getWriteValue()) :
+			thismet = met_options[i]
+			#leptonic b is an ak4 jet on the opposite hemisphere
+			for j in range(len(ak4jets)) :
+				ak4jet = ak4jets[j]
+				#kinematic cuts on ak4 jets
+				thislept = ak4jet.getFourVector()+lep.getFourVector()+thismet
+				#if not ak4jet.getPt()>100. :
+				#	continue
+				#if not thislept.Pt()>500. :
+				#	continue
+				dRcheck = thislept.DeltaR(hadtCandJet.getFourVector())
+				if dRcheck > pi/2. : 
+					hypotheses.append([lep,thismet,ak4jet,hadtCandJet])
 		#if no hypotheses had a valid assignment, chuck it
 		if len(hypotheses)==0 :
-			print 'EVENT NUMBER %d NOT VALID; NO AK4 JET ASSIGNMENT CREATES HEMISPHERICALLY SEPARATED TOPS'%(eventnumber)
+			#print 'EVENT NUMBER %d NOT VALID; NO AK4 JET ASSIGNMENT CREATES HEMISPHERICALLY SEPARATED TOPS'%(eventnumber) #DEBUG
+			self.cut_branches['topology'].setWriteValue(0)
+			self.__closeout__()
 			return
+		self.cut_branches['topology'].setWriteValue(1)
 		self.nhypotheses.setWriteValue(len(hypotheses))
 		#do the monte carlo matching
-		corrhypindex=-1
+		corrhypindex=-1; mindR = 10000.
 		if self.event_type<2 and not self.is_data :
 			for i in range(len(hypotheses)) :
 				hypothesis=hypotheses[i]
-				#check the lepton, neutrino, and leptonic b
-				if hypothesis[0].getFourVector().DeltaR(MClep_vec)<0.1 and hypothesis[1].DeltaPhi(MCv_vec)<0.3 and hypothesis[2].getFourVector().DeltaR(MClepb_vec)<0.4 :
-					if len(hypothesis)==4 : #type 1
-						#check the hadronic top
-						if hypothesis[3].getFourVector().DeltaR(MChadW_vec)<0.8 and hypothesis[3].getFourVector().DeltaR(MChadb_vec)<0.8 :
-							corrhypindex = i; self.ismatchable.setWriteValue(1); break
-					else : #type 2
-						#check the hadronic W and b
-						if hypothesis[3].getFourVector().DeltaR(MChadW_vec)<0.8 and hypothesis[4].getFourVector().DeltaR(MChadb_vec)<0.4 :
-							corrhypindex = i; self.ismatchable.setWriteValue(1); break
-		#	if corrhypindex==-1 : #DEBUG
-		#		print 'EVENT NUMBER %d IS NOT MATCHABLE'%(eventnumber) #DEBUG
-		#	else : #DEBUG
-		#		print 'Event number %d has a correct assignment hypothesis at index %d'%(eventnumber,corrhypindex) #DEBUG
+				#check the lepton 
+				ldR = hypothesis[0].getFourVector().DeltaR(MClep_vec)
+				#neutrino
+				vdP = hypothesis[1].DeltaPhi(MCv_vec)
+				#leptonic b
+				lbdR = hypothesis[2].getFourVector().DeltaR(MClepb_vec)
+				#hadronic W
+				hWdR = hypothesis[3].getFourVector().DeltaR(MChadW_vec)
+				#and hadronic b
+				hbdR = hypothesis[3].getFourVector().DeltaR(MChadb_vec)
+				if ldR<0.1 and vdP<0.3 and lbdR<0.4 and hWdR<0.8 and hbdR<0.8 and (ldR+vdP+lbdR+hWdR+hbdR)<mindR :
+					mindR = ldR+vdP+lbdR+hWdR+hbdR; corrhypindex = i; self.ismatchable.setWriteValue(1)
+			#print '------------------------------------------------------------------------' #DEBUG
+			#if corrhypindex==-1 : #DEBUG
+			#	print 'EVENT NUMBER %d IS NOT MATCHABLE'%(eventnumber) #DEBUG
+			#else : #DEBUG
+			#	print 'Event number %d has a correct assignment hypothesis at index %d'%(eventnumber,corrhypindex) #DEBUG
 		#send the hypotheses to the kinematic fit
 		scaledlep = TLorentzVector(); scaledmet = TLorentzVector()
 		scaledlepb = TLorentzVector(); scaledhadt = TLorentzVector()
-		scaledhadW = TLorentzVector(); scaledhadb = TLorentzVector()
-		hypindex, scaledlep, scaledmet, scaledlepb, scaledhadW, scaledhadb, scaledhadt, fitchi2, finalpars = reconstruct(hypotheses)
+		hypindex, scaledlep, scaledmet, scaledlepb, scaledhadt, fitchi2, finalpars = reconstruct(hypotheses)
 		if scaledlep==None :
-			print 'EVENT NUMBER '+str(eventnumber)+' NOT VALID; NO KINEMATIC FITS CONVERGED'
+			#print 'EVENT NUMBER '+str(eventnumber)+' NOT VALID; NO KINEMATIC FITS CONVERGED' #DEBUG
+			self.cut_branches['validminimization'].setWriteValue(0)
+			self.__closeout__()
 			return
+		self.cut_branches['validminimization'].setWriteValue(1)
+
+		#-----------------------------------------------------Below here is a bunch of variable and weight calculation-----------------------------------------------------#
+
 		if not self.is_data :
-			if hypindex==corrhypindex : self.iscorrect.setWriteValue(1)
-			elif corrhypindex!=-1 : self.iscorrect.setWriteValue(0)
+			#if the fit returned the correct hypothesis with either MET solution, it was correct
+			if hypindex==corrhypindex or (corrhypindex!=-1 and hypotheses[hypindex][2]==hypotheses[corrhypindex][2]) : 
+				self.iscorrect.setWriteValue(1)
+			elif corrhypindex!=-1 : 
+				self.iscorrect.setWriteValue(0)
 		#try the MC matching again with the postfit quantities
 		if self.event_type<2 and not self.is_data :
 			hypothesis=hypotheses[hypindex]
 			#check the lepton, neutrino, and leptonic b
 			if scaledlep.DeltaR(MClep_vec)<0.1 and scaledmet.DeltaPhi(MCv_vec)<0.3 and scaledlepb.DeltaR(MClepb_vec)<0.4 :
-				if len(hypothesis)==4 : #type 1
-					#check the hadronic top
-					if scaledhadt.DeltaR(MChadW_vec)<0.8 and scaledhadt.DeltaR(MChadb_vec)<0.8 :
-						self.ismatchedpostfit.setWriteValue(1)
-				else : #type 2
-					#check the hadronic W and b
-					if scaledhadW.DeltaR(MChadW_vec)<0.8 and scaledhadb.DeltaR(MChadb_vec)<0.4 :
-						self.ismatchedpostfit.setWriteValue(1)
+				#check the hadronic top
+				if scaledhadt.DeltaR(MChadW_vec)<0.8 and scaledhadt.DeltaR(MChadb_vec)<0.8 :
+					self.ismatchedpostfit.setWriteValue(1)
 			if self.ismatchedpostfit.getWriteValue()!=1 : self.ismatchedpostfit.setWriteValue(0)
+		#	print 'ismatchedpostfit = %d'%(self.ismatchedpostfit.getWriteValue()) #DEBUG
 							
 		#Kinematic fit debugging variables
 		self.chi2.setWriteValue(fitchi2)
-		locs = [self.par_0,self.par_1,self.par_2,self.par_3,self.par_4,self.par_5]
+		locs = [self.par_0,self.par_1,self.par_2,self.par_3,self.par_4]
 		for i in range(len(finalpars)) :
 			locs[i].setWriteValue(finalpars[i])
-		MW = 80.4; MW_ht2 = 80.4; MT = 172.5; MT_lt1 = 174.2; MT_lt2 = 173.4; MT_ht1 = 187.5; MT_ht2 = 173.8; 
-		WW = 2.0; WW_ht2 = 2.0; WT = 1.4; WT_lt1 = 31.80; WT_lt2 = 26.03; WT_ht1 = 18.78; WT_ht2 = 16.39; 
-		SIGMAJ  = 0.10; SIGMAL  = 0.03; 
-		self.lnLlsf.setWriteValue((finalpars[1]-1.)*(finalpars[1]-1.)/(SIGMAL*SIGMAL))
-		self.lnLblsf.setWriteValue((finalpars[2]-1.)*(finalpars[2]-1.)/(SIGMAJ*SIGMAJ))
-		self.lnLhsf1.setWriteValue((finalpars[3]-1.)*(finalpars[3]-1.)/(SIGMAJ*SIGMAJ))
-		self.lnLhsf2.setWriteValue((finalpars[4]-1.)*(finalpars[4]-1.)/(SIGMAJ*SIGMAJ))
+		MW = 80.4; MT = 172.5; MT_l = 174.0; MT_h = 189.2; WW = 2.0; WT = 1.4; WT_l = 26.5; WT_h = 17.5; SIGMAJ  = 0.10; SIGMAL  = 0.02 
+		self.pdflsf.setWriteValue((finalpars[1]-1.)*(finalpars[1]-1.)/(SIGMAL*SIGMAL))
+		self.pdfblsf.setWriteValue((finalpars[2]-1.)*(finalpars[2]-1.)/(SIGMAJ*SIGMAJ))
+		self.pdfhsf1.setWriteValue((finalpars[3]-1.)*(finalpars[3]-1.)/(SIGMAJ*SIGMAJ))
+		self.pdfhsf2.setWriteValue((finalpars[4]-1.)*(finalpars[4]-1.)/(SIGMAJ*SIGMAJ))
 		wl = scaledmet + scaledlep; tl = wl + scaledlepb
-		if self.ttype.getWriteValue()==1 :
-			th = scaledhadt
-			mwl2 = wl.M2(); mtl2 = tl.M2(); mth2 = th.M2()
-			self.lnLtl.setWriteValue(1./((mtl2-MT_lt1*MT_lt1)**2+MT_lt1*MT_lt1*WT_lt1*WT_lt1))
-			self.lnLth.setWriteValue(1./((mth2-MT_ht1*MT_ht1)**2+MT_ht1*MT_ht1*WT_ht1*WT_ht1))
-			self.lnLwl.setWriteValue(((MT_lt1*MT_lt1-mwl2)*(MT_lt1*MT_lt1-mwl2)*(2*MT_lt1*MT_lt1+mwl2))/((mwl2-MW*MW)*(mwl2-MW*MW)+MW*MW*WW*WW))
-		elif self.ttype.getWriteValue()==2 :
-			wh = scaledhadW; th = wh+scaledhadb
-			mwl2 = wl.M2(); mtl2 = tl.M2(); mwh2 = wh.M2(); mth2 = th.M2()
-			self.lnLtl.setWriteValue(1./((mtl2-MT_lt2*MT_lt2)**2+MT_lt2*MT_lt2*WT_lt2*WT_lt2))
-			self.lnLth.setWriteValue(1./((mth2-MT_ht2*MT_ht2)**2+MT_ht2*MT_ht2*WT_ht2*WT_ht2))
-			self.lnLwl.setWriteValue(((MT_lt2*MT_lt2-mwl2)*(MT_lt2*MT_lt2-mwl2)*(2*MT_lt2*MT_lt2+mwl2))/((mwl2-MW*MW)*(mwl2-MW*MW)+MW*MW*WW*WW))
-			self.lnLwh.setWriteValue(((MT_ht2*MT_ht2-mwh2)*(MT_ht2*MT_ht2-mwh2)*(2*MT_ht2*MT_ht2+mwh2))/((mwh2-MW_ht2*MW_ht2)*(mwh2-MW_ht2*MW_ht2)+MW_ht2*MW_ht2*WW_ht2*WW_ht2))
-			self.lnLhsf3.setWriteValue((finalpars[5]-1.)*(finalpars[5]-1.)/(SIGMAJ*SIGMAJ))
+		th = scaledhadt
+		mwl2 = wl.M2(); mtl2 = tl.M2(); mth2 = th.M2()
+		self.pdftl.setWriteValue(1./((mtl2-MT_l**2)**2+MT_l**2*WT_l**2))
+		self.pdfth.setWriteValue(1./((mth2-MT_h**2)**2+MT_h**2*WT_h**2))
+		self.pdfwl.setWriteValue(((MT**2-mwl2)*(MT**2-mwl2)*(2*MT**2+mwl2))/((mwl2-MW*MW)*(mwl2-MW*MW)+MW*MW*WW*WW))
 
 		#fill the TTree with the scaled fourvector variables
 		self.__setFourVectorBranchValues__('scaled_lep',scaledlep)
@@ -621,35 +595,26 @@ class Reconstructor(object) :
 		self.__setFourVectorBranchValues__('scaled_lepW',scaledlep+scaledmet)
 		self.__setFourVectorBranchValues__('scaled_lepb',scaledlepb)
 		self.__setFourVectorBranchValues__('scaled_lept',scaledlep+scaledmet+scaledlepb)
-		if len(hypotheses[hypindex])==5 :
-			self.__setFourVectorBranchValues__('scaled_hadW',scaledhadW)
-			self.__setFourVectorBranchValues__('scaled_hadb',scaledhadb)
-		elif len(hypotheses[hypindex])==4 :
-			self.__setFourVectorBranchValues__('scaled_hadt',scaledhadt)
+		self.__setFourVectorBranchValues__('scaled_hadt',scaledhadt)
 
 		#reconstruct the observables 
 		#using the chosen postfit
 		cstar_s,xF_s,M_s = getObservables(scaledlep+scaledmet+scaledlepb,scaledhadt,lep.getQ()) 
-		self.cstar_scaled.setWriteValue(cstar_s); self.x_F_scaled.setWriteValue(xF_s); self.M_scaled.setWriteValue(M_s)
+		self.cstar.setWriteValue(cstar_s); self.x_F.setWriteValue(xF_s); self.M.setWriteValue(M_s)
 		#using the chosen prefit
 		hypothesis = hypotheses[hypindex]
 		prefitlept = hypothesis[0].getFourVector()+hypothesis[1]+hypothesis[2].getFourVector()
 		prefithadt = hypothesis[3].getFourVector()
 		if len(hypothesis)==5 : prefithadt+=hypothesis[4].getFourVector()
 		cstar,xF,M = getObservables(prefitlept,prefithadt,hypothesis[0].getQ()) 
-		self.cstar.setWriteValue(cstar); self.x_F.setWriteValue(xF); self.M.setWriteValue(M)
+		self.cstar_prefit.setWriteValue(cstar); self.x_F_prefit.setWriteValue(xF); self.M_prefit.setWriteValue(M)
 		#using the correct assignment prefit
 		if (not self.is_data) and corrhypindex!=-1 : 
 			hypothesis = hypotheses[corrhypindex]	
 			prefitlepW = hypothesis[0].getFourVector()+hypothesis[1]
 			prefitlept = prefitlepW+hypothesis[2].getFourVector()
-			prefithadW = hypothesis[3].getFourVector()
-			prefithadt = copy.deepcopy(prefithadW)
-			if len(hypothesis)==5 : 
-				prefithadt+=hypothesis[4].getFourVector()
-				self.hadWcorprefitM.setWriteValue(prefithadW.M())
+			prefithadt = hypothesis[3].getFourVector()
 			self.lepWcorprefitM.setWriteValue(prefitlepW.M())
-			self.hadWcorprefitM.setWriteValue(prefithadW.M())
 			self.leptcorprefitM.setWriteValue(prefitlept.M())
 			self.hadtcorprefitM.setWriteValue(prefithadt.M())
 			cstar,xF,M = getObservables(prefitlept,prefithadt,hypothesis[0].getQ()) 
@@ -774,7 +739,7 @@ class Reconstructor(object) :
 	########## function to close out the event, called before kicking back to runner #########
 	def __closeout__(self) :
 		#fill ttree
-		#print 'written M = %.4f, written M_scaled = %.4f'%(self.M.getWriteValue(),self.M_scaled.getWriteValue()) #DEBUG
+		#print 'written M = %.4f, written M_prefit = %.4f'%(self.M.getWriteValue(),self.M_prefit.getWriteValue()) #DEBUG
 		self.tree.Fill()
 
 	################################## __del__ function  ###################################

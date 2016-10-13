@@ -6,20 +6,36 @@ sample_names = []
 #sample_names.append('Powheg_qq_semilep_TT_Mtt_700_to_1000')
 #sample_names.append('Powheg_qq_semilep_TT_Mtt_1000_to_Inf')
 sample_names.append('mcatnlo_qq_semilep_TT')
-#sample_names.append('mcatnlo_qq_semilep_TT_no_W_contribs')
+#sample_names.append('mcatnlo_qq_semilep_TT_final')
+#sample_names.append('mcatnlo_qq_semilep_TT_gaussian_all_params')
+#sample_names.append('mcatnlo_qq_semilep_TT_gaussian_pz_only')
+#sample_names.append('mcatnlo_qq_semilep_TT_gaussian_all_params_no_W')
+#sample_names.append('mcatnlo_qq_semilep_TT_gaussian_pz_only_no_W')
+#sample_names.append('mcatnlo_qq_semilep_TT_lorentzian_all_params')
+#sample_names.append('mcatnlo_qq_semilep_TT_lorentzian_pz_only')
+#sample_names.append('mcatnlo_qq_semilep_TT_lorentzian_all_params_no_W')
+#sample_names.append('mcatnlo_qq_semilep_TT_lorentzian_pz_only_no_W')
 #sample_names.append('Powheg_gg_semilep_TT')
 #sample_names.append('Powheg_gg_semilep_TT_Mtt_700_to_1000')
 #sample_names.append('Powheg_gg_semilep_TT_Mtt_1000_to_Inf')
 sample_names.append('mcatnlo_gg_semilep_TT')
-#sample_names.append('mcatnlo_gg_semilep_TT_no_W_contribs')
-#sample_names.append('Powheg_dilep_TT')
+#sample_names.append('mcatnlo_gg_semilep_TT_final')
+#sample_names.append('mcatnlo_gg_semilep_TT_gaussian_all_params')
+#sample_names.append('mcatnlo_gg_semilep_TT_gaussian_pz_only')
+#sample_names.append('mcatnlo_gg_semilep_TT_gaussian_all_params_no_W')
+#sample_names.append('mcatnlo_gg_semilep_TT_gaussian_pz_only_no_W')
+#sample_names.append('mcatnlo_gg_semilep_TT_lorentzian_all_params')
+#sample_names.append('mcatnlo_gg_semilep_TT_lorentzian_pz_only')
+#sample_names.append('mcatnlo_gg_semilep_TT_lorentzian_all_params_no_W')
+#sample_names.append('mcatnlo_gg_semilep_TT_lorentzian_pz_only_no_W')
+sample_names.append('Powheg_dilep_TT')
 #sample_names.append('Powheg_dilep_TT_Mtt_700_to_1000')
 #sample_names.append('Powheg_dilep_TT_Mtt_1000_to_Inf')
-sample_names.append('mcatnlo_dilep_TT')
-#sample_names.append('Powheg_had_TT')
+#sample_names.append('mcatnlo_dilep_TT')
+sample_names.append('Powheg_had_TT')
 #sample_names.append('Powheg_had_TT_Mtt_700_to_1000')
 #sample_names.append('Powheg_had_TT_Mtt_1000_to_Inf')
-sample_names.append('mcatnlo_had_TT')
+#sample_names.append('mcatnlo_had_TT')
 #sample_names.append('W1Jets')
 #sample_names.append('W2Jets')
 #sample_names.append('W3Jets')
@@ -82,12 +98,12 @@ for name in sample_names :
 #    cmd = 'python ../make_list_of_jobs.py --n_jobs '+nJobs+' --name '+name+' --on_grid yes'
 #    cmd+= ' --generator '+generator+' --xSec '+xSec
 #    os.system(cmd)
+
+#    #make list of failed jobs
+#    os.system('python ../make_failed_job_list.py')
     
     #submit jobs
     os.system('tcsh grid_sub.csh')
- 
-#    #make list of failed jobs
-#    os.system('python ../make_failed_job_list.py')
 
 #    #skim files
 #    os.system('rm -rf *_skim_tree.root')
@@ -97,7 +113,8 @@ for name in sample_names :
 #        f = TFile(filelist[i]); t = f.Get('tree')
 #        newname = filelist[i].replace('_tree.root','')+'_skim_tree.root'
 #        newFile = TFile(newname,'recreate')
-#        newTree = t.CopyTree('hadt_pt>300.')
+#        #newTree = t.CopyTree('hadt_pt>300.')
+#        newTree = t.CopyTree('fullselection==1')
 #        newTree.Write()
 #        newFile.Close()
 #    i = 0
@@ -124,6 +141,7 @@ for name in sample_names :
 #        cmd = 'hadd -f '+name+'_JER_down_skim_all.root '+name+'_JER_down_*_skim_tree.root'
 #        os.system(cmd)
 #    os.system('mv *_all.root ../total_ttree_files')
+#    os.system('rm -rf *_skim_tree.root')
 
 #    #skim files (e/mu selection)
 #    filelist = glob.glob('*_tree.root')

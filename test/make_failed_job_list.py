@@ -36,7 +36,7 @@ for rootfile in rootfilelist :
 expected_contribution = totalsize/len(rootfilelist)
 for rootfile in rootfilelist :
 	filesize = os.path.getsize(rootfile)
-	if filesize/expected_contribution<0.90 :
+	if filesize/expected_contribution<0.80 :
 		print 'File '+rootfile+' is too small, its size is '+str(filesize)+' bytes, contributing '+str(filesize/expected_contribution)+' of its expectation'
 		jobnumber = int(rootfile.rstrip('_tree.root').split('_')[len(rootfile.rstrip('_tree.root').split('_'))-1])
 		if (not 'singleel' in rootfile.lower() and not 'singlemu' in rootfile.lower()) :

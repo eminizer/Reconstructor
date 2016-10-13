@@ -67,7 +67,10 @@ class Branch(object) :
 	def setWriteValue(self,value,index=0) :
 		self.__writeArray[index]=value
 	def getReadValue(self,index=0) :
-		return self.__readArray[index]
+		if index<len(self.__readArray) :
+			return self.__readArray[index]
+		else :
+			return self.__inival
 	def getReadArray(self) :
 		return self.__readArray
 	def getWriteValue(self,index=0) :
