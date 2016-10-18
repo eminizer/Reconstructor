@@ -153,19 +153,28 @@ def getfourvec(branches,index,jes,jer,lep,corrector,isdata,pp) :
 		newJEC = corrector.getJECforJet(cleanjet,jetArea,rho,npv,pp)
 	nominalJet = cleanjet*newJEC
 	#If this is data, don't apply any smearing or systematics, just return the corrected, cleaned jet
-	#if isdata :
-	#	return nominalJet
-	return nominalJet #HEY CHANGE THIS BECAUSE IT'S SUPER WRONG BUT YOU NEED HELP WITH JET RESOLUTION CORRECTIONS
+	if isdata :
+		return nominalJet
 	#The rest depends on whether we're doing JEC systematics
 	#Also we need the generated pt, eta, phi
 	genPt  = branches[pp+'_GenJetPt'].getReadValue(index)
 	genEta = branches[pp+'_GenJetEta'].getReadValue(index)
 	genPhi = branches[pp+'_GenJetPhi'].getReadValue(index)
-	if genPt==-900. or genEta==-900. or genPhi==-900. :
+	genE   = branches[pp+'_GenJetE'].getReadValue(index)
+	if genPt==-900. or genEta==-900. or genPhi==-900. or genE==-900. :
 		return None
+	#set the generated jet vector
+	genJetVec = TLorentzVector(); genJetVec.SetPtEtaPhiE(genPt,genEta,genPhi,genE)
+	#subtract out the lepton if necessary
+	dRCheck = 0.4 if pp.find('jetAK4')!=-1 else 0.8
+	if subtracted and genJetVec.DeltaR(lep.getFourVector())<dRCheck :
+		genJetVec -= lep.getFourVector()
+	#get the pt resolution of the jet
+	ptres = branches[pp+'_PtResolution'].getReadValue(index)
+	#Smear the jet 
 	newJet = None
 	if jes=='nominal' :
-		newJet=corrector.smearJet(nominalJet,jer,genPt,genEta,genPhi)
+		newJet=corrector.smearJet(nominalJet,jer,genJetVec,ptres,dRCheck)
 	else :
 		#otherwise get the new jec uncertainty
 		newJECuncDown, newJECuncUp = jecunc, jecunc
@@ -174,10 +183,10 @@ def getfourvec(branches,index,jes,jer,lep,corrector,isdata,pp) :
 		#And scale the fourvector up or down if we're looking for JES corrections
 		if jes=='up' :
 			jecUpJet = cleanjet*(newJEC+newJECuncUp)
-			newJet=corrector.smearJet(jecUpJet,jer,genPt,genEta,genPhi)
+			newJet=corrector.smearJet(jecUpJet,jer,genJetVec,ptres,dRCheck)
 		elif jes=='down' :
 			jecDownJet = cleanjet*(newJEC+newJECuncDown)
-			newJet=corrector.smearJet(jecDownJet,jer,genPt,genEta,genPhi)
+			newJet=corrector.smearJet(jecDownJet,jer,genJetVec,ptres,dRCheck)
 	return newJet
 
 def cleanJet(jetvec,jetkeys,sj1keys,sj2keys,lepvec,lepkey) :

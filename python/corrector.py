@@ -2,6 +2,8 @@
 
 #Imports
 from ROOT import vector, FactorizedJetCorrector, JetCorrectorParameters, JetCorrectionUncertainty
+from random import gauss
+from math import sqrt
 
 class Corrector(object) :
 
@@ -41,39 +43,29 @@ class Corrector(object) :
 		uncUp   = uncCorrector.getUncertainty(1)
 		return uncDown, uncUp
 
-	def smearJet(self,jetvec,jer,genPt,genEta,genPhi) :
+	def smearJet(self,jetvec,jer,genJetVec,ptres,dRCheck) :
+		ptsmear=1.
 		eta = jetvec.Eta()
 		#get the smearing factors
 		if jer=='nominal' :
 			ptsmearfac = getJER(eta,0)
-			angsmearfac = 0.1	
 		elif jer=='down' :
 			ptsmearfac = getJER(eta,-1)
-			angsmearfac = 0.0	
 		elif jer=='up' :
 			ptsmearfac = getJER(eta,1)
-			angsmearfac = 0.2	
 		else :
 			print 'WARNING: JER OPTION '+str(jer)+' NOT RECOGNIZED!!'
 			return None
-		#smear the pt
-		recopt = jetvec.Pt()
-		deltapt = (recopt-genPt)*(ptsmearfac-1.0)
-		ptsmear = max(0.0, (recopt+deltapt)/recopt)
+		#see which smearing method we should use based on MC matching
+		if jetvec.DeltaR(genJetVec)<dRCheck/2. and abs(jetvec.Pt()-genJetVec.Pt())<3.*ptres : #scaling
+			#smear the pt
+			recopt = jetvec.Pt()
+			deltapt = (recopt-genJetVec.Pt())*(ptsmearfac-1.0)
+			ptsmear = max(0.0, (recopt+deltapt)/recopt)
+		else : #gaussian smearing
+			sigma = sqrt(abs(ptsmearfac**2-1.))*ptres #Note the absolute value here, this is to handle cases where ptsmearfac<1., which are always out of selection range
+			ptsmear = 1.+gauss(0.,sigma)
 		ptsmearedjet = jetvec*ptsmear
-		#scale the eta/phi values
-		recoeta = ptsmearedjet.Eta()
-		if recoeta==0. :
-			#print 'JET WITH 0 ETA = (pt,eta,phi,M) = (%.2f,%.2f,%.2f,%.2f)'%(ptsmearedjet.Pt(),ptsmearedjet.Eta(),ptsmearedjet.Phi(),ptsmearedjet.M()) #DEBUG
-			#print 'Original jet vector = (pt,eta,phi,M) = (%.2f,%.2f,%.2f,%.2f)'%(jetvec.Pt(),jetvec.Eta(),jetvec.Phi(),jetvec.M()) #DEBUG
-			#print 'ptsmear = %.2f, recopt = %.2f, genPt = %.2f, ptsmearfac = %.2f'%(ptsmear,recopt,genPt,ptsmearfac) #DEBUG
-			return None
-		deltaeta = (recoeta-genEta)*angsmearfac
-		etascale = max(0.0, (recoeta+deltaeta)/recoeta)
-		recophi = ptsmearedjet.Phi()
-		deltaphi = (recophi-genPhi)*angsmearfac
-		phiscale = max(0.0, (recophi+deltaphi)/recophi)
-		ptsmearedjet.SetPtEtaPhiE(ptsmearedjet.Pt(),recoeta*etascale,recophi*phiscale,ptsmearedjet.E())
 		#return the smeared fourvector
 		return ptsmearedjet
 

@@ -40,7 +40,8 @@ class Reconstructor(object) :
 	#GenWeight info
 	genWeight = AddBranch('evt_Gen_Weight','genWeight','F',1.0,'1',[allBranches])
 	rho 	  = AddBranch('evt_rho','rho','D',1.0,'1',[allBranches,ak4JetBranches,ak8JetBranches])
-	npv 	  = AddBranch('evt_npv','npv','I',-1,'1',[allBranches,ak4JetBranches,ak8JetBranches])
+	#pileup
+	npv = AddBranch('pu_NtrueInt','npv','I',-1,'1',[allBranches,ak4JetBranches,ak8JetBranches])
 	#MC GenEvent info
 	mcGenEventBranches = {}
 	thisdictlist = [allBranches,mcGenEventBranches]
@@ -74,10 +75,6 @@ class Reconstructor(object) :
 	goodVertices 		= AddBranch('Flag_goodVertices','goodVerticesfilter','I',-1,'1',thisdictlist)
 	eebadsc 			= AddBranch('Flag_eeBadScFilter','eebadscfilter','I',-1,'1',thisdictlist)
 	globaltighthalo2016 = AddBranch('Flag_globalTightHalo2016Filter','globaltighthalo2016filter','I',-1,'1',thisdictlist)
-	#pileup
-	pileupBranches = {}
-	thisdictlist = [allBranches,pileupBranches]
-	pu = AddBranch(readname='pu_NtrueInt',ttreetype='I',dictlist=thisdictlist)
 	#MET
 	metBranches = {}
 	thisdictlist = [allBranches,metBranches]
@@ -117,10 +114,12 @@ class Reconstructor(object) :
 	ak4_genpts 					= AddBranch(readname='jetAK4_GenJetPt',size='jetAK4_size',dictlist=thisdictlist)
 	ak4_genetas 				= AddBranch(readname='jetAK4_GenJetEta',size='jetAK4_size',dictlist=thisdictlist)
 	ak4_genphis 				= AddBranch(readname='jetAK4_GenJetPhi',size='jetAK4_size',dictlist=thisdictlist)
+	ak4_genEs 					= AddBranch(readname='jetAK4_GenJetE',size='jetAK4_size',dictlist=thisdictlist)
 	ak4_csvv2s 					= AddBranch(readname='jetAK4_CSVv2',size='jetAK4_size',dictlist=thisdictlist)
 	ak4_jec0s 					= AddBranch(readname='jetAK4_jecFactor0',size='jetAK4_size',dictlist=thisdictlist)
 	ak4_jecuncs 				= AddBranch(readname='jetAK4_jecUncertainty',size='jetAK4_size',dictlist=thisdictlist)
 	ak4_jetAs 					= AddBranch(readname='jetAK4_jetArea',size='jetAK4_size',dictlist=thisdictlist)
+	ak4_jetPtRess 				= AddBranch(readname='jetAK4_PtResolution',size='jetAK4_size',dictlist=thisdictlist)
 	ak4_keylists 				= AddBranch(readname='jetAK4_Keys',ttreetype='vi',size='jetAK4_size',dictlist=thisdictlist)
 	ak4_neutralMultiplicity 	= AddBranch(readname='jetAK4_neutralMultiplicity',size='jetAK4_size',dictlist=thisdictlist)
 	ak4_neutralHadronEnergyFrac = AddBranch(readname='jetAK4_neutralHadronEnergyFrac',size='jetAK4_size',dictlist=thisdictlist)
@@ -138,10 +137,12 @@ class Reconstructor(object) :
 	ak8_genpts 					= AddBranch(readname='jetAK8_GenJetPt',size='jetAK8_size',dictlist=thisdictlist)
 	ak8_genetas 				= AddBranch(readname='jetAK8_GenJetEta',size='jetAK8_size',dictlist=thisdictlist)
 	ak8_genphis 				= AddBranch(readname='jetAK8_GenJetPhi',size='jetAK8_size',dictlist=thisdictlist)
+	ak8_genEs 					= AddBranch(readname='jetAK8_GenJetE',size='jetAK8_size',dictlist=thisdictlist)
 	ak8_csvv2s 					= AddBranch(readname='jetAK8_CSVv2',size='jetAK8_size',dictlist=thisdictlist)
 	ak8_jec0s 					= AddBranch(readname='jetAK8_jecFactor0',size='jetAK8_size',dictlist=thisdictlist)
 	ak8_jecuncs 				= AddBranch(readname='jetAK8_jecUncertainty',size='jetAK8_size',dictlist=thisdictlist)
 	ak8_jetAs 					= AddBranch(readname='jetAK8_jetArea',size='jetAK8_size',dictlist=thisdictlist)
+	ak8_jetPtRess 				= AddBranch(readname='jetAK8_PtResolution',size='jetAK8_size',dictlist=thisdictlist)
 	ak8_tau1s 					= AddBranch(readname='jetAK8_tau1',size='jetAK8_size',dictlist=thisdictlist)
 	ak8_tau2s 					= AddBranch(readname='jetAK8_tau2',size='jetAK8_size',dictlist=thisdictlist)
 	ak8_tau3s 					= AddBranch(readname='jetAK8_tau3',size='jetAK8_size',dictlist=thisdictlist)
@@ -165,6 +166,7 @@ class Reconstructor(object) :
 	subjak8_genpts 					= AddBranch(readname='subjetAK8_GenJetPt',size='subjetAK8_size',dictlist=thisdictlist)
 	subjak8_genetas 				= AddBranch(readname='subjetAK8_GenJetEta',size='subjetAK8_size',dictlist=thisdictlist)
 	subjak8_genphis 				= AddBranch(readname='subjetAK8_GenJetPhi',size='subjetAK8_size',dictlist=thisdictlist)
+	subjak8_genEs 					= AddBranch(readname='subjetAK8_GenJetE',size='subjetAK8_size',dictlist=thisdictlist)
 	subjak8_csvv2s 					= AddBranch(readname='subjetAK8_CSVv2',size='subjetAK8_size',dictlist=thisdictlist)
 	subjak8_jec0s 					= AddBranch(readname='subjetAK8_jecFactor0',size='subjetAK8_size',dictlist=thisdictlist)
 	subjak8_keylists 				= AddBranch(readname='subjetAK8_Keys',ttreetype='vi',size='subjetAK8_size',dictlist=thisdictlist)
@@ -285,7 +287,7 @@ class Reconstructor(object) :
 	#cut variables
 	cut_branches = {}
 	thisdictlist = [allBranches,cut_branches]
-	cutnames = ['metfilters','onelepton','isolepton','jetcuts','fullselection','topology','validminimization']
+	cutnames = ['metfilters','trigger','onelepton','isolepton','jetcuts','fullselection','topology','validminimization']
 	for cutname in cutnames :
 		AddBranch(writename=cutname,ttreetype='i',inival=2,dictlist=thisdictlist)
 	#debugging variables
@@ -459,6 +461,9 @@ class Reconstructor(object) :
 		#other cuts are lepton flavor specific
 		other_leps = []; allcuts = []
 		if self.lepflavor.getWriteValue()==1 :
+			#trigger
+			if self.muTrig.getWriteValue()==1 : self.cut_branches['trigger'].setWriteValue(1)
+			else : self.cut_branches['trigger'].setWriteValue(0)
 			#exactly one lepton
 			other_leps+=electrons
 			for i in range(1,len(muons)) :
@@ -472,6 +477,9 @@ class Reconstructor(object) :
 			allcuts.append((lep.getPt()+met.E())>150.)
 			allcuts.append(met.E()>50.)
 		elif self.lepflavor.getWriteValue()==2 :
+			#trigger
+			if self.elTrig.getWriteValue()==1 : self.cut_branches['trigger'].setWriteValue(1)
+			else : self.cut_branches['trigger'].setWriteValue(0)
 			other_leps+=muons
 			for i in range(1,len(electrons)) :
 				other_leps.append(electrons[i])

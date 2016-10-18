@@ -172,14 +172,11 @@ def findInitialPartonsMCAtNLO(branches) :
 		Mom0ID = branches['gen_Mom0ID'].getReadValue(i)
 		Mom1ID = branches['gen_Mom1ID'].getReadValue(i)
 		Dau0ID = branches['gen_Dau0ID'].getReadValue(i)
+		Dau1ID = branches['gen_Dau1ID'].getReadValue(i)
 	#	print '[%d + %d] = %d -> (%d + %d)'%(Mom0ID,Mom1ID,thisID,Dau0ID,branches['gen_Dau1ID'].getReadValue(i)) #DEBUG
-		if abs(Mom0ID)!=TOP_ID and abs(Mom1ID)!=TOP_ID and Mom0ID!=-900 and Mom1ID!=-900 and abs(thisID)==TOP_ID and Dau0ID==thisID :
+		if abs(Mom0ID)==PROTON_ID and Mom1ID==-900. and abs(Dau0ID)==TOP_ID and abs(Dau1ID)==TOP_ID :
 	#		print '	eta = %.4f'%(branches['gen_Eta'].getReadValue(i)) #DEBUG
-			factor = 0.0
-			if branches['gen_Eta'].getReadValue(i) > 0 :
-				factor = 1.0
-			else :
-				factor = -1.0
+			factor = 1.0 if branches['gen_Eta'].getReadValue(i) > 0 else -1.0
 			factor*=abs(thisID)/thisID
 			return TLorentzVector(1.0,0.0,factor*sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY), TLorentzVector(1.0,0.0,-1.*factor*sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY)
 	#Note that this will crash if the above algorithm doesn't find what it's looking for
