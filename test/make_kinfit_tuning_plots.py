@@ -30,7 +30,7 @@ for func in allfuncs :
 	func.SetParameter(0,3500000.); func.SetParameter(1,173.); func.SetParameter(2,20.)
 
 #plot plots
-weights = '12900.*weight'
+weights = '12917.*weight'
 com_cuts = 'fullselection==1 && ismatchable==1 && hadt_isttagged==1'
 tree.Draw('leptcorprefitM>>leptM('+str(ntbins)+','+str(tmass_low)+','+str(tmass_high)+')','('+weights+')*('+com_cuts+')')
 tree.Draw('hadtcorprefitM>>hadtM('+str(ntbins)+','+str(tmass_low)+','+str(tmass_high)+')','('+weights+')*('+com_cuts+')')

@@ -6,6 +6,9 @@ MAX_EL_ARRAY_LENGTH = 20
 MAX_AK4_JET_ARRAY_LENGTH = 40
 MAX_AK8_JET_ARRAY_LENGTH = 20
 MAX_AK8_SUBJET_ARRAY_LENGTH = 10
+MAX_SCALE_ARRAY_LENGTH = 6
+MAX_PDF_ARRAY_LENGTH = 100
+MAX_ALPHAS_ARRAY_LENGTH = 2
 
 #Imports
 from array import array
@@ -107,5 +110,11 @@ def get_array_length(size) :
 		return MAX_AK8_JET_ARRAY_LENGTH
 	elif size=='subjetAK8_size' :
 		return MAX_AK8_SUBJET_ARRAY_LENGTH
+	elif size=='scale_size' :
+		return MAX_SCALE_ARRAY_LENGTH
+	elif size=='pdf_size' :
+		return MAX_PDF_ARRAY_LENGTH
+	elif size=='alphas_size' :
+		return MAX_ALPHAS_ARRAY_LENGTH
 	else :
 		return None

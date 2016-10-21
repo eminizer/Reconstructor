@@ -4,6 +4,7 @@ SQRT_S=13000.0
 BEAM_ENERGY=SQRT_S/2.0
 #Trigger paths
 MU_TRIG_PATH = 'HLT_Mu30_eta2p1_PFJet150_PFJet50'
+#MU_TRIG_PATH = 'HLT_Mu45_eta2p1'
 EL_TRIG_PATH = 'HLT_Ele35_CaloIdVT_GsfTrkIdT_PFJet150_PFJet50'
 
 ##########								   Imports  								##########
@@ -42,6 +43,15 @@ class Reconstructor(object) :
 	rho 	  = AddBranch('evt_rho','rho','D',1.0,'1',[allBranches,ak4JetBranches,ak8JetBranches])
 	#pileup
 	npv = AddBranch('pu_NtrueInt','npv','I',-1,'1',[allBranches,ak4JetBranches,ak8JetBranches])
+	#Scale, PDF, and alpha_s weights
+	genUncBranches = {}
+	thisdictlist=[allBranches,genUncBranches]
+	scale_size = AddBranch(readname='scale_size',ttreetype='i',dictlist=thisdictlist)
+	scale_weights = AddBranch(readname='scale_Weights',ttreetype='F',size='scale_size',dictlist=thisdictlist)
+	pdf_size = AddBranch(readname='pdf_size',ttreetype='i',dictlist=thisdictlist)
+	pdf_weights = AddBranch(readname='pdf_Weights',ttreetype='F',size='pdf_size',dictlist=thisdictlist)
+	alphas_size = AddBranch(readname='alphas_size',ttreetype='i',dictlist=thisdictlist)
+	alphas_weights = AddBranch(readname='alphas_Weights',ttreetype='F',size='alphas_size',dictlist=thisdictlist)
 	#MC GenEvent info
 	mcGenEventBranches = {}
 	thisdictlist = [allBranches,mcGenEventBranches]
@@ -75,6 +85,8 @@ class Reconstructor(object) :
 	goodVertices 		= AddBranch('Flag_goodVertices','goodVerticesfilter','I',-1,'1',thisdictlist)
 	eebadsc 			= AddBranch('Flag_eeBadScFilter','eebadscfilter','I',-1,'1',thisdictlist)
 	globaltighthalo2016 = AddBranch('Flag_globalTightHalo2016Filter','globaltighthalo2016filter','I',-1,'1',thisdictlist)
+	badpfmuon 			= AddBranch('Flag_BadPFMuonFilter','badpfmuonfilter','I',-1,'1',thisdictlist)
+	badchargedcandidate = AddBranch('Flag_BadChargedCandidateFilter','badchargedcandidatefilter','I',-1,'1',thisdictlist)
 	#MET
 	metBranches = {}
 	thisdictlist = [allBranches,metBranches]
@@ -204,21 +216,24 @@ class Reconstructor(object) :
 	#scalefactors
 	scalefactorBranches = {}
 	thisdictlist = [allBranches,scalefactorBranches]
-	sf_top_pT 		  = AddBranch(writename='sf_top_pT',inival=1.,dictlist=thisdictlist)
-	sf_top_pT_low 	  = AddBranch(writename='sf_top_pT_low',inival=1.,dictlist=thisdictlist)
-	sf_top_pT_hi 	  = AddBranch(writename='sf_top_pT_hi',inival=1.,dictlist=thisdictlist)
-	sf_btag_eff 	  = AddBranch(writename='sf_btag_eff',inival=1.,dictlist=thisdictlist)
-	sf_btag_eff_low   = AddBranch(writename='sf_btag_eff_low',inival=1.,dictlist=thisdictlist)
-	sf_btag_eff_hi 	  = AddBranch(writename='sf_btag_eff_hi',inival=1.,dictlist=thisdictlist)
 	sf_pileup 		  = AddBranch(writename='sf_pileup',inival=1.,dictlist=thisdictlist)
 	sf_pileup_low 	  = AddBranch(writename='sf_pileup_low',inival=1.,dictlist=thisdictlist)
 	sf_pileup_hi 	  = AddBranch(writename='sf_pileup_hi',inival=1.,dictlist=thisdictlist)
 	sf_lep_ID 		  = AddBranch(writename='sf_lep_ID',inival=1.,dictlist=thisdictlist)
 	sf_lep_ID_low 	  = AddBranch(writename='sf_lep_ID_low',inival=1.,dictlist=thisdictlist)
 	sf_lep_ID_hi 	  = AddBranch(writename='sf_lep_ID_hi',inival=1.,dictlist=thisdictlist)
-	sf_trig_eff 	  = AddBranch(writename='sf_trig_eff',inival=1.,dictlist=thisdictlist)
-	sf_trig_eff_low   = AddBranch(writename='sf_trig_eff_low',inival=1.,dictlist=thisdictlist)
-	sf_trig_eff_hi 	  = AddBranch(writename='sf_trig_eff_hi',inival=1.,dictlist=thisdictlist)
+	sf_mu_R 		  = AddBranch(writename='sf_mu_R',inival=1.,dictlist=thisdictlist)
+	sf_mu_R_low 	  = AddBranch(writename='sf_mu_R_low',inival=1.,dictlist=thisdictlist)
+	sf_mu_R_hi 		  = AddBranch(writename='sf_mu_R_hi',inival=1.,dictlist=thisdictlist)
+	sf_mu_F 		  = AddBranch(writename='sf_mu_F',inival=1.,dictlist=thisdictlist)
+	sf_mu_F_low 	  = AddBranch(writename='sf_mu_F_low',inival=1.,dictlist=thisdictlist)
+	sf_mu_F_hi 		  = AddBranch(writename='sf_mu_F_hi',inival=1.,dictlist=thisdictlist)
+	sf_scale_comb 	  = AddBranch(writename='sf_scale_comb',inival=1.,dictlist=thisdictlist)
+	sf_scale_comb_low = AddBranch(writename='sf_scale_comb_low',inival=1.,dictlist=thisdictlist)
+	sf_scale_comb_hi  = AddBranch(writename='sf_scale_comb_hi',inival=1.,dictlist=thisdictlist)
+	sf_pdf_alphas 	  = AddBranch(writename='sf_pdf_alphas',inival=1.,dictlist=thisdictlist)
+	sf_pdf_alphas_low = AddBranch(writename='sf_pdf_alphas_low',inival=1.,dictlist=thisdictlist)
+	sf_pdf_alphas_hi  = AddBranch(writename='sf_pdf_alphas_hi',inival=1.,dictlist=thisdictlist)
 	#physics objects
 	physobjectBranches = {}
 	thisdictlist = [allBranches,physobjectBranches]
@@ -656,24 +671,27 @@ class Reconstructor(object) :
 			self.wqa2_opp.setWriteValue(wqa2_opp)
 			self.wega.setWriteValue(wega)
 			self.wegc.setWriteValue(wegc)
-#			#scale factor and reweighting calculations
-#			if self.lep_type==0 :
-#				meas_lep_pt=muons[0].vec.Pt(); meas_lep_eta=muons[0].vec.Eta()
-#			elif self.lep_type==1 :
-#				meas_lep_pt=electrons[0].vec.Pt(); meas_lep_eta=electrons[0].vec.Eta()
-#			#8TeV numbers
-#			self.sf_top_pT[0], self.sf_top_pT_low[0], self.sf_top_pT_hi[0] = self.MCcorrector.getToppT_reweight(MCt_vec,MCtbar_vec,self.Q_l[0])
-#			self.sf_top_pT_new[0], self.sf_top_pT_new_low[0], self.sf_top_pT_new_hi[0] = self.MCcorrector.getNewToppT_reweight(MCt_vec,MCtbar_vec)
-#			self.sf_pileup[0], self.sf_pileup_low[0], self.sf_pileup_hi[0] = self.MCcorrector.getpileup_reweight(MCpileup)
-#			( self.sf_lep_ID[0], self.sf_lep_ID_low[0], 
-#				self.sf_lep_ID_hi[0] ) = self.MCcorrector.getID_eff(pileup,meas_lep_pt,meas_lep_eta,self.lep_type)
+			#scale factor and reweighting calculations
+			#Pileup reweighting
+			pu_sf, pu_sf_up, pu_sf_down = self.corrector.getPileupReweight(self.allBranches['npv'].getReadValue())
+			self.sf_pileup.setWriteValue(pu_sf); self.sf_pileup_hi.setWriteValue(pu_sf_up); self.sf_pileup_low.setWriteValue(pu_sf_down)
+			#Lepton ID reweighting
+			lep_ID_sf, lep_ID_sf_up, lep_ID_sf_down = self.corrector.getIDEff(self.allBranches['npv'].getReadValue(),lep)
+			self.sf_lep_ID.setWriteValue(lep_ID_sf); self.sf_lep_ID_hi.setWriteValue(lep_ID_sf_up); self.sf_lep_ID_low.setWriteValue(lep_ID_sf_down)
+			#Scale, and pdf/alpha_s reweights
+			( mu_R_sf, mu_R_sf_up, mu_R_sf_down, mu_F_sf, mu_F_sf_up, mu_F_sf_down,
+			 scale_comb_sf, scale_comb_sf_up, scale_comb_sf_down, pdf_alphas_sf, pdf_alphas_sf_up, pdf_alphas_sf_down ) = self.corrector.getGenReweights(self.genUncBranches)
+			self.sf_mu_R.setWriteValue(mu_R_sf); self.sf_mu_R_hi.setWriteValue(mu_R_sf_up); self.sf_mu_R_low.setWriteValue(mu_R_sf_down)
+			self.sf_mu_F.setWriteValue(mu_F_sf); self.sf_mu_F_hi.setWriteValue(mu_F_sf_up); self.sf_mu_F_low.setWriteValue(mu_F_sf_down)
+			self.sf_scale_comb.setWriteValue(scale_comb_sf); self.sf_scale_comb_hi.setWriteValue(scale_comb_sf_up); self.sf_scale_comb_low.setWriteValue(scale_comb_sf_down)
+			self.sf_pdf_alphas.setWriteValue(pdf_alphas_sf); self.sf_pdf_alphas_hi.setWriteValue(pdf_alphas_sf_up); self.sf_pdf_alphas_low.setWriteValue(pdf_alphas_sf_down)
 #			( self.sf_trig_eff[0], self.sf_trig_eff_low[0], 
 #				self.sf_trig_eff_hi[0] ) = self.MCcorrector.gettrig_eff(pileup,meas_lep_pt,meas_lep_eta,self.lep_type)
 
 		self.__closeout__() #yay! A complete event!
 
 	##################################  #__init__ function  ##################################
-	def __init__(self,fileName,tree,isData,xsec,generator,jes,jer,onGrid,totweight) :
+	def __init__(self,fileName,tree,isData,xsec,generator,jes,jer,onGrid,pu_histo,totweight) :
 		#output file
 		self.outfile_name = fileName
 		self.outfile = TFile(self.outfile_name,'recreate')
@@ -720,7 +738,7 @@ class Reconstructor(object) :
 		#Set the total weight
 		self.totalweight = totweight
 		#Set the corrector that does event weights and JEC calculations
-		self.corrector = Corrector(self.is_data,self.MC_generator,self.event_type,onGrid)
+		self.corrector = Corrector(self.is_data,self.MC_generator,self.event_type,onGrid,pu_histo)
 
 	##################################   reset function   ##################################
 	#########  sets all relevant values back to initial values to get ready for next event  ##########

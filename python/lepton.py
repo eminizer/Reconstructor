@@ -11,6 +11,7 @@ class Lepton(object) :
 		self.__fourvec = TLorentzVector(); self.__fourvec.SetPtEtaPhiE(self.__pt,self.__eta,phi,E)
 		self.__Q = branches[pp+'_Charge'].getReadValue(index)
 		self.__Key = branches[pp+'_Key'].getReadValue(index)
+		self.__type = pp
 
 	def calculateIsolation(self,jets) :
 		nearestJetVec = findNearestJet(self.__fourvec,jets).getFourVector()
@@ -31,6 +32,8 @@ class Lepton(object) :
 		return self.__relPt
 	def getDR(self) :
 		return self.__dR
+	def getType(self) :
+		return self.__type
 
 class Muon(Lepton) :
 

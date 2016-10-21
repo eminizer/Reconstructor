@@ -79,7 +79,7 @@ cutnames.append('fullselection'); 	  cutstrings.append(fullselection); 	prior_cu
 cutnames.append('signalregion'); 	  cutstrings.append(signalregion); 		prior_cutstrings.append(fullselection)
 
 #weight string
-weightstring = '12900.*weight'
+weightstring = '12917.*weight'
 
 data_events_at_cut = []; data_events_at_prior_cut = []
 events_at_cut = []; events_at_prior_cut = []

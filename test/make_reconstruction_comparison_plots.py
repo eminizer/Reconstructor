@@ -33,7 +33,7 @@ all_cuts = '('+signalregion+')'
 
 print 'all_cuts = '+all_cuts
 
-weights = '(12900.*weight)'
+weights = '(12917.*weight)'
 
 tree.Draw("cstar:cstar_MC>>cstar_comp_int(40,-1.,1.,40,-1.,1.)",weights+"*"+all_cuts,"COLZ")
 tree.Draw("x_F:x_F_MC>>x_F_comp_int(30,0.,0.6,30,0.,0.6)",weights+"*"+all_cuts,"COLZ")

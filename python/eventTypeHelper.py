@@ -66,6 +66,7 @@ def findMCParticles(branches,generator) :
 	#print '---------------------------------------------------------------------' #DEBUG
 	#loop over the particles and assign them
 	for i in range(branches['gen_size'].getReadValue()) :
+		status = branches['gen_Status'].getReadValue(i)
 		thisID = branches['gen_ID'].getReadValue(i)
 		Mom0ID = branches['gen_Mom0ID'].getReadValue(i)
 		Mom1ID = branches['gen_Mom1ID'].getReadValue(i)
@@ -120,6 +121,7 @@ def typeCheckMCAtNLO(branches,event_type) :
 		ip_ids_tbar = []
 		#loop through and find the particles whose daughters include the ttbar pair
 		for i in range(branches['gen_size'].getReadValue()) :
+			status = branches['gen_Status'].getReadValue(i)
 			thisID = branches['gen_ID'].getReadValue(i)
 			Mom0ID = branches['gen_Mom0ID'].getReadValue(i)
 			Mom1ID = branches['gen_Mom1ID'].getReadValue(i)
@@ -147,6 +149,7 @@ def semilepCheck(branches,event_type) :
 	#check the decay type
 	leptons_from_Ws_IDs = []
 	for i in range(branches['gen_size'].getReadValue()) :
+		status = branches['gen_Status'].getReadValue(i)
 		thisID = branches['gen_ID'].getReadValue(i)
 		Mom0ID = branches['gen_Mom0ID'].getReadValue(i)
 		Mom1ID = branches['gen_Mom1ID'].getReadValue(i)
@@ -167,7 +170,10 @@ def semilepCheck(branches,event_type) :
 #MC@NLO findInitialPartons function
 def findInitialPartonsMCAtNLO(branches) :
 	#print '------------------------------------------------' #DEBUG
+	#first algorithm for simple first-order processes (also goes through once so we use it to assign particles for the higher-order algorithm)
+	inip1id = 0; inip2id = 0
 	for i in range(branches['gen_size'].getReadValue()) :
+		status = branches['gen_Status'].getReadValue(i)
 		thisID = branches['gen_ID'].getReadValue(i)
 		Mom0ID = branches['gen_Mom0ID'].getReadValue(i)
 		Mom1ID = branches['gen_Mom1ID'].getReadValue(i)
@@ -179,4 +185,20 @@ def findInitialPartonsMCAtNLO(branches) :
 			factor = 1.0 if branches['gen_Eta'].getReadValue(i) > 0 else -1.0
 			factor*=abs(thisID)/thisID
 			return TLorentzVector(1.0,0.0,factor*sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY), TLorentzVector(1.0,0.0,-1.*factor*sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY)
-	#Note that this will crash if the above algorithm doesn't find what it's looking for
+		elif abs(Mom0ID)!=TOP_ID and abs(Mom1ID)!=TOP_ID and abs(thisID)==TOP_ID and Dau0ID==thisID and Dau1ID==-900 and inip1id==0 and inip2id==0 : 
+			inip1id = Mom0ID; inip2id=Mom1ID
+	#second algorithm for higher order events
+	if inip1id!=0 and inip2id!=0 :
+		for i in range(branches['gen_size'].getReadValue()) :
+			status = branches['gen_Status'].getReadValue(i)
+			thisID = branches['gen_ID'].getReadValue(i)
+			Mom0ID = branches['gen_Mom0ID'].getReadValue(i)
+			Mom1ID = branches['gen_Mom1ID'].getReadValue(i)
+			Dau0ID = branches['gen_Dau0ID'].getReadValue(i)
+			Dau1ID = branches['gen_Dau1ID'].getReadValue(i)
+			if  abs(Mom0ID)==PROTON_ID and Mom1ID==-900. and (thisID==inip1id or thisID==inip2id) and Dau0ID==thisID and Dau1ID==-900 :
+				factor = 1.0 if branches['gen_Eta'].getReadValue(i) > 0 else -1.0
+				factor*=abs(thisID)/thisID
+				return TLorentzVector(1.0,0.0,factor*sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY), TLorentzVector(1.0,0.0,-1.*factor*sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY)
+	#and just in case neither of those worked, here's this default!
+	return TLorentzVector(1.0,0.0,sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY), TLorentzVector(1.0,0.0,-1.*sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY)

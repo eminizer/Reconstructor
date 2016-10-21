@@ -38,7 +38,7 @@ for histo in all_histos :
 canv = TCanvas('canv','canv',1100,900)
 
 #draw chains into histos
-weights = '12900.*weight'
+weights = '12917.*weight'
 com_cuts = 'fullselection==1 && validminimization==1'
 sig_chain.Draw('chi2>>'+sig_fs_histo.GetName()+'('+str(nbins)+','+str(chi2_low)+','+str(chi2_hi)+')','('+weights+')*('+com_cuts+')')
 sig_chain.Draw('chi2>>'+sig_sr_histo.GetName()+'('+str(nbins)+','+str(chi2_low)+','+str(chi2_hi)+')','('+weights+')*('+com_cuts+' && hadt_isttagged)')

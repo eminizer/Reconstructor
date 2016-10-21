@@ -2,7 +2,7 @@
 import os
 import sys
 from DataFormats.FWLite import Events, Handle
-from ROOT import TChain, TFile
+from ROOT import TChain, TFile, TH1D
 from optparse import OptionParser
 from reconstructor import Reconstructor
 
@@ -56,12 +56,15 @@ print 'Using input file '+input_files_list+''
 input_files_list = open(input_files_list,'r')
 chain = TChain(options.ttree_name)
 print 'Getting these files: '
-#Read files in line by line and get the tree and total weight value from each
+#Read files in line by line and get the tree, pileup histogram, and total weight value from each
+total_pileup_histo = TH1D('total_pileup_histo','total MC pileup; pileup; events',100,0.,100.); total_pileup_histo.SetDirectory(0)
 totweight = 0.
 for input_file in input_files_list :
 	print '	'+input_file.rstrip()+''
 	chain.AddFile(input_file.rstrip()+'/'+options.ttree_dir_name+'/'+options.ttree_name)
 	f = TFile.Open(input_file.rstrip()) 
+	pu_histo = f.Get('EventCounter/pileup')
+	total_pileup_histo.Add(pu_histo)
 	histo=f.Get('EventCounter/totweight')
 	newweight=histo.GetBinContent(1)
 	print '		Added %.2f to total weight'%(newweight)
@@ -81,7 +84,7 @@ filename+='_tree.root'
 data=False
 if options.name.lower().find('singlemu')!=-1 or options.name.lower().find('singleel')!=-1 :
 	data=True
-analyzer = Reconstructor(filename, chain, data, options.xSec, options.generator, options.JES.lower(), options.JER.lower(), options.on_grid, totweight)
+analyzer = Reconstructor(filename, chain, data, options.xSec, options.generator, options.JES.lower(), options.JER.lower(), options.on_grid, total_pileup_histo, totweight)
 
 #Counters
 real_count = 0
