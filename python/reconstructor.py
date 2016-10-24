@@ -3,9 +3,10 @@
 SQRT_S=13000.0
 BEAM_ENERGY=SQRT_S/2.0
 #Trigger paths
-MU_TRIG_PATH = 'HLT_Mu30_eta2p1_PFJet150_PFJet50'
-#MU_TRIG_PATH = 'HLT_Mu45_eta2p1'
-EL_TRIG_PATH = 'HLT_Ele35_CaloIdVT_GsfTrkIdT_PFJet150_PFJet50'
+#MU_TRIG_PATH = 'HLT_Mu30_eta2p1_PFJet150_PFJet50'
+MU_TRIG_PATH = 'HLT_Mu45_eta2p1'
+#EL_TRIG_PATH = 'HLT_Ele35_CaloIdVT_GsfTrkIdT_PFJet150_PFJet50'
+EL_TRIG_PATH = 'HLT_Ele45_CaloIdVT_GsfTrkIdT_PFJet200_PFJet50'
 
 ##########								   Imports  								##########
 

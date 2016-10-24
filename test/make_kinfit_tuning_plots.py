@@ -8,7 +8,7 @@ inputfilename = '../total_ttree_files/mcatnlo_semilep_TT_all.root'
 infile = TFile(inputfilename)
 
 #star up the output file
-outfile = TFile('kinfit_tuning_plots_test.root','recreate')
+outfile = TFile('kinfit_tuning_plots.root','recreate')
 
 #get the tree from the file
 tree = infile.Get('tree')
