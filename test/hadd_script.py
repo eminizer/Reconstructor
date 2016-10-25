@@ -2,52 +2,22 @@ import os, glob
 from ROOT import *
 
 sample_names = []
-#sample_names.append('Powheg_qq_semilep_TT')
-#sample_names.append('Powheg_qq_semilep_TT_Mtt_700_to_1000')
-#sample_names.append('Powheg_qq_semilep_TT_Mtt_1000_to_Inf')
 sample_names.append('mcatnlo_qq_semilep_TT')
-#sample_names.append('mcatnlo_qq_semilep_TT_final')
-#sample_names.append('mcatnlo_qq_semilep_TT_gaussian_all_params')
-#sample_names.append('mcatnlo_qq_semilep_TT_gaussian_pz_only')
-#sample_names.append('mcatnlo_qq_semilep_TT_gaussian_all_params_no_W')
-#sample_names.append('mcatnlo_qq_semilep_TT_gaussian_pz_only_no_W')
-#sample_names.append('mcatnlo_qq_semilep_TT_lorentzian_all_params')
-#sample_names.append('mcatnlo_qq_semilep_TT_lorentzian_pz_only')
-#sample_names.append('mcatnlo_qq_semilep_TT_lorentzian_all_params_no_W')
-#sample_names.append('mcatnlo_qq_semilep_TT_lorentzian_pz_only_no_W')
-#sample_names.append('Powheg_gg_semilep_TT')
-#sample_names.append('Powheg_gg_semilep_TT_Mtt_700_to_1000')
-#sample_names.append('Powheg_gg_semilep_TT_Mtt_1000_to_Inf')
 sample_names.append('mcatnlo_gg_semilep_TT')
-#sample_names.append('mcatnlo_gg_semilep_TT_final')
-#sample_names.append('mcatnlo_gg_semilep_TT_gaussian_all_params')
-#sample_names.append('mcatnlo_gg_semilep_TT_gaussian_pz_only')
-#sample_names.append('mcatnlo_gg_semilep_TT_gaussian_all_params_no_W')
-#sample_names.append('mcatnlo_gg_semilep_TT_gaussian_pz_only_no_W')
-#sample_names.append('mcatnlo_gg_semilep_TT_lorentzian_all_params')
-#sample_names.append('mcatnlo_gg_semilep_TT_lorentzian_pz_only')
-#sample_names.append('mcatnlo_gg_semilep_TT_lorentzian_all_params_no_W')
-#sample_names.append('mcatnlo_gg_semilep_TT_lorentzian_pz_only_no_W')
-#sample_names.append('Powheg_dilep_TT')
-#sample_names.append('Powheg_dilep_TT_Mtt_700_to_1000')
-#sample_names.append('Powheg_dilep_TT_Mtt_1000_to_Inf')
 sample_names.append('mcatnlo_dilep_TT')
-#sample_names.append('Powheg_had_TT')
-#sample_names.append('Powheg_had_TT_Mtt_700_to_1000')
-#sample_names.append('Powheg_had_TT_Mtt_1000_to_Inf')
 sample_names.append('mcatnlo_had_TT')
-#sample_names.append('W1Jets')
-#sample_names.append('W2Jets')
-#sample_names.append('W3Jets')
-#sample_names.append('W4Jets')
-#sample_names.append('DY1Jets')
-#sample_names.append('DY2Jets')
-#sample_names.append('DY3Jets')
-#sample_names.append('DY4Jets')
+sample_names.append('WJets_HT-200to400')
+sample_names.append('WJets_HT-400to600')
+sample_names.append('WJets_HT-600to800')
+sample_names.append('WJets_HT-800to1200')
+sample_names.append('WJets_HT-2500toInf')
+sample_names.append('DYJets_M-50_HT-100to200')
+sample_names.append('DYJets_M-50_HT-200to400')
+sample_names.append('DYJets_M-50_HT-400to600')
 sample_names.append('ST_s-c')
 sample_names.append('ST_t-c_top')
 sample_names.append('ST_tW-c_top')
-sample_names.append('ST_t-c_anttop')
+sample_names.append('ST_t-c_antitop')
 sample_names.append('ST_tW-c_antitop')
 sample_names.append('SingleEl_Run2016Bv2')
 sample_names.append('SingleEl_Run2016C')
@@ -59,42 +29,42 @@ sample_names.append('SingleMu_Run2016D')
 for name in sample_names :
     print 'doing '+name
     
-    #make directories
-    os.system('mkdir '+name)
+#    #make directories
+#    os.system('mkdir '+name)
     
     os.chdir(name)
 
-    #get rid of old files
-    os.system('bash cleanup.bash')
-    os.system('rm -rf output *.root')
-    os.system('mv ana.listOfJobs_all ana.listOfJobs')
+#    #get rid of old files
+#    os.system('bash cleanup.bash')
+#    os.system('rm -rf output *.root')
+#    os.system('mv ana.listOfJobs_all ana.listOfJobs')
 
-    #clean out the input and ana.listOfJobs, even
-    os.system('rm -rf input.txt')
-    os.system('rm -rf ana.listOfJobs')
+#    #clean out the input and ana.listOfJobs, even
+#    os.system('rm -rf input.txt')
+#    os.system('rm -rf ana.listOfJobs')
     
-    #copy scripts
-    os.system('cp ../grid_sub.csh .; cp ../cleanup.bash .')
+#    #copy scripts
+#    os.system('cp ../grid_sub.csh .; cp ../cleanup.bash .')
     
-    #make input file
-    os.system('rm -rf input.txt')
-    directory = raw_input('nTuple directory for '+name+': ')
-    os.system('python ../make_ttree_input_file.py --directory '+directory)
+#    #make input file
+#    os.system('rm -rf input.txt')
+#    directory = raw_input('nTuple directory for '+name+': ')
+#    os.system('python ../make_ttree_input_file.py --directory '+directory)
     
-    #make new ana.listOfJobs
-    os.system('rm -rf ana.listOfJobs')
-    nJobs = raw_input('number of jobs for '+name+': ')
-    xSec  = raw_input('cross section for '+name+': ')
-    generator = None
-    if name.lower().find('powheg')!=-1 :
-    	generator='powheg'
-    elif name.lower().find('mcatnlo')!=-1 :
-    	generator='mcatnlo'
-    else :
-	    generator = raw_input('MC generator for '+name+': ')
-    cmd = 'python ../make_list_of_jobs.py --n_jobs '+nJobs+' --name '+name+' --on_grid yes'
-    cmd+= ' --generator '+generator+' --xSec '+xSec
-    os.system(cmd)
+#    #make new ana.listOfJobs
+#    os.system('rm -rf ana.listOfJobs')
+#    nJobs = raw_input('number of jobs for '+name+': ')
+#    xSec  = raw_input('cross section for '+name+': ')
+#    generator = None
+#    if name.lower().find('powheg')!=-1 :
+#    	generator='powheg'
+#    elif name.lower().find('mcatnlo')!=-1 :
+#    	generator='mcatnlo'
+#    else :
+#	    generator = raw_input('MC generator for '+name+': ')
+#    cmd = 'python ../make_list_of_jobs.py --n_jobs '+nJobs+' --name '+name+' --on_grid yes'
+#    cmd+= ' --generator '+generator+' --xSec '+xSec
+#    os.system(cmd)
 
 #    #make list of failed jobs
 #    os.system('python ../make_failed_job_list.py')

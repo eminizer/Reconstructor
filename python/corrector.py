@@ -195,7 +195,11 @@ def setupJECCorrector(onGrid,isdata,jetType) :
 		L3JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV6_MC_L3Absolute_'+jetType+'.txt')
 		jetUncertainty = JetCorrectionUncertainty(pp+'Spring16_25nsV6_MC_Uncertainty_'+jetType+'.txt')
 	else :
-		print 'I do not know where to get the corrections for data right now; this will crash.'
+		L1JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV6_DATA_L1FastJet_'+jetType+'.txt')
+		L2JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV6_DATA_L2Relative_'+jetType+'.txt')
+		L3JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV6_DATA_L3Absolute_'+jetType+'.txt')
+		ResJetPar = JetCorrectorParameters(pp+'Spring16_25nsV6_DATA_L2L3Residual_'+jetType+'.txt')
+		jetUncertainty = JetCorrectionUncertainty(pp+'Spring16_25nsV6_DATA_Uncertainty_'+jetType+'.txt')
 	#Load the JetCorrectorParameter objects into a vector, IMPORTANT: THE ORDER MATTERS HERE !!!! 
 	vParJec = vector('JetCorrectorParameters')()
 	vParJec.push_back(L1JetPar)
@@ -230,7 +234,7 @@ def getJER(jetEta, sysType) :
     return float(jerSF)
 
 def setupPileupHistos(onGrid,pu_histo) :
-	pu_histo.Scale(1./pu_histo.Integral())
+	if pu_histo.Integral() > 0 : pu_histo.Scale(1./pu_histo.Integral())
 	pp = './tardir/' if onGrid == 'yes' else '../other_input_files/'
 	data_nom_file  = TFile(pp+DATA_PU_HISTO_NOMINAL_FILENAME)
 	data_nom_histo  = data_nom_file.Get('pileup')

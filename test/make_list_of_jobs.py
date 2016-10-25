@@ -40,11 +40,10 @@ for i in range(options.n_jobs) :
 	os.system(cmd+'" >> ana.listOfJobs')
 	if options.name.lower().find('singleel')==-1 and options.name.lower().find('singlemu')==-1 :
 		#and also the JES and JER up/down jobs
-		print "Hey, I'm not adding the JEC jobs, do those another time if you want them, sorry."
-		#os.system(cmd+' --JES up" >> ana.listOfJobs')
-		#os.system(cmd+' --JES down" >> ana.listOfJobs')
-		#os.system(cmd+' --JER up" >> ana.listOfJobs')
-		#os.system(cmd+' --JER down" >> ana.listOfJobs')
+		os.system(cmd+' --JES up" >> ana.listOfJobs')
+		os.system(cmd+' --JES down" >> ana.listOfJobs')
+		os.system(cmd+' --JER up" >> ana.listOfJobs')
+		os.system(cmd+' --JER down" >> ana.listOfJobs')
 
 print 'done. Completed file: '
 os.system('cat ana.listOfJobs')
