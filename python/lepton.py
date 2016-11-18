@@ -48,7 +48,7 @@ class Electron(Lepton) :
 
 	def __init__(self,branches,index) :
 		Lepton.__init__(self,branches,index,'el')
-		self.__ID = branches['el_IDTight_NoIso'].getReadValue(index)
+		self.__ID = branches['el_IDMedium_NoIso'].getReadValue(index)
 		self.__scEta = branches['el_SCEta'].getReadValue(index)
 
 	def getID(self) :

@@ -78,6 +78,8 @@ class Branch(object) :
 		return self.__readArray
 	def getWriteValue(self,index=0) :
 		return self.__writeArray[index]
+	def getReadName(self) :
+		return self.__readname
 
 def get_array_type(ttreetype) :
 	if ttreetype=='vi' :

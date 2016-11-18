@@ -115,7 +115,7 @@ class Reconstructor(object) :
 	el_phis 	  = AddBranch(readname='el_Phi',size='el_size',dictlist=thisdictlist)
 	el_es 		  = AddBranch(readname='el_E',size='el_size',dictlist=thisdictlist)
 	el_charges 	  = AddBranch(readname='el_Charge',size='el_size',dictlist=thisdictlist)
-	el_id 		  = AddBranch(readname='el_IDTight_NoIso',ttreetype='I',size='el_size',dictlist=thisdictlist)
+	el_id 		  = AddBranch(readname='el_IDMedium_NoIso',ttreetype='I',size='el_size',dictlist=thisdictlist)
 	el_Keys 	  = AddBranch(readname='el_Key',size='el_size',dictlist=thisdictlist)
 	#AK4 Jets
 	thisdictlist = [allBranches,ak4JetBranches]
@@ -467,6 +467,8 @@ class Reconstructor(object) :
 		#met filtering
 		metfiltercuts = []
 		for branch in self.filterBranches.values() :
+			if self.is_data==0 and branch.getReadName()=='Flag_eeBadScFilter' : #the one filter that shouldn't be applied to Monte Carlo
+				continue
 			if branch.getWriteValue()!=1 :
 				metfiltercuts.append(False)
 		if metfiltercuts.count(False)==0 : self.cut_branches['metfilters'].setWriteValue(1)
@@ -601,7 +603,7 @@ class Reconstructor(object) :
 		locs = [self.par_0,self.par_1,self.par_2,self.par_3,self.par_4]
 		for i in range(len(finalpars)) :
 			locs[i].setWriteValue(finalpars[i])
-		MW = 80.4; MT = 172.5; MT_l = 174.0; MT_h = 189.2; WW = 2.0; WT = 1.4; WT_l = 26.5; WT_h = 17.5; SIGMAJ  = 0.10; SIGMAL  = 0.02 
+		MW = 80.4; MT = 172.5; MT_l = 171.2; MT_h = 190.9; WW = 2.0; WT = 1.4; WT_l = 29.3; WT_h = 19.4; SIGMAJ  = 0.10; SIGMAL  = 0.02 
 		self.pdflsf.setWriteValue((finalpars[1]-1.)*(finalpars[1]-1.)/(SIGMAL*SIGMAL))
 		self.pdfblsf.setWriteValue((finalpars[2]-1.)*(finalpars[2]-1.)/(SIGMAJ*SIGMAJ))
 		self.pdfhsf1.setWriteValue((finalpars[3]-1.)*(finalpars[3]-1.)/(SIGMAJ*SIGMAJ))
@@ -682,6 +684,16 @@ class Reconstructor(object) :
 			#Scale, and pdf/alpha_s reweights
 			( mu_R_sf, mu_R_sf_up, mu_R_sf_down, mu_F_sf, mu_F_sf_up, mu_F_sf_down,
 			 scale_comb_sf, scale_comb_sf_up, scale_comb_sf_down, pdf_alphas_sf, pdf_alphas_sf_up, pdf_alphas_sf_down ) = self.corrector.getGenReweights(self.genUncBranches)
+			if self.event_type<4 : #values corrected via mean over all phase space
+				mu_R_sf_up*=1./0.895856
+				mu_R_sf_down*=1./1.06002
+				mu_F_sf_up*=1./0.985279
+				mu_F_sf_down*=1./1.01997
+				scale_comb_sf_up*=1./0.870402
+				scale_comb_sf_down*=1./1.04951
+				pdf_alphas_sf*=1./0.999987
+				pdf_alphas_sf_up*=1./1.24271
+				pdf_alphas_sf_down*=1./0.729095
 			self.sf_mu_R.setWriteValue(mu_R_sf); self.sf_mu_R_hi.setWriteValue(mu_R_sf_up); self.sf_mu_R_low.setWriteValue(mu_R_sf_down)
 			self.sf_mu_F.setWriteValue(mu_F_sf); self.sf_mu_F_hi.setWriteValue(mu_F_sf_up); self.sf_mu_F_low.setWriteValue(mu_F_sf_down)
 			self.sf_scale_comb.setWriteValue(scale_comb_sf); self.sf_scale_comb_hi.setWriteValue(scale_comb_sf_up); self.sf_scale_comb_low.setWriteValue(scale_comb_sf_down)

@@ -26,14 +26,14 @@ onelepton = 'onelepton==1'
 isolepton = 'isolepton==1'
 jetcuts = 'jetcuts==1'
 fullselection = 'fullselection==1'
-signalregion = fullselection+' && hadt_isttagged==1 '
+signalregion = fullselection+' && hadt_SDM>105. && hadt_SDM<220. && hadt_tau32<0.69 '
 
 #all_cuts = '('+fullselection+')'
 all_cuts = '('+signalregion+')'
 
 print 'all_cuts = '+all_cuts
 
-weights = '(12917.*weight)'
+weights = '(12917.*weight*sf_pileup*sf_lep_ID*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas)'
 
 tree.Draw("cstar:cstar_MC>>cstar_comp_int(40,-1.,1.,40,-1.,1.)",weights+"*"+all_cuts,"COLZ")
 tree.Draw("x_F:x_F_MC>>x_F_comp_int(30,0.,0.6,30,0.,0.6)",weights+"*"+all_cuts,"COLZ")

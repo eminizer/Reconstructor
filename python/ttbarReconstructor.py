@@ -6,12 +6,12 @@ from array import array
 #Global variables
 MW = 80.4 #W mass
 MT = 172.5 #top mass
-MT_l = 176.1 #leptonic top mass for type 1 tops
-MT_h = 187.4 #hadronic top mass for type 1 tops
+MT_l = 171.2 #leptonic top mass for type 1 tops
+MT_h = 190.9 #hadronic top mass for type 1 tops
 WW = 2.0 #W width
 WT = 1.4 #top width
-WT_l = 27.5 #leptonic top width for type 1 tops
-WT_h = 20.7 #hadronic top width for type 1 tops
+WT_l = 29.3 #leptonic top width for type 1 tops
+WT_h = 19.4 #hadronic top width for type 1 tops
 SIGMAJ  = 0.10 #jet momentum resolution
 SIGMAL  = 0.02 #lepton momentum resolution
 #global fourvectors for the fit

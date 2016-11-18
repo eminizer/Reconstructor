@@ -3,22 +3,34 @@ from ROOT import *
 
 sample_names = []
 sample_names.append('mcatnlo_qq_semilep_TT')
+#sample_names.append('mcatnlo_qq_semilep_TT_just_MC')
 sample_names.append('mcatnlo_gg_semilep_TT')
+#sample_names.append('mcatnlo_gg_semilep_TT_just_MC')
 sample_names.append('mcatnlo_dilep_TT')
 sample_names.append('mcatnlo_had_TT')
 sample_names.append('WJets_HT-200to400')
 sample_names.append('WJets_HT-400to600')
 sample_names.append('WJets_HT-600to800')
 sample_names.append('WJets_HT-800to1200')
-sample_names.append('WJets_HT-2500toInf')
+#sample_names.append('WJets_HT-2500toInf')
 sample_names.append('DYJets_M-50_HT-100to200')
 sample_names.append('DYJets_M-50_HT-200to400')
 sample_names.append('DYJets_M-50_HT-400to600')
+#sample_names.append('DYJets_M-50_HT-600toInf')
 sample_names.append('ST_s-c')
 sample_names.append('ST_t-c_top')
 sample_names.append('ST_tW-c_top')
 sample_names.append('ST_t-c_antitop')
 sample_names.append('ST_tW-c_antitop')
+sample_names.append('WW_to_2L_2Nu')
+sample_names.append('WW_to_L_Nu_2Q')
+sample_names.append('WZ_to_L_Nu_2Q')
+sample_names.append('WZ_to_L_3Nu')
+sample_names.append('WZ_to_2L_2Q')
+sample_names.append('WZ_to_3L_Nu')
+sample_names.append('ZZ_to_2L_2Nu')
+sample_names.append('ZZ_to_2L_2Q')
+sample_names.append('ZZ_to_4L')
 sample_names.append('SingleEl_Run2016Bv2')
 sample_names.append('SingleEl_Run2016C')
 sample_names.append('SingleEl_Run2016D')
@@ -72,43 +84,43 @@ for name in sample_names :
 #    #submit jobs
 #    os.system('tcsh grid_sub.csh')
 
-#    #skim files
-#    os.system('rm -rf *_skim_tree.root')
-#    filelist = glob.glob('*_tree.root')
-#    for i in range(len(filelist)) :
-#        print ' '+str(i)+''
-#        f = TFile(filelist[i]); t = f.Get('tree')
-#        newname = filelist[i].replace('_tree.root','')+'_skim_tree.root'
-#        newFile = TFile(newname,'recreate')
-#        #newTree = t.CopyTree('hadt_pt>300.')
-#        newTree = t.CopyTree('fullselection==1')
-#        newTree.Write()
-#        newFile.Close()
-#    i = 0
-#    while i<len(filelist) :
-#        if filelist[i].find('JES')!=-1 or filelist[i].find('JER')!=-1 or filelist[i].find('skim')!=-1 :
-#            filelist.pop(i)
-#        else :
-#            i+=1
-#    cmd = 'hadd -f '+name+'_skim_all.root '+name+'_?_skim_tree.root'
-#    if len(filelist) > 10 :
-#        cmd += ' '+name+'_??_skim_tree.root'
-#        if len(filelist) > 100 :
-#            cmd += ' '+name+'_???_skim_tree.root'
-#            if len(filelist) > 1000 :
-#                cmd += ' '+name+'_????_skim_tree.root'
-#    os.system(cmd)
-#    if name.find('Run2012')==-1 :
-#        cmd = 'hadd -f '+name+'_JES_up_skim_all.root '+name+'_JES_up_*_skim_tree.root'
-#        os.system(cmd)
-#        cmd = 'hadd -f '+name+'_JES_down_skim_all.root '+name+'_JES_down_*_skim_tree.root'
-#        os.system(cmd)
-#        cmd = 'hadd -f '+name+'_JER_up_skim_all.root '+name+'_JER_up_*_skim_tree.root'
-#        os.system(cmd)
-#        cmd = 'hadd -f '+name+'_JER_down_skim_all.root '+name+'_JER_down_*_skim_tree.root'
-#        os.system(cmd)
-#    os.system('mv *_all.root ../total_ttree_files')
-#    os.system('rm -rf *_skim_tree.root')
+    #skim files
+    os.system('rm -rf *_skim_tree.root')
+    filelist = glob.glob('*_tree.root')
+    for i in range(len(filelist)) :
+        print ' '+str(i)+': '+str(filelist[i])
+        f = TFile(filelist[i]); t = f.Get('tree')
+        newname = filelist[i].replace('_tree.root','')+'_skim_tree.root'
+        newFile = TFile(newname,'recreate')
+        newTree = t.CopyTree('weight!=0.')
+        #newTree = t.CopyTree('fullselection==1')
+        newTree.Write()
+        newFile.Close()
+    i = 0
+    while i<len(filelist) :
+        if filelist[i].find('JES')!=-1 or filelist[i].find('JER')!=-1 or filelist[i].find('skim')!=-1 :
+            filelist.pop(i)
+        else :
+            i+=1
+    cmd = 'hadd -f '+name+'_skim_all.root '+name+'_?_skim_tree.root'
+    if len(filelist) > 10 :
+        cmd += ' '+name+'_??_skim_tree.root'
+        if len(filelist) > 100 :
+            cmd += ' '+name+'_???_skim_tree.root'
+            if len(filelist) > 1000 :
+                cmd += ' '+name+'_????_skim_tree.root'
+    os.system(cmd)
+    if name.find('Run2012')==-1 :
+        cmd = 'hadd -f '+name+'_JES_up_skim_all.root '+name+'_JES_up_*_skim_tree.root'
+        os.system(cmd)
+        cmd = 'hadd -f '+name+'_JES_down_skim_all.root '+name+'_JES_down_*_skim_tree.root'
+        os.system(cmd)
+        cmd = 'hadd -f '+name+'_JER_up_skim_all.root '+name+'_JER_up_*_skim_tree.root'
+        os.system(cmd)
+        cmd = 'hadd -f '+name+'_JER_down_skim_all.root '+name+'_JER_down_*_skim_tree.root'
+        os.system(cmd)
+    os.system('mv *_all.root ../total_ttree_files')
+    os.system('rm -rf *_skim_tree.root')
 
 #    #skim files (e/mu selection)
 #    filelist = glob.glob('*_tree.root')

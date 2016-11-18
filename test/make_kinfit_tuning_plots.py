@@ -30,8 +30,8 @@ for func in allfuncs :
 	func.SetParameter(0,3500000.); func.SetParameter(1,173.); func.SetParameter(2,20.)
 
 #plot plots
-weights = '12917.*weight'
-com_cuts = 'fullselection==1 && ismatchable==1 && hadt_isttagged==1'
+weights = '12917.*weight*sf_pileup*sf_lep_ID*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
+com_cuts = 'fullselection==1 && ismatchable==1 && hadt_SDM>105. && hadt_SDM<220. && hadt_tau32<0.69'
 tree.Draw('leptcorprefitM>>leptM('+str(ntbins)+','+str(tmass_low)+','+str(tmass_high)+')','('+weights+')*('+com_cuts+')')
 tree.Draw('hadtcorprefitM>>hadtM('+str(ntbins)+','+str(tmass_low)+','+str(tmass_high)+')','('+weights+')*('+com_cuts+')')
 for histo in allhistos :
