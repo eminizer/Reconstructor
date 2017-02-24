@@ -31,8 +31,6 @@ parser.add_option('--name', 		 type='string', action='store', 			  	dest='name',
 	help='Name of sample or process (used to name output files, etc.)')
 parser.add_option('--xSec', 		 type='float', action='store', 			  	dest='xSec', 		    
 	help="Cross section of sample's process")
-parser.add_option('--generator', 	 type='string', action='store', default='none', dest='generator', 		
-	help='Monte Carlo generator for this file (powheg, madgraph, pythia8, mcatnlo); default is "none"')
 parser.add_option('--JES', type='string', action='store', default='nominal',  dest='JES',  
 	help='JES systematics: shift JES up or down (default is nominal)')
 parser.add_option('--JER', type='string', action='store', default='nominal',  dest='JER',  
@@ -84,7 +82,7 @@ filename+='_tree.root'
 data=False
 if options.name.lower().find('singlemu')!=-1 or options.name.lower().find('singleel')!=-1 :
 	data=True
-analyzer = Reconstructor(filename, chain, data, options.xSec, options.generator, options.JES.lower(), options.JER.lower(), options.on_grid, total_pileup_histo, totweight)
+analyzer = Reconstructor(filename, chain, data, options.xSec, options.JES.lower(), options.JER.lower(), options.on_grid, total_pileup_histo, totweight)
 
 #Counters
 real_count = 0
@@ -113,4 +111,5 @@ for event in range(ntotalevents) :
 	#reset analyzer
 	analyzer.reset()
 #clean up after yourself
-del analyzer
+analyzer.finish()
+#del analyzer

@@ -7,6 +7,7 @@ from math import *
 class Jet(object) :
 
 	def __init__(self,branches,index,jes,jer,lep,corrector,isdata,pp) :
+		#print '----------------------- New Jet --------------------------' #DEBUG
 		self.__fourvec = getfourvec(branches,index,jes,jer,lep,corrector,isdata,pp)
 		self.__pt = self.__fourvec.Pt() if self.__fourvec!=None else None
 		self.__eta = self.__fourvec.Eta() if self.__fourvec!=None else None
@@ -58,16 +59,16 @@ class Jet(object) :
 class AK4Jet(Jet) :
 
 	def __init__(self,branches,index,jes,jer,lep,corrector,isdata) :
-		Jet.__init__(self,branches,index,jes,jer,lep,corrector,isdata,'jetAK4')
+		Jet.__init__(self,branches,index,jes,jer,lep,corrector,isdata,'jetAK4CHS')
 
 class AK8Jet(Jet) :
 
 	def __init__(self,branches,index,jes,jer,lep,corrector,isdata) :
-		Jet.__init__(self,branches,index,jes,jer,lep,corrector,isdata,'jetAK8')
-		self.__tau3 = branches['jetAK8_tau3'].getReadValue(index)
-		self.__tau2 = branches['jetAK8_tau2'].getReadValue(index)
-		self.__tau1 = branches['jetAK8_tau1'].getReadValue(index)
-		self.__sdm  = branches['jetAK8_softDropMass'].getReadValue(index)
+		Jet.__init__(self,branches,index,jes,jer,lep,corrector,isdata,'jetAK8CHS')
+		self.__tau3 = branches['jetAK8CHS_tau3CHS'].getReadValue(index)
+		self.__tau2 = branches['jetAK8CHS_tau2CHS'].getReadValue(index)
+		self.__tau1 = branches['jetAK8CHS_tau1CHS'].getReadValue(index)
+		self.__sdm  = branches['jetAK8CHS_softDropMassCHS'].getReadValue(index)
 		#print 'Adding AK8 jet with soft drop mass %.4f'%(self.__sdm) #DEBUG
 		self.__subjets = self.__getsubjets__(branches,index,jes,jer,lep,corrector,isdata)
 		self.__n_subjets = len(self.__subjets)
@@ -77,15 +78,15 @@ class AK8Jet(Jet) :
 		#start by making a list of all the subjets for this jet
 		allsubjets = []
 		#get the subjet indices
-		subjet0index = branches['jetAK8_vSubjetIndex0'].getReadValue(index)
-		subjet1index = branches['jetAK8_vSubjetIndex1'].getReadValue(index)
+		subjet0index = branches['jetAK8CHS_vSubjetIndex0'].getReadValue(index)
+		subjet1index = branches['jetAK8CHS_vSubjetIndex1'].getReadValue(index)
 		#add the subjets
 		if subjet0index>-1 :
-			newSubjet = Jet(branches,int(subjet0index),jes,jer,lep,corrector,isdata,'subjetAK8')
+			newSubjet = Jet(branches,int(subjet0index),jes,jer,lep,corrector,isdata,'subjetAK8CHS')
 			if newSubjet.getFourVector()!=None :
 				allsubjets.append(newSubjet)
 		if subjet1index>-1 :
-			newSubjet = Jet(branches,int(subjet1index),jes,jer,lep,corrector,isdata,'subjetAK8')
+			newSubjet = Jet(branches,int(subjet1index),jes,jer,lep,corrector,isdata,'subjetAK8CHS')
 			if newSubjet.getFourVector()!=None :
 				allsubjets.append(newSubjet)
 		#order the list of subjets by pt

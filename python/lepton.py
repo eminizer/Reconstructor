@@ -37,9 +37,12 @@ class Lepton(object) :
 
 class Muon(Lepton) :
 
-	def __init__(self,branches,index) :
+	def __init__(self,branches,index,useModID) :
 		Lepton.__init__(self,branches,index,'mu')
-		self.__ID = branches['mu_IsLooseMuon'].getReadValue(index)
+		if useModID :
+			self.__ID = branches['mu_IsMediumMuon2016'].getReadValue(index)
+		else :
+			self.__ID = branches['mu_IsMediumMuon'].getReadValue(index)
 
 	def getID(self) :
 		return self.__ID

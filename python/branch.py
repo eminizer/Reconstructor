@@ -106,11 +106,11 @@ def get_array_length(size) :
 		return MAX_MU_ARRAY_LENGTH
 	elif size=='el_size' :
 		return MAX_EL_ARRAY_LENGTH
-	elif size=='jetAK4_size' :
+	elif size=='jetAK4CHS_size' :
 		return MAX_AK4_JET_ARRAY_LENGTH
-	elif size=='jetAK8_size' :
+	elif size=='jetAK8CHS_size' :
 		return MAX_AK8_JET_ARRAY_LENGTH
-	elif size=='subjetAK8_size' :
+	elif size=='subjetAK8CHS_size' :
 		return MAX_AK8_SUBJET_ARRAY_LENGTH
 	elif size=='scale_size' :
 		return MAX_SCALE_ARRAY_LENGTH

@@ -8,8 +8,6 @@ parser.add_option('--n_jobs',   type='int',    action='store', default=1,  dest=
 #Sample options to change
 parser.add_option('--name',  type='string', action='store',   dest='name',     
 		  help='Name of sample or process (used to name output files, etc.)')
-parser.add_option('--generator',  type='string', action='store', default='none', dest='generator', 
-		  help='Monte Carlo generator for this file (powheg, madgraph, pythia8); default is "none"')
 parser.add_option('--xSec',  type='string', action='store', default='1.', dest='xSec', 
 		  help='Cross section for this process')
 #Probably won't change each time
@@ -25,7 +23,7 @@ parser.add_option('--print_every',type='int',    action='store', default=1000,  
 (options, args) = parser.parse_args()
 
 for i in range(options.n_jobs) :
-	cmd = 'echo "python ./tardir/run_reconstructor.py --name '+options.name+' --generator '+options.generator+' --xSec '+options.xSec
+	cmd = 'echo "python ./tardir/run_reconstructor.py --name '+options.name+' --xSec '+options.xSec
 	if options.input!='input' :
 		cmd+= '--input '+options.input
 	if options.on_grid!='no' :

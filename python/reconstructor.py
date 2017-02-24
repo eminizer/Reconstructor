@@ -106,7 +106,8 @@ class Reconstructor(object) :
 	mu_phis 	  = AddBranch(readname='mu_Phi',size='mu_size',dictlist=thisdictlist)
 	mu_es 		  = AddBranch(readname='mu_E',size='mu_size',dictlist=thisdictlist)
 	mu_charges 	  = AddBranch(readname='mu_Charge',size='mu_size',dictlist=thisdictlist)
-	mus_isLoose   = AddBranch(readname='mu_IsLooseMuon',size='mu_size',dictlist=thisdictlist)
+	mus_isMed     = AddBranch(readname='mu_IsMediumMuon',size='mu_size',dictlist=thisdictlist)
+	mus_isMed2016 = AddBranch(readname='mu_IsMediumMuon2016',size='mu_size',dictlist=thisdictlist)
 	mu_Keys 	  = AddBranch(readname='mu_Key',size='mu_size',dictlist=thisdictlist)
 	#electrons
 	electronBranches = {}
@@ -346,15 +347,14 @@ class Reconstructor(object) :
 		elsize = self.el_size.getReadValue()
 		ak4jetsize = self.ak4_size.getReadValue()
 		ak8jetsize = self.ak8_size.getReadValue()
-		if not (metsize>0 and (musize>0 or elsize>0) and ak4jetsize>0 and ak8jetsize>0) :
-			#print 'EVENT NUMBER %d NOT VALID; MISSING REQUISITE PHYSICS OBJECTS (metsize = %d, musize = %d, elsize = %d, ak4jetsize = %d, ak8jetsize = %d)'%(eventnumber,
-			#	metsize,musize,elsize,ak4jetsize,ak8jetsize)
+		if not (metsize>0 and (musize>0 or elsize>0) and ak4jetsize>0) :
+			#print 'EVENT NUMBER %d NOT VALID; MISSING REQUISITE PHYSICS OBJECTS (metsize = %d, musize = %d, elsize = %d, ak4jetsize = %d)'%(eventnumber,metsize,musize,elsize,ak4jetsize)
 			return
 
 		#MC stuff
 		if not self.is_data :
 			#event type split
-			keepevent,addtwice = keepEventType(self.mcGenEventBranches,self.event_type,self.MC_generator)
+			keepevent,addtwice = keepEventType(self.mcGenEventBranches,self.event_type)
 			if not keepevent :
 				return
 			#set the addTwice value
@@ -365,16 +365,18 @@ class Reconstructor(object) :
 			#Mother particle and MC truth top assignment
 			vecnames = []; vecobjs = []
 			if self.event_type!=4 :
-				q_vec, qbar_vec = findInitialPartons(self.mcGenEventBranches,self.MC_generator)
+				q_vec, qbar_vec = findInitialPartons(self.mcGenEventBranches)
 				vecnames += ['q','qbar']
 				vecobjs  += [q_vec,qbar_vec]
 			if self.event_type<2 :
-				MCt_vec, MCtbar_vec, MClep_vec, MClep_charge, MCv_vec, MClepb_vec, MChadW_vec, MChadb_vec = findMCParticles(self.mcGenEventBranches,self.MC_generator)
+				MCt_vec, MCtbar_vec, MClep_vec, MClep_charge, MCv_vec, MClepb_vec, MChadW_vec, MChadb_vec = findMCParticles(self.mcGenEventBranches)
 				vecnames += ['MCt','MCtbar','MClep','MCv','MClepb','MChadW','MChadb']
 				vecobjs  += [MCt_vec,MCtbar_vec,MClep_vec,MCv_vec,MClepb_vec,MChadW_vec,MChadb_vec]
 			#write out fourvectors of MC particles
 			for i in range(len(vecnames)) :
 				self.__setFourVectorBranchValues__(vecnames[i],vecobjs[i])
+
+		#print '------------------------------------------------' #DEBUG
 
 		#For the record, trigger information is handled automatically
 
@@ -385,7 +387,7 @@ class Reconstructor(object) :
 		#muons
 		muons = []
 		for i in range(musize) :
-			newmuon=Muon(self.muonBranches,i)
+			newmuon=Muon(self.muonBranches,i,self.use_modified_muon_ID)
 			if newmuon.getPt()>50. and abs(newmuon.getEta())<2.1 and newmuon.getID()==1 : muons.append(newmuon)
 		muons.sort(key=lambda x: x.getPt(), reverse=True)
 
@@ -707,7 +709,7 @@ class Reconstructor(object) :
 		self.__closeout__() #yay! A complete event!
 
 	##################################  #__init__ function  ##################################
-	def __init__(self,fileName,tree,isData,xsec,generator,jes,jer,onGrid,pu_histo,totweight) :
+	def __init__(self,fileName,tree,isData,xsec,jes,jer,onGrid,pu_histo,totweight) :
 		#output file
 		self.outfile_name = fileName
 		self.outfile = TFile(self.outfile_name,'recreate')
@@ -729,6 +731,8 @@ class Reconstructor(object) :
 		else :
 			print 'ALL event types will be analyzed from this file'
 			self.event_type = 4
+		#Do we need to use the modified isMediumMuon2016 ID because this sample is Run2016B-F data
+		self.use_modified_muon_ID=fileName.find('Run2016B')!=-1 or fileName.find('Run2016C')!=-1 or fileName.find('Run2016D')!=-1 or fileName.find('Run2016E')!=-1 or fileName.find('Run2016F')!=-1
 		#input tree
 		self.inputTree = tree
 		#Set input and output branch locations
@@ -738,23 +742,13 @@ class Reconstructor(object) :
 		self.is_data = isData
 		#cross section
 		self.xsec = xsec
-		#MC generator?
-		gen = generator.lower()
-		if gen == 'powheg' or gen == 'madgraph' or gen == 'pythia8' or gen == 'mcatnlo' :
-			self.MC_generator = gen
-		elif gen == 'mg5' :
-			self.MC_generator = 'madgraph'
-		elif gen == 'mc@nlo' or gen == 'amcatnlo' :
-			self.MC_generator = 'mcatnlo'
-		elif gen == 'none' :
-			self.MC_generator = 'none'
 		#JEC systematics?
 		self.JES = jes
 		self.JER = jer
 		#Set the total weight
 		self.totalweight = totweight
 		#Set the corrector that does event weights and JEC calculations
-		self.corrector = Corrector(self.is_data,self.MC_generator,self.event_type,onGrid,pu_histo)
+		self.corrector = Corrector(self.is_data,self.event_type,onGrid,pu_histo)
 
 	##################################   reset function   ##################################
 	#########  sets all relevant values back to initial values to get ready for next event  ##########
@@ -787,6 +781,13 @@ class Reconstructor(object) :
 	################################## __del__ function  ###################################
 	def __del__(self) :
 		self.outfile.cd()
-		#self.tree.Write()
+		self.tree.Write()
 		self.outfile.Write()
 		self.outfile.Close()
+
+	def finish(self) :
+		self.outfile.cd()
+		self.tree.Write()
+		self.outfile.Write()
+		self.outfile.Close()
+ 

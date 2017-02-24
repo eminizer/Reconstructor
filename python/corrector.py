@@ -21,7 +21,7 @@ import pickle
 class Corrector(object) :
 
 	##################################  #__init__ function  ##################################
-	def __init__(self,isdata,generator,eventType,onGrid,pu_histo) :
+	def __init__(self,isdata,eventType,onGrid,pu_histo) :
 		self.__ak4JetCorrector, self.__ak4JecUncertainty = setupJECCorrector(onGrid,isdata,'AK4PFchs')
 		self.__ak8JetCorrector, self.__ak8JecUncertainty = setupJECCorrector(onGrid,isdata,'AK8PFchs')
 		self.__MC_pu_histo, self.__data_pu_histo_nom, self.__data_pu_histo_up, self.__data_pu_histo_down = setupPileupHistos(onGrid,pu_histo)
