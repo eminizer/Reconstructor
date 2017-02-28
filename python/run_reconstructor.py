@@ -111,5 +111,4 @@ for event in range(ntotalevents) :
 	#reset analyzer
 	analyzer.reset()
 #clean up after yourself
-analyzer.finish()
-#del analyzer
+del analyzer

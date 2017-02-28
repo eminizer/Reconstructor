@@ -387,7 +387,7 @@ class Reconstructor(object) :
 		#muons
 		muons = []
 		for i in range(musize) :
-			newmuon=Muon(self.muonBranches,i,self.use_modified_muon_ID)
+			newmuon=Muon(self.muonBranches,i,self.run_era)
 			if newmuon.getPt()>50. and abs(newmuon.getEta())<2.1 and newmuon.getID()==1 : muons.append(newmuon)
 		muons.sort(key=lambda x: x.getPt(), reverse=True)
 
@@ -731,8 +731,11 @@ class Reconstructor(object) :
 		else :
 			print 'ALL event types will be analyzed from this file'
 			self.event_type = 4
-		#Do we need to use the modified isMediumMuon2016 ID because this sample is Run2016B-F data
-		self.use_modified_muon_ID=fileName.find('Run2016B')!=-1 or fileName.find('Run2016C')!=-1 or fileName.find('Run2016D')!=-1 or fileName.find('Run2016E')!=-1 or fileName.find('Run2016F')!=-1
+		#Run era
+		self.run_era = None
+		fnsplit = fileName.split('Run2016')
+		if len(fnsplit)>1 :
+			self.run_era=fnsplit[1][0]
 		#input tree
 		self.inputTree = tree
 		#Set input and output branch locations
@@ -748,7 +751,7 @@ class Reconstructor(object) :
 		#Set the total weight
 		self.totalweight = totweight
 		#Set the corrector that does event weights and JEC calculations
-		self.corrector = Corrector(self.is_data,self.event_type,onGrid,pu_histo)
+		self.corrector = Corrector(self.is_data,self.event_type,onGrid,pu_histo,self.run_era)
 
 	##################################   reset function   ##################################
 	#########  sets all relevant values back to initial values to get ready for next event  ##########
@@ -781,13 +784,7 @@ class Reconstructor(object) :
 	################################## __del__ function  ###################################
 	def __del__(self) :
 		self.outfile.cd()
-		self.tree.Write()
 		self.outfile.Write()
 		self.outfile.Close()
 
-	def finish(self) :
-		self.outfile.cd()
-		self.tree.Write()
-		self.outfile.Write()
-		self.outfile.Close()
  

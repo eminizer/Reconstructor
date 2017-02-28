@@ -11,8 +11,9 @@ class Jet(object) :
 		self.__fourvec = getfourvec(branches,index,jes,jer,lep,corrector,isdata,pp)
 		self.__pt = self.__fourvec.Pt() if self.__fourvec!=None else None
 		self.__eta = self.__fourvec.Eta() if self.__fourvec!=None else None
-		self.__isIDed = True #self.__checkID__(branches,index,pp)
+		self.__isIDed = self.__checkID__(branches,index,pp)
 		self.__csvv2 = branches[pp+'_CSVv2'].getReadValue(index)
+		self.__isbtagged = self.__csvv2>0.46 #loose working point
 
 	def __checkID__(self,branches,index,pp) :
 		if self.__eta==None :
@@ -24,6 +25,7 @@ class Jet(object) :
 		numConstituents = neutralMultiplicity+chargedMultiplicity
 		chargedHadronFraction = branches[pp+'_chargedHadronEnergyFrac'].getReadValue(index)
 		chargedEMFraction = branches[pp+'_chargedEmEnergyFrac'].getReadValue(index)
+		#These are the "Loose" ID criteria from here: https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVRun2016
 		if abs(self.__eta)<2.7 :
 			if neutralHadronFraction<0.99 and neutralEMFraction<0.99 and numConstituents>1 :
 				if abs(self.__eta)<2.4 :
@@ -31,18 +33,12 @@ class Jet(object) :
 						return True
 				else :
 					return True
-			else :
-				return False
 		elif abs(self.__eta)<3.0 :
-			if neutralEMFraction<0.9 and neutralMultiplicity>2 :
+			if neutralEMFraction>0.1 and neutralHadronFraction<0.98 and neutralMultiplicity>2 :
 				return True
-			else :
-				return False
 		else :
 			if neutralEMFraction<0.90 and neutralMultiplicity>10 :
 				return True
-			else :
-				return False
 		return False
 
 	def getFourVector(self) :
@@ -72,7 +68,7 @@ class AK8Jet(Jet) :
 		#print 'Adding AK8 jet with soft drop mass %.4f'%(self.__sdm) #DEBUG
 		self.__subjets = self.__getsubjets__(branches,index,jes,jer,lep,corrector,isdata)
 		self.__n_subjets = len(self.__subjets)
-		self.__isttagged = self.__sdm>105. and self.__sdm<220. and self.__tau3!=0. and self.__tau2!=0. and (self.__tau3/self.__tau2)<0.81
+		self.__isttagged = self.__sdm>105. and self.__sdm<220. and self.__tau3!=0. and self.__tau2!=0. and (self.__tau3/self.__tau2)<0.81 and self.__n_subjets>0 and self.__subjets[0].getCSVv2()>0.46
 
 	def __getsubjets__(self,branches,index,jes,jer,lep,corrector,isdata) :
 		#start by making a list of all the subjets for this jet

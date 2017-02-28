@@ -21,9 +21,9 @@ import pickle
 class Corrector(object) :
 
 	##################################  #__init__ function  ##################################
-	def __init__(self,isdata,eventType,onGrid,pu_histo) :
-		self.__ak4JetCorrector, self.__ak4JecUncertainty = setupJECCorrector(onGrid,isdata,'AK4PFchs')
-		self.__ak8JetCorrector, self.__ak8JecUncertainty = setupJECCorrector(onGrid,isdata,'AK8PFchs')
+	def __init__(self,isdata,eventType,onGrid,pu_histo,runera) :
+		self.__ak4JetCorrector, self.__ak4JecUncertainty = setupJECCorrector(onGrid,isdata,'AK4PFchs',runera)
+		self.__ak8JetCorrector, self.__ak8JecUncertainty = setupJECCorrector(onGrid,isdata,'AK8PFchs',runera)
 		self.__MC_pu_histo, self.__data_pu_histo_nom, self.__data_pu_histo_up, self.__data_pu_histo_down = setupPileupHistos(onGrid,pu_histo)
 		self.__muon_id_eff_vs_eta, self.__muon_id_eff_vs_pt, self.__muon_id_eff_vs_pu = setupMuonIDHistos(onGrid)
 		self.__muon_id_eff_vs_eta_low = self.__muon_id_eff_vs_eta.GetBinCenter(1); self.__muon_id_eff_vs_eta_hi = self.__muon_id_eff_vs_eta.GetBinCenter(self.__muon_id_eff_vs_eta.GetNbinsX())
@@ -80,7 +80,7 @@ class Corrector(object) :
 			print 'WARNING: JER OPTION '+str(jer)+' NOT RECOGNIZED!!'
 			return None
 		#see which smearing method we should use based on MC matching
-		if jetvec.DeltaR(genJetVec)<dRCheck/2. and abs(jetvec.Pt()-genJetVec.Pt())<3.*ptres : #scaling
+		if jetvec.DeltaR(genJetVec)<dRCheck/2. and abs(jetvec.Pt()-genJetVec.Pt())<3.*ptres*jetvec.Pt() : #scaling
 			#smear the pt
 			recopt = jetvec.Pt()
 			deltapt = (recopt-genJetVec.Pt())*(ptsmearfac-1.0)
@@ -183,23 +183,46 @@ class Corrector(object) :
 	def __del__(self) :
 		pass
 
-def setupJECCorrector(onGrid,isdata,jetType) :
+def setupJECCorrector(onGrid,isdata,jetType,runera) :
 	#Define the JEC  parameters
 	L1JetPar  = None
 	L2JetPar  = None
 	L3JetPar  = None
 	pp = './tardir/' if onGrid == 'yes' else '../other_input_files/'
+	#Get the files linked below from https://twiki.cern.ch/twiki/bin/view/CMS/JECDataMC
 	if not isdata :
-		L1JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV6_MC_L1FastJet_'+jetType+'.txt')
-		L2JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV6_MC_L2Relative_'+jetType+'.txt')
-		L3JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV6_MC_L3Absolute_'+jetType+'.txt')
-		jetUncertainty = JetCorrectionUncertainty(pp+'Spring16_25nsV6_MC_Uncertainty_'+jetType+'.txt')
+		L1JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10_MC_L1FastJet_'+jetType+'.txt')
+		L2JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10_MC_L2Relative_'+jetType+'.txt')
+		L3JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10_MC_L3Absolute_'+jetType+'.txt')
+		jetUncertainty = JetCorrectionUncertainty(pp+'Spring16_25nsV10_MC_Uncertainty_'+jetType+'.txt')
 	else :
-		L1JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV6_DATA_L1FastJet_'+jetType+'.txt')
-		L2JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV6_DATA_L2Relative_'+jetType+'.txt')
-		L3JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV6_DATA_L3Absolute_'+jetType+'.txt')
-		ResJetPar = JetCorrectorParameters(pp+'Spring16_25nsV6_DATA_L2L3Residual_'+jetType+'.txt')
-		jetUncertainty = JetCorrectionUncertainty(pp+'Spring16_25nsV6_DATA_Uncertainty_'+jetType+'.txt')
+		if runera=='B' or runera=='C' or runera=='D' :
+			L1JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10BCD_DATA_L1FastJet_'+jetType+'.txt')
+			L2JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10BCD_DATA_L2Relative_'+jetType+'.txt')
+			L3JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10BCD_DATA_L3Absolute_'+jetType+'.txt')
+			ResJetPar = JetCorrectorParameters(pp+'Spring16_25nsV10BCD_DATA_L2L3Residual_'+jetType+'.txt')
+			jetUncertainty = JetCorrectionUncertainty(pp+'Spring16_25nsV10BCD_DATA_Uncertainty_'+jetType+'.txt')
+		elif runera=='E' :
+			L1JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10E_DATA_L1FastJet_'+jetType+'.txt')
+			L2JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10E_DATA_L2Relative_'+jetType+'.txt')
+			L3JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10E_DATA_L3Absolute_'+jetType+'.txt')
+			ResJetPar = JetCorrectorParameters(pp+'Spring16_25nsV10E_DATA_L2L3Residual_'+jetType+'.txt')
+			jetUncertainty = JetCorrectionUncertainty(pp+'Spring16_25nsV10E_DATA_Uncertainty_'+jetType+'.txt')
+		elif runera=='F' :
+			L1JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10F_DATA_L1FastJet_'+jetType+'.txt')
+			L2JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10F_DATA_L2Relative_'+jetType+'.txt')
+			L3JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10F_DATA_L3Absolute_'+jetType+'.txt')
+			ResJetPar = JetCorrectorParameters(pp+'Spring16_25nsV10F_DATA_L2L3Residual_'+jetType+'.txt')
+			jetUncertainty = JetCorrectionUncertainty(pp+'Spring16_25nsV10F_DATA_Uncertainty_'+jetType+'.txt')
+		elif runera=='G' or runera=='H' :
+			L1JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10p2_DATA_L1FastJet_'+jetType+'.txt')
+			L2JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10p2_DATA_L2Relative_'+jetType+'.txt')
+			L3JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10p2_DATA_L3Absolute_'+jetType+'.txt')
+			ResJetPar = JetCorrectorParameters(pp+'Spring16_25nsV10p2_DATA_L2L3Residual_'+jetType+'.txt')
+			jetUncertainty = JetCorrectionUncertainty(pp+'Spring16_25nsV10p2_DATA_Uncertainty_'+jetType+'.txt')
+		else :
+			print 'WARNING: Can\'t recognize Data Run Era based on filename (Run Era variable is '+str(runera)+')! This will crash I think'
+			return None, None
 	#Load the JetCorrectorParameter objects into a vector, IMPORTANT: THE ORDER MATTERS HERE !!!! 
 	vParJec = vector('JetCorrectorParameters')()
 	vParJec.push_back(L1JetPar)
@@ -220,8 +243,8 @@ def getJER(jetEta, sysType) :
     # Values from https://twiki.cern.ch/twiki/bin/view/CMS/JetResolution
     etamin = [0.0,0.5,0.8,1.1,1.3,1.7,1.9,2.1,2.3,2.5,2.8,3.0,3.2]
     etamax = [0.5,0.8,1.1,1.3,1.7,1.9,2.1,2.3,2.5,2.8,3.0,3.2,5.0]
-    scale_nom =    [1.122,1.167,1.168,1.029,1.115,1.041,1.167,1.094,1.168,1.266,1.595,0.998,1.226]
-    scale_uncert = [0.026,0.048,0.046,0.066,0.030,0.062,0.086,0.093,0.120,0.132,0.175,0.066,0.145]
+    scale_nom =    [1.109,1.138,1.114,1.1234,1.084,1.082,1.140,1.067,1.177,1.364,1.857,1.328,1.16]
+    scale_uncert = [0.008,0.013,0.013,0.024,0.011,0.035,0.047,0.053,0.041,0.039,0.071,0.022,0.029]
     for iSF in range(0,len(scale_nom)) :
         if abs(jetEta) >= etamin[iSF] and abs(jetEta) < etamax[iSF] :
             if sysType < 0 :
