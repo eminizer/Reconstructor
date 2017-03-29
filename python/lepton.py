@@ -43,9 +43,12 @@ class Muon(Lepton) :
 			self.__ID = branches['mu_IsMediumMuon2016'].getReadValue(index)
 		else :
 			self.__ID = branches['mu_IsMediumMuon'].getReadValue(index)
+		self.__iso = branches['mu_Iso04'].getReadValue(index)
 
 	def getID(self) :
 		return self.__ID
+	def isIso(self) :
+		return (self.__iso/Lepton.getPt(self))<0.1
 
 class Electron(Lepton) :
 
@@ -53,11 +56,14 @@ class Electron(Lepton) :
 		Lepton.__init__(self,branches,index,'el')
 		self.__ID = branches['el_IDMedium_NoIso'].getReadValue(index)
 		self.__scEta = branches['el_SCEta'].getReadValue(index)
+		self.__iso = branches['el_Iso03'].getReadValue(index)
 
 	def getID(self) :
 		return self.__ID
 	def getEtaSC(self) :
 		return self.__scEta
+	def isIso(self) :
+		return (self.__iso/Lepton.getPt(self))<0.12
 
 def findNearestJet(lepvec,jets) :
 	closestJet = jets[0]

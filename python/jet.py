@@ -51,6 +51,8 @@ class Jet(object) :
 		return self.__isIDed
 	def getCSVv2(self) :
 		return self.__csvv2
+	def isbTagged(self) :
+		return self.__isbtagged
 
 class AK4Jet(Jet) :
 
@@ -68,7 +70,8 @@ class AK8Jet(Jet) :
 		#print 'Adding AK8 jet with soft drop mass %.4f'%(self.__sdm) #DEBUG
 		self.__subjets = self.__getsubjets__(branches,index,jes,jer,lep,corrector,isdata)
 		self.__n_subjets = len(self.__subjets)
-		self.__isttagged = self.__sdm>105. and self.__sdm<220. and self.__tau3!=0. and self.__tau2!=0. and (self.__tau3/self.__tau2)<0.81 and self.__n_subjets>0 and self.__subjets[0].getCSVv2()>0.46
+		self.__isttagged = self.__sdm>105. and self.__sdm<220. and self.__tau3!=0. and self.__tau2!=0. and (self.__tau3/self.__tau2)<0.80
+		self.__isWtagged = self.__sdm>65. and self.__sdm<105. and self.__tau2!=0. and self.__tau1!=0. and (self.__tau2/self.__tau1)<0.55
 
 	def __getsubjets__(self,branches,index,jes,jer,lep,corrector,isdata) :
 		#start by making a list of all the subjets for this jet
@@ -108,6 +111,8 @@ class AK8Jet(Jet) :
 		return self.__n_subjets
 	def isTopTagged(self) :
 		return self.__isttagged
+	def isWTagged(self) :
+		return self.__isWtagged
 
 def getfourvec(branches,index,jes,jer,lep,corrector,isdata,pp) :
 	#get all the jet fourvectors, etc.

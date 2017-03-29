@@ -3,10 +3,6 @@ from ROOT import TLorentzRotation, TLorentzVector
 from math import *
 
 #Global variables
-#Alpha value for adjustment due to longitudinal gluon polarization
-ALPHA = -0.155 #This is the value for 8TeV, M>750
-#epsilon value for gg cross section correction
-EPSILON = 1.324 #This is the value for 8TeV, M>750
 #Default Lorentz Rotation
 S = TLorentzRotation()
 #Beam energy
@@ -85,73 +81,41 @@ def getObservables(lept_vec,hadt_vec,lepton_charge) :
 	return (cos_theta_cs,x_f,ttbar_mass)
 
 #Given the fourvectors of the initial state partons and the MC tops, and the event type, returns the MC truth observables and a ton of reweights
-def getMCObservables(q_vec,qbar_vec,t_vec,tbar_vec,eventtype) :
-	#initialize the rotation to the identity
-	R = TLorentzRotation()
-	#Make the 4-vector of the ttbar pair, get its mass, calculate x_F
-	Q = t_vec+tbar_vec
-	ttbar_mass=Q.Mag()
-	x_f = 2*Q.Pz()/SQRT_S
-	#defining the Px, Py,and Pz, and energies to boost into the ttbar rest frame
-	Bx = -1*Q.Px()/Q.E(); By = -1*Q.Py()/Q.E(); Bz = -1*Q.Pz()/Q.E()
-	#calculating beta for the boost
-	M2_1 = t_vec.Mag2(); M2_2 = tbar_vec.Mag2()
+def getMCRWs(cos_theta_cs,t_vec,tbar_vec,alpha,epsilon) :
+	#calculating beta
+	M2_1 = t_vec.Mag2(); M2_2 = tbar_vec.Mag2(); ttbar_mass=(t_vec+tbar_vec).Mag()
 	beta = sqrt(1. - 2.*(M2_1+M2_2)/(ttbar_mass*ttbar_mass) + (M2_1-M2_2)*(M2_1-M2_2)/(ttbar_mass*ttbar_mass*ttbar_mass*ttbar_mass))
-	#Doing the boost
-	R = R.Boost(Bx,By,Bz)
-	t_vec = R*t_vec; tbar_vec = R*tbar_vec
-	q_vec = R*q_vec; qbar_vec = R*qbar_vec
-	#Reset the boost
-	R=S
-	#Define normalized three-vectors for the top and protons in the ttbar rest frame
-	top = t_vec.Vect(); q = q_vec.Vect(); qbar = qbar_vec.Vect()
-	#Normalize vectors (and flip the qbar direction)
-	if eventtype != 0 and q.Mag()>qbar.Mag() :
-		top = top*(1.0/top.Mag()); q = -1.0*q*(1.0/q.Mag()); qbar = qbar*(1.0/qbar.Mag())
-	else :
-		top = top*(1.0/top.Mag()); q = q*(1.0/q.Mag()); qbar = -1.0*qbar*(1.0/qbar.Mag())
-	#find the unit bisectors
-	bisector = (q+qbar)*(1.0/(q+qbar).Mag())
-	#find the CS angle
-	cos_theta_cs=cos(top.Angle(bisector))
 	#calculate the reweighting factors
 	b2 = beta*beta;
 	b2c2 = beta*beta*cos_theta_cs*cos_theta_cs;
-	denom = 1.+b2c2+(1.-b2)+ALPHA*(1.-b2c2)
+	denom = 1.+b2c2+(1.-b2)+alpha*(1.-b2c2)
 	Afunc = (7.+9.*b2c2)/(1.-b2c2)
 	Bfunc = (1.-b2c2*b2c2+2.*b2*(1.-b2)*(1.-cos_theta_cs*cos_theta_cs))/(2.*(1.-b2c2))
-	wg1 = 1./(Bfunc*(1.+EPSILON*b2c2))
-	wg2 = 56./((1.-b2)*Afunc*Bfunc*(1.+EPSILON*b2c2))
-	wg3 = 4./((1.-b2c2)*Afunc*Bfunc*(1.+EPSILON*b2c2))
-	wg4 = (8./(Afunc*Bfunc*(1.+EPSILON*b2c2)))*(1./(1.-b2c2) + 1./(1.-b2) + ((4.*(1.-b2c2))/((1.-b2)*(1.-b2))))
+	wg1 = 1./(Bfunc*(1.+epsilon*b2c2))
+	wg2 = 56./((1.-b2)*Afunc*Bfunc*(1.+epsilon*b2c2))
+	wg3 = 4./((1.-b2c2)*Afunc*Bfunc*(1.+epsilon*b2c2))
+	wg4 = (8./(Afunc*Bfunc*(1.+epsilon*b2c2)))*(1./(1.-b2c2) + 1./(1.-b2) + ((4.*(1.-b2c2))/((1.-b2)*(1.-b2))))
 	wqs1 = (4./denom)
 	wqs2 = (4./denom)*(1.-b2c2)/(1.-b2)
-	wqa0 = (2.*(2.+ALPHA)*(1.-b2/3.)*cos_theta_cs)/denom
+	wqa0 = (2.*(2.+alpha)*(1.-b2/3.)*cos_theta_cs)/denom
 	wqa1 = (8.*cos_theta_cs)/denom
 	wqa2 = ((8.*cos_theta_cs)/denom)*((1.-b2/3.)/(1.-b2))
-	wg1_opp = 1./(Bfunc*(1.+EPSILON*b2c2))
-	wg2_opp = 56./((1.-b2)*Afunc*Bfunc*(1.+EPSILON*b2c2))
-	wg3_opp = 4./((1.-b2c2)*Afunc*Bfunc*(1.+EPSILON*b2c2))
-	wg4_opp = (8./(Afunc*Bfunc*(1.+EPSILON*b2c2)))*(1./(1.-b2c2) + 1./(1.-b2) + ((4.*(1.-b2c2))/((1.-b2)*(1.-b2))))
+	wg1_opp = 1./(Bfunc*(1.+epsilon*b2c2))
+	wg2_opp = 56./((1.-b2)*Afunc*Bfunc*(1.+epsilon*b2c2))
+	wg3_opp = 4./((1.-b2c2)*Afunc*Bfunc*(1.+epsilon*b2c2))
+	wg4_opp = (8./(Afunc*Bfunc*(1.+epsilon*b2c2)))*(1./(1.-b2c2) + 1./(1.-b2) + ((4.*(1.-b2c2))/((1.-b2)*(1.-b2))))
 	wqs1_opp = (4./denom)
 	wqs2_opp = (4./denom)*(1.-b2c2)/(1.-b2)
-	wqa0_opp = (2.*(2.+ALPHA)*(1.-b2/3.)*(-1.*cos_theta_cs))/denom
+	wqa0_opp = (2.*(2.+alpha)*(1.-b2/3.)*(-1.*cos_theta_cs))/denom
 	wqa1_opp = (-1.*8.*cos_theta_cs)/denom
 	wqa2_opp = ((-1.*8.*cos_theta_cs)/denom)*((1.-b2/3.)/(1.-b2))
 	#exotic gluon reweights
-	cm = t_vec + tbar_vec
-	mtt = cm.M()
-	mq = t_vec.M()
-	mb = tbar_vec.M()
-	s = mtt*mtt
-	if(b2 < 1.e-6) :
-		b2 = 1.e-6
+	s = ttbar_mass*ttbar_mass
 	costcs = t_vec.CosTheta()
 	bc = beta*costcs
 	bc2 = bc*bc
 	omb2 = 1. - b2
 	tmb2 = 1. + omb2
-	alpha = -0.155
 	#Divide out the generated angular distribution
 	dena = (s-mg2)*(s-mg2)+mg2*gg2a
 	propxa = s*(s-mg2)/dena
@@ -163,5 +127,4 @@ def getMCObservables(q_vec,qbar_vec,t_vec,tbar_vec,eventtype) :
 	wega = 1.+rnorm*(0.5*propxa*(fLpRa*gLpRa*(tmb2+bc2)+2.*Dfga*bc)+0.25*prop2a*(fL2pR2a*gL2pR2a*(1.+bc2)+fL2pR2a*2.*gLgRa*omb2+2.*Df2g2a*bc))
 	wegc = 1.+rnorm*(0.5*propxc*(fLpRc*gLpRc*(tmb2+bc2)+2.*Dfgc*bc)+0.25*prop2c*(fL2pR2c*gL2pR2c*(1.+bc2)+fL2pR2c*2.*gLgRc*omb2+2.*Df2g2c*bc))
 
-	return (cos_theta_cs,x_f,ttbar_mass,wg1,wg2,wg3,wg4,wqs1,wqs2,wqa0,wqa1,wqa2,
-		wg1_opp,wg2_opp,wg3_opp,wg4_opp,wqs1_opp,wqs2_opp,wqa0_opp,wqa1_opp,wqa2_opp,wega,wegc)
+	return (wg1,wg2,wg3,wg4,wqs1,wqs2,wqa0,wqa1,wqa2,wg1_opp,wg2_opp,wg3_opp,wg4_opp,wqs1_opp,wqs2_opp,wqa0_opp,wqa1_opp,wqa2_opp,wega,wegc)

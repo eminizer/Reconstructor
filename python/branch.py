@@ -1,11 +1,10 @@
 #Global Variables
-MAX_GEN_ARRAY_LENGTH = 300
 MAX_MET_ARRAY_LENGTH = 1
-MAX_MU_ARRAY_LENGTH = 40
-MAX_EL_ARRAY_LENGTH = 20
-MAX_AK4_JET_ARRAY_LENGTH = 40
-MAX_AK8_JET_ARRAY_LENGTH = 20
-MAX_AK8_SUBJET_ARRAY_LENGTH = 10
+MAX_MU_ARRAY_LENGTH = 50
+MAX_EL_ARRAY_LENGTH = 50
+MAX_AK4_JET_ARRAY_LENGTH = 100
+MAX_AK8_JET_ARRAY_LENGTH = 100
+MAX_AK8_SUBJET_ARRAY_LENGTH = 25
 MAX_SCALE_ARRAY_LENGTH = 6
 MAX_PDF_ARRAY_LENGTH = 100
 MAX_ALPHAS_ARRAY_LENGTH = 2
@@ -80,6 +79,8 @@ class Branch(object) :
 		return self.__writeArray[index]
 	def getReadName(self) :
 		return self.__readname
+	def getWriteName(self) :
+		return self.__writename
 
 def get_array_type(ttreetype) :
 	if ttreetype=='vi' :
@@ -98,8 +99,6 @@ def get_array_type(ttreetype) :
 def get_array_length(size) :
 	if size=='1' :
 		return 1
-	elif size=='gen_size' :
-		return MAX_GEN_ARRAY_LENGTH
 	elif size=='met_size' :
 		return MAX_MET_ARRAY_LENGTH
 	elif size=='mu_size' :

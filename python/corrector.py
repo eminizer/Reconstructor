@@ -21,7 +21,7 @@ import pickle
 class Corrector(object) :
 
 	##################################  #__init__ function  ##################################
-	def __init__(self,isdata,eventType,onGrid,pu_histo,runera) :
+	def __init__(self,isdata,onGrid,pu_histo,runera,renormdict) :
 		self.__ak4JetCorrector, self.__ak4JecUncertainty = setupJECCorrector(onGrid,isdata,'AK4PFchs',runera)
 		self.__ak8JetCorrector, self.__ak8JecUncertainty = setupJECCorrector(onGrid,isdata,'AK8PFchs',runera)
 		self.__MC_pu_histo, self.__data_pu_histo_nom, self.__data_pu_histo_up, self.__data_pu_histo_down = setupPileupHistos(onGrid,pu_histo)
@@ -34,6 +34,7 @@ class Corrector(object) :
 		self.__ele_trk_eff_pt_hi  = self.__ele_trk_eff_2D_histo.GetYaxis().GetBinCenter(self.__ele_trk_eff_2D_histo.GetNbinsY())
 		self.__ele_trk_eff_sceta_low = self.__ele_trk_eff_2D_histo.GetXaxis().GetBinCenter(0)
 		self.__ele_trk_eff_sceta_hi  = self.__ele_trk_eff_2D_histo.GetXaxis().GetBinCenter(self.__ele_trk_eff_2D_histo.GetNbinsX())
+		self.__renormdict = renormdict
 
 	def getJECforJet(self,jetvec,area,rho,npv,pp) :
 		corrector=None
@@ -150,16 +151,16 @@ class Corrector(object) :
 		returnlist = []
 		#mu_R, from scale_weights
 		returnlist.append(1.) #nominal
-		returnlist.append(branches['scale_Weights'].getReadValue(2)) #mu_R up
-		returnlist.append(branches['scale_Weights'].getReadValue(4)) #mu_R down
+		returnlist.append(branches['scale_Weights'].getReadValue(2)/self.__renormdict['muRup']) #mu_R up
+		returnlist.append(branches['scale_Weights'].getReadValue(4)/self.__renormdict['muRdown']) #mu_R down
 		#mu_F
 		returnlist.append(1.) #nominal
-		returnlist.append(branches['scale_Weights'].getReadValue(0)) #mu_F up
-		returnlist.append(branches['scale_Weights'].getReadValue(1)) #mu_F down
+		returnlist.append(branches['scale_Weights'].getReadValue(0)/self.__renormdict['muFup']) #mu_F up
+		returnlist.append(branches['scale_Weights'].getReadValue(1)/self.__renormdict['muFdown']) #mu_F down
 		#combined mu_R/mu_F ("scale_comb")
 		returnlist.append(1.) #nominal
-		returnlist.append(branches['scale_Weights'].getReadValue(3)) #mu_R/F up
-		returnlist.append(branches['scale_Weights'].getReadValue(5)) #mu_R/F down
+		returnlist.append(branches['scale_Weights'].getReadValue(3)/self.__renormdict['scup']) #mu_R/F up
+		returnlist.append(branches['scale_Weights'].getReadValue(5)/self.__renormdict['scdown']) #mu_R/F down
 		#PDF and alpha_s ("pdf_alphas")
 		#get the average and std dev of the pdf replica reweights
 		pdfvaluearray = branches['pdf_Weights'].getReadArray()
@@ -173,10 +174,10 @@ class Corrector(object) :
 		alphas_up_unc 	= abs(branches['alphas_Weights'].getReadValue(1)*0.75-1.)
 		alphas_down_unc = abs(branches['alphas_Weights'].getReadValue(0)*0.75-1.)
 		#nominal value
-		returnlist.append(pdfmean)
+		returnlist.append(pdfmean/self.__renormdict['pdfas'])
 		#up/down with pdf and alpha_s added in quadrature
-		returnlist.append(pdfmean+sqrt(pdfunc**2+alphas_up_unc**2))
-		returnlist.append(pdfmean-sqrt(pdfunc**2+alphas_down_unc**2))
+		returnlist.append((pdfmean+sqrt(pdfunc**2+alphas_up_unc**2))/self.__renormdict['pdfasup'])
+		returnlist.append(pdfmean-sqrt(pdfunc**2+alphas_down_unc**2)/self.__renormdict['pdfasdown'])
 		#return the list, made into a tuple so it's immutable
 		return tuple(returnlist)
 
