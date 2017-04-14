@@ -6,9 +6,9 @@ from math import *
 
 class Jet(object) :
 
-	def __init__(self,branches,index,jes,jer,lep,corrector,isdata,pp) :
+	def __init__(self,branches,index,jes,jer,leps,corrector,isdata,pp) :
 		#print '----------------------- New Jet --------------------------' #DEBUG
-		self.__fourvec = getfourvec(branches,index,jes,jer,lep,corrector,isdata,pp)
+		self.__fourvec = getfourvec(branches,index,jes,jer,leps,corrector,isdata,pp)
 		self.__pt = self.__fourvec.Pt() if self.__fourvec!=None else None
 		self.__eta = self.__fourvec.Eta() if self.__fourvec!=None else None
 		self.__isIDed = self.__checkID__(branches,index,pp)
@@ -56,24 +56,24 @@ class Jet(object) :
 
 class AK4Jet(Jet) :
 
-	def __init__(self,branches,index,jes,jer,lep,corrector,isdata) :
-		Jet.__init__(self,branches,index,jes,jer,lep,corrector,isdata,'jetAK4CHS')
+	def __init__(self,branches,index,jes,jer,leps,corrector,isdata) :
+		Jet.__init__(self,branches,index,jes,jer,leps,corrector,isdata,'jetAK4CHS')
 
 class AK8Jet(Jet) :
 
-	def __init__(self,branches,index,jes,jer,lep,corrector,isdata) :
-		Jet.__init__(self,branches,index,jes,jer,lep,corrector,isdata,'jetAK8CHS')
+	def __init__(self,branches,index,jes,jer,leps,corrector,isdata) :
+		Jet.__init__(self,branches,index,jes,jer,leps,corrector,isdata,'jetAK8CHS')
 		self.__tau3 = branches['jetAK8CHS_tau3CHS'].getReadValue(index)
 		self.__tau2 = branches['jetAK8CHS_tau2CHS'].getReadValue(index)
 		self.__tau1 = branches['jetAK8CHS_tau1CHS'].getReadValue(index)
 		self.__sdm  = branches['jetAK8CHS_softDropMassCHS'].getReadValue(index)
 		#print 'Adding AK8 jet with soft drop mass %.4f'%(self.__sdm) #DEBUG
-		self.__subjets = self.__getsubjets__(branches,index,jes,jer,lep,corrector,isdata)
+		self.__subjets = self.__getsubjets__(branches,index,jes,jer,leps,corrector,isdata)
 		self.__n_subjets = len(self.__subjets)
-		self.__isttagged = self.__sdm>105. and self.__sdm<220. and self.__tau3!=0. and self.__tau2!=0. and (self.__tau3/self.__tau2)<0.80
-		self.__isWtagged = self.__sdm>65. and self.__sdm<105. and self.__tau2!=0. and self.__tau1!=0. and (self.__tau2/self.__tau1)<0.55
+		self.__isttagged = self.getPt()>400. and self.__sdm>105. and self.__sdm<220. and self.__tau3!=0. and self.__tau2!=0. and (self.__tau3/self.__tau2)<0.80
+		self.__isWtagged = self.getPt()>200. and self.__sdm>65. and self.__sdm<105. and self.__tau2!=0. and self.__tau1!=0. and (self.__tau2/self.__tau1)<0.55
 
-	def __getsubjets__(self,branches,index,jes,jer,lep,corrector,isdata) :
+	def __getsubjets__(self,branches,index,jes,jer,leps,corrector,isdata) :
 		#start by making a list of all the subjets for this jet
 		allsubjets = []
 		#get the subjet indices
@@ -81,11 +81,11 @@ class AK8Jet(Jet) :
 		subjet1index = branches['jetAK8CHS_vSubjetIndex1'].getReadValue(index)
 		#add the subjets
 		if subjet0index>-1 :
-			newSubjet = Jet(branches,int(subjet0index),jes,jer,lep,corrector,isdata,'subjetAK8CHS')
+			newSubjet = Jet(branches,int(subjet0index),jes,jer,leps,corrector,isdata,'subjetAK8CHS')
 			if newSubjet.getFourVector()!=None :
 				allsubjets.append(newSubjet)
 		if subjet1index>-1 :
-			newSubjet = Jet(branches,int(subjet1index),jes,jer,lep,corrector,isdata,'subjetAK8CHS')
+			newSubjet = Jet(branches,int(subjet1index),jes,jer,leps,corrector,isdata,'subjetAK8CHS')
 			if newSubjet.getFourVector()!=None :
 				allsubjets.append(newSubjet)
 		#order the list of subjets by pt
@@ -114,7 +114,7 @@ class AK8Jet(Jet) :
 	def isWTagged(self) :
 		return self.__isWtagged
 
-def getfourvec(branches,index,jes,jer,lep,corrector,isdata,pp) :
+def getfourvec(branches,index,jes,jer,leps,corrector,isdata,pp) :
 	#get all the jet fourvectors, etc.
 	pt  = branches[pp+'_Pt'].getReadValue(index)
 	eta = branches[pp+'_Eta'].getReadValue(index)
@@ -137,7 +137,7 @@ def getfourvec(branches,index,jes,jer,lep,corrector,isdata,pp) :
 	if rawjet.M()==-900 :
 		return None
 	rawjet*=(1./jec0)
-	cleanjet, subtracted = cleanJet(rawjet,jetkeys,subjet1keys,subjet2keys,lep.getFourVector(),lep.getKey())
+	cleanjet, subtractedleps = cleanJet(rawjet,jetkeys,subjet1keys,subjet2keys,leps)
 	if cleanjet == None :
 	#	print 'CLEANED JET WAS "NONE"' #DEBUG
 		return None
@@ -147,7 +147,7 @@ def getfourvec(branches,index,jes,jer,lep,corrector,isdata,pp) :
 		return nominalJet
 	newJEC = jec0
 	#if there was a lepton subtracted from the jet
-	if subtracted :
+	if len(subtractedleps)>0 :
 		#get and apply the new jec
 		jetArea = branches[pp+'_jetArea'].getReadValue(index)
 		rho = branches['rho'].getReadValue()
@@ -169,8 +169,9 @@ def getfourvec(branches,index,jes,jer,lep,corrector,isdata,pp) :
 	genJetVec = TLorentzVector(); genJetVec.SetPtEtaPhiE(genPt,genEta,genPhi,genE)
 	#subtract out the lepton if necessary
 	dRCheck = 0.4 if pp.find('jetAK4')!=-1 else 0.8
-	if subtracted and genJetVec.DeltaR(lep.getFourVector())<dRCheck :
-		genJetVec -= lep.getFourVector()
+	for lep in subtractedleps :
+		if genJetVec.DeltaR(lep.getFourVector())<dRCheck :
+			genJetVec -= lep.getFourVector()
 	#get the pt resolution of the jet
 	ptres = branches[pp+'_PtResolution'].getReadValue(index)
 	#Smear the jet 
@@ -191,23 +192,25 @@ def getfourvec(branches,index,jes,jer,lep,corrector,isdata,pp) :
 			newJet=corrector.smearJet(jecDownJet,jer,genJetVec,ptres,dRCheck)
 	return newJet
 
-def cleanJet(jetvec,jetkeys,sj1keys,sj2keys,lepvec,lepkey) :
-	subtracted = False
-	#if the lepton is within the jet, remove it
-	#print 'deltaR = %.4f'%(jetvec.DeltaR(lepvec)) #DEBUG
-	if lepkey in jetkeys or lepkey in sj1keys or lepkey in sj2keys :
-	#	print 'found matching key %d'%(lepkey) #DEBUG
-		if lepvec.E() > jetvec.E() :
-	#		print 'THIS JET WAS BASICALLY JUST A LEPTON!!' #DEBUG
-			return None, subtracted
-	#	print 'REMOVING LEPTON FROM JET' #DEBUG
-	#	print 'Jet Before = (pT, eta, phi, M) = (%.2f, %.2f, %.2f, %.2f)'%(jetvec.Pt(),jetvec.Eta(),jetvec.Phi(),jetvec.M()) #DEBUG
-		jetvec-=lepvec
-		subtracted = True
-	#	print 'Jet After = (pT, eta, phi, M) = (%.2f, %.2f, %.2f, %.2f)'%(jetvec.Pt(),jetvec.Eta(),jetvec.Phi(),jetvec.M()) #DEBUG
-	#else : #DEBUG
-	#	print 'NO LEPTON CLEANING NEEDED' #DEBUG
-	if jetvec.Pt()==0. :
-	#	print 'RESULTING JET HAS NO PT' #DEBUG
-		return None, subtracted
-	return jetvec, subtracted
+def cleanJet(jetvec,jetkeys,sj1keys,sj2keys,leps) :
+	subtractedleps = []
+	for lep in leps :
+		lepvec=lep.getFourVector(); lepkey=lep.getKey()
+		#if the lepton is within the jet, remove it
+		#print 'deltaR = %.4f'%(jetvec.DeltaR(lepvec)) #DEBUG
+		if lepkey in jetkeys or lepkey in sj1keys or lepkey in sj2keys :
+		#	print 'found matching key %d'%(lepkey) #DEBUG
+			if lepvec.E() > jetvec.E() :
+		#		print 'THIS JET WAS BASICALLY JUST A LEPTON!!' #DEBUG
+				return None, subtractedleps
+		#	print 'REMOVING LEPTON FROM JET' #DEBUG
+		#	print 'Jet Before = (pT, eta, phi, M) = (%.2f, %.2f, %.2f, %.2f)'%(jetvec.Pt(),jetvec.Eta(),jetvec.Phi(),jetvec.M()) #DEBUG
+			jetvec-=lepvec
+			subtractedleps.append(lep)
+		#	print 'Jet After = (pT, eta, phi, M) = (%.2f, %.2f, %.2f, %.2f)'%(jetvec.Pt(),jetvec.Eta(),jetvec.Phi(),jetvec.M()) #DEBUG
+		#else : #DEBUG
+		#	print 'NO LEPTON CLEANING NEEDED' #DEBUG
+		if jetvec.Pt()==0. :
+		#	print 'RESULTING JET HAS NO PT' #DEBUG
+			return None, subtractedleps
+	return jetvec, subtractedleps

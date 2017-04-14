@@ -1,10 +1,11 @@
 #Imports
 import os
 import sys
-from DataFormats.FWLite import Events, Handle
 from ROOT import TMinuit, Long, Double, TChain, TFile, TH1D, TH2D, TF2
 from array import array
 from math import *
+from time import *
+from datetime import timedelta
 from optparse import OptionParser
 from reconstructor import Reconstructor
 
@@ -110,6 +111,8 @@ def make_renormalization_dict(muRup,muRdown,muFup,muFdown,scup,scdown,pdfas,pdfa
 
 ##########								Parser Options								##########
 
+startTime = time()
+
 parser = OptionParser()
 #Run options
 parser.add_option('--input', 	  type='string', action='store', default='input', dest='input',	   	  
@@ -154,12 +157,18 @@ if not options.input.endswith('.txt') :
 print 'Using input file '+input_files_list+''
 #open input file in read only mode 
 input_files_list = open(input_files_list,'r')
+#Set up the garbage output file and the chain
+garbageFileName = 'garbage' 
+if options.n_jobs!=1 : 
+	garbageFileName+='_'+str(options.i_job) 
+garbageFileName+='.root' 
+garbageFile = TFile(garbageFileName,'recreate') 
 chain = TChain(options.ttree_name)
 print 'Getting these files: '
 #Read files in line by line and get the tree, pileup,cstar vs. beta,pdf_alphas/F_up/down,scale_comb_sf_up/down,pdf_alphas_sf_up/down histograms, and total weight value from each
 total_pileup_histo               = TH1D('total_pileup_histo','total MC pileup; pileup; events',100,0.,100.); total_pileup_histo.SetDirectory(0)
-total_cstar_vs_beta_qqbar_histo  = TH2D('total_cstar_vs_beta_qqbar_histo','MC truth c* vs. #beta (q#bar{q} events); #beta; c*; events',10,0.,1.,20,0.,1.); total_cstar_vs_beta_qqbar_histo.SetDirectory(0)
-total_cstar_vs_beta_gg_histo     = TH2D('total_cstar_vs_beta_gg_histo','MC truth c* vs. #beta (qg/gg events); #beta; c*; events',10,0.,1.,20,0.,1.); total_cstar_vs_beta_gg_histo.SetDirectory(0)
+total_cstar_vs_beta_qqbar_histo  = TH2D('total_cstar_vs_beta_qqbar_histo','MC truth c* vs. #beta (q#bar{q} events); #beta; c*; events',10,0.,1.,20,-1.,1.); total_cstar_vs_beta_qqbar_histo.SetDirectory(0)
+total_cstar_vs_beta_gg_histo     = TH2D('total_cstar_vs_beta_gg_histo','MC truth c* vs. #beta (qg/gg events); #beta; c*; events',10,0.,1.,20,-1.,1.); total_cstar_vs_beta_gg_histo.SetDirectory(0)
 total_mu_R_sf_up_histo           = TH1D('total_mu_R_sf_up_histo','total #mu_{R} sf (up); #mu_{R} sf up; events',4,-1.,3.); total_mu_R_sf_up_histo.SetDirectory(0);
 total_mu_R_sf_down_histo         = TH1D('total_mu_R_sf_down_histo','total #mu_{R} sf (down); #mu_{R} sf down; events',4,-1.,3.); total_mu_R_sf_down_histo.SetDirectory(0);
 total_mu_F_sf_up_histo           = TH1D('total_mu_F_sf_up_histo','total #mu_{F} sf (up); #mu_{F} sf up; events',4,-1.,3.); total_mu_F_sf_up_histo.SetDirectory(0);
@@ -202,15 +211,32 @@ for input_file in input_files_list :
 	newweight=histo.GetBinContent(1)
 	print '		Added %.2f to total weight'%(newweight)
 	totweight+=newweight
+	f.Close()
 print 'TOTAL SUM OF EVENT WEIGHTS = '+str(totweight)
 #set the global histograms (normalized)
-total_cstar_vs_beta_qqbar_histo.Sumw2(); total_cstar_vs_beta_qqbar_histo.Scale(1./total_cstar_vs_beta_qqbar_histo.Integral()) 
-total_cstar_vs_beta_gg_histo.Sumw2(); total_cstar_vs_beta_gg_histo.Scale(1./total_cstar_vs_beta_gg_histo.Integral())
+total_cstar_vs_beta_qqbar_histo.Sumw2(); #total_cstar_vs_beta_qqbar_histo.Scale(1./total_cstar_vs_beta_qqbar_histo.Integral()) 
+total_cstar_vs_beta_gg_histo.Sumw2(); #total_cstar_vs_beta_gg_histo.Scale(1./total_cstar_vs_beta_gg_histo.Integral())
 csvb_qq_global_hist=total_cstar_vs_beta_qqbar_histo
 csvb_gg_global_hist=total_cstar_vs_beta_gg_histo
 renormalization_dict = make_renormalization_dict(total_mu_R_sf_up_histo,total_mu_R_sf_down_histo,total_mu_F_sf_up_histo,total_mu_F_sf_down_histo,
 												 total_scale_comb_sf_up_histo,total_scale_comb_sf_down_histo,total_pdf_alphas_sf_histo,total_pdf_alphas_sf_up_histo,total_pdf_alphas_sf_down_histo)
+#Get the total number of events
 ntotalevents = chain.GetEntries()
+print 'number of total events = %d'%(ntotalevents) 
+#find how many events should be in this tree 
+nanalysisevents = int(ntotalevents/options.n_jobs)  
+#adjust so they don't all pile up in the last job
+while ntotalevents-options.n_jobs*nanalysisevents > nanalysisevents :
+	nanalysisevents+=1
+#if this job isn't needed based on the splitting just return
+if options.i_job*nanalysisevents>ntotalevents :
+	print 'This job is unnecessary because of the grid splitting.'
+	quit()
+#copy the subset tree to be analyzed 
+garbageFile.cd()
+analysisTree = chain.CopyTree('','',nanalysisevents,options.i_job*nanalysisevents) 
+nanalysisevents = analysisTree.GetEntries() 
+print 'number of analyzed events for this job = %d'%(nanalysisevents) 
 #Set filename for analyzer from sample name
 filename = options.name
 if options.JES.lower() != 'nominal' :
@@ -224,30 +250,31 @@ filename+='_tree.root'
 data=False
 if options.name.lower().find('singlemu')!=-1 or options.name.lower().find('singleel')!=-1 :
 	data=True
-analyzer = Reconstructor(filename, chain, data, options.xSec, options.JES.lower(), options.JER.lower(), options.on_grid, total_pileup_histo, totweight, renormalization_dict)
+analyzer = Reconstructor(filename, analysisTree, data, options.xSec, options.JES.lower(), options.JER.lower(), options.on_grid, total_pileup_histo, totweight, renormalization_dict) 
 
-#Counters
-real_count = 0
+#Counter 
 count = 0
 
-##########								Main Event Loop								##########
+#If there is no max_events argument, set it to the total number of analyzed events
+maxEvents = options.max_events if options.max_events!=-1 else nanalysisevents
+setupDoneTime = time(); setupTime = timedelta(seconds=setupDoneTime-startTime)
+print 'Done Setting up; time taken: %02d:%02d:%02d'%(setupTime.seconds/3600,(setupTime.seconds%3600)/60,(setupTime.seconds%60))
 
+##########								Main Event Loop								##########
 print 'Files opened, starting event loop'
-for event in range(ntotalevents) :
-	#increment the "real" counter
-	real_count+=1
-	#check the grid split
-	if ((real_count-1)-options.i_job) % options.n_jobs != 0 :
-		continue
+for event in range(nanalysisevents) : 
 	count+=1
 	#check the max events 
-	if count == options.max_events+1 :
+	if count == maxEvents+1 :
 		print 'Processed event number '+str(count-1)+', exiting'
 		break
 	#print progress
 	if count % options.print_every == 0 or count == 1:
-			print ( 'Count at '+str(count)+' out of '+str(ntotalevents/options.n_jobs)+', (%.4f%% complete)'
-				%(float(count) / float(ntotalevents/options.n_jobs) * 100.0) )
+			timeSinceSetup = timedelta(seconds=time()-setupDoneTime)
+			percentDone = float(count) / float(min(nanalysisevents,maxEvents)) * 100.0
+			timeLeft = timedelta(seconds=(100.-percentDone)*timeSinceSetup.total_seconds()/percentDone)
+			print ( 'Count at %d out of %d, (%.4f%% complete; time elapsed = %02d:%02d:%02d, approx. time left = %02d:%02d:%02d)'
+				   %(count,min(nanalysisevents,maxEvents),percentDone,timeSinceSetup.seconds/3600,(timeSinceSetup.seconds%3600)/60,(timeSinceSetup.seconds%60),timeLeft.seconds/3600,(timeLeft.seconds%3600)/60,(timeLeft.seconds%60))  )
 	#analyze event and add to TTree
 	analyzer.analyze(event)
 	#reset analyzer

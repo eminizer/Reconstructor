@@ -59,7 +59,8 @@ def findInitialPartons(branches) :
 #returns a bunch of fourvectors from Monte Carlo for MC truth reconstruction and matching
 def findMCParticles(branches) :
 	returnlist = []
-	names = ['t','tbar','lep','nu','lepb','hadW','hadb']
+	#names = ['t','tbar','lep','nu','lepb','hadW','hadb'] #uncomment this line when running on nTuples created after 3/29/2017 (I fixed the b-quark assignment; it was backward before!)
+	names = ['t','tbar','lep','nu','hadb','hadW','lepb'] #get rid of this line when running on nTuples created after 3/29/2017
 	for name in names :
 		thispt = branches['MC_'+name+'_pt'].getReadValue()
 		thiseta = branches['MC_'+name+'_eta'].getReadValue()
