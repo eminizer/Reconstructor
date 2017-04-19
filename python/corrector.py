@@ -260,30 +260,33 @@ def getJER(jetEta, sysType) :
 def setupPileupHistos(onGrid,pu_histo) :
 	if pu_histo.Integral() > 0 : pu_histo.Scale(1./pu_histo.Integral())
 	pp = './tardir/' if onGrid == 'yes' else '../other_input_files/'
-	data_nom_file  = TFile(pp+DATA_PU_HISTO_NOMINAL_FILENAME)
+	data_nom_file  = TFile.Open(pp+DATA_PU_HISTO_NOMINAL_FILENAME)
 	data_nom_histo  = data_nom_file.Get('pileup')
 	data_nom_histo.Scale(1./data_nom_histo.Integral())
-	data_up_file   = TFile(pp+DATA_PU_HISTO_XS_UP_FILENAME)
+	data_up_file   = TFile.Open(pp+DATA_PU_HISTO_XS_UP_FILENAME)
 	data_up_histo   = data_up_file.Get('pileup')
 	data_up_histo.Scale(1./data_up_histo.Integral())
-	data_down_file = TFile(pp+DATA_PU_HISTO_XS_DOWN_FILENAME)
+	data_down_file = TFile.Open(pp+DATA_PU_HISTO_XS_DOWN_FILENAME)
 	data_down_histo = data_down_file.Get('pileup')
 	data_down_histo.Scale(1./data_down_histo.Integral())
 	pu_histo.SetDirectory(0); data_nom_histo.SetDirectory(0); data_up_histo.SetDirectory(0); data_down_histo.SetDirectory(0)
+	data_nom_file.Close(); data_up_file.Close(); data_down_file.Close()
 	return pu_histo, data_nom_histo, data_up_histo, data_down_histo
 
 def setupMuonIDHistos(onGrid) :
 	pp = './tardir/' if onGrid == 'yes' else '../other_input_files/'
-	muon_id_file = TFile(pp+MUON_ID_EFF_ROOT_FILENAME)
+	muon_id_file = TFile.Open(pp+MUON_ID_EFF_ROOT_FILENAME)
 	vs_eta_histo = muon_id_file.Get(MUON_ID_VS_ETA_HISTONAME)
 	vs_pt_histo  = muon_id_file.Get(MUON_ID_VS_PT_HISTONAME)
 	vs_pu_histo  = muon_id_file.Get(MUON_ID_VS_PU_HISTONAME)
 	vs_eta_histo.SetDirectory(0); vs_pt_histo.SetDirectory(0); vs_pu_histo.SetDirectory(0)
+	muon_id_file.Close()
 	return vs_eta_histo, vs_pt_histo, vs_pu_histo
 
 def setupEleTrkHisto(onGrid) :
 	pp = './tardir/' if onGrid == 'yes' else '../other_input_files/'
-	ele_id_file = TFile(pp+ELE_TRK_EFF_ROOT_FILENAME)
+	ele_id_file = TFile.Open(pp+ELE_TRK_EFF_ROOT_FILENAME)
 	histo = ele_id_file.Get(ELE_TRK_EFF_HISTO_NAME)
 	histo.SetDirectory(0)
+	ele_id_file.Close()
 	return histo

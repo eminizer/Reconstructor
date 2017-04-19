@@ -134,14 +134,14 @@ fit_alpha, fit_alpha_err, fit_epsilon, fit_epsilon_err = get_alpha_epsilon()
 #alpha fitting function
 f_alpha_num = '(2.+(x*x)*(y*y)-(x*x)+%f*(1.-(x*x)*(y*y)))'%(fit_alpha)
 f_alpha_den = '(2.*(2-2.*(x*x)/3.+(%f)*(1.-(x*x)/3.)))'%(fit_alpha)
-f_alpha = TF2('f_alpha',f_alpha_num+'/'+f_alpha_den,0.,1.,0.,1.)
+f_alpha = TF2('f_alpha',f_alpha_num+'/'+f_alpha_den,0.,1.,-1.,1.)
 #epsilon fitting function
-rnorm = '(%f*(34.*x*x*x*x-100.*x*x+98.)+2.*x*x*x*x-36.*x*x+66.)'%(fit_epsilon)
+rnorm = '((%f*(34.*x*x*x*x-100.*x*x+98.)+2.*x*x*x*x-36.*x*x+66.)'%(fit_epsilon)
 rnorm+= '*atanh(x)/x-9./5.*%f*x*x*x*x+6.*x*x'%(fit_epsilon)
 rnorm+= '*(%f*(x*x-2.38889)-0.5)-16.*(1.+%f)'%(fit_epsilon,fit_epsilon)
 rnorm+= '*(x*x*x*x-2.*x*x+1.)/(1.-x*x)-%f'%(fit_epsilon)
-rnorm+= '*(18.*x*x*x*x-68.*x*x+82.)+18.*x*x-43.'
-f_epsilon = TF2('f_epsilon','(7.+9.*x*x*y*y)/(1.-x*x*y*y)*((1.+x*x*y*y)/2.+(1.-x*x)*x*x*(1.-y*y)/(1.-x*x*y*y))*(1.+%f*x*x*y*y)/%s'%(fit_epsilon,rnorm),0.,1.,0.,1.)
+rnorm+= '*(18.*x*x*x*x-68.*x*x+82.)+18.*x*x-43.)'
+f_epsilon = TF2('f_epsilon','(7.+9.*x*x*y*y)/(1.-x*x*y*y)*((1.+x*x*y*y)/2.+(1.-x*x)*x*x*(1.-y*y)/(1.-x*x*y*y))*(1.+%f*x*x*y*y)/%s'%(fit_epsilon,rnorm),0.,1.,-1.,1.)
 #plot alpha 2D plot and total function
 canv_alpha_hist = TCanvas('canv_alpha_hist','canv_alpha_hist',1100,900)
 csvb_qq_global_hist.Draw('COLZ')
@@ -155,24 +155,24 @@ f_epsilon.Draw('COLZ')
 #plot alpha projected plots
 canv_alpha_proj = TCanvas('canv_alpha_proj','canv_alpha_proj',1100,900)
 alpha_proj_histo = csvb_qq_global_hist.ProjectionY()
-alpha_proj_histo.Scale(1./alpha_proj_histo.Integral())
-alpha_proj_histo.GetYaxis().SetRangeUser(0.,0.07)
+alpha_proj_histo.Scale(1./alpha_proj_histo.Integral()) 
+alpha_proj_histo.GetYaxis().SetRangeUser(0.,0.07) 
 npoints_alpha = 10*csvb_qq_global_hist.GetYaxis().GetNbins()
 xpoints_alpha = array('d',npoints_alpha*[0.])
 ypoints_alpha = array('d',npoints_alpha*[0.])
 for i in range(npoints_alpha) :
-	pointspacing = 1./(npoints_alpha)
-	cstar_low = i*pointspacing
-	cstar = (i+0.5)*pointspacing
-	cstar_hi  = (i+1)*pointspacing
+	pointspacing = 2./(npoints_alpha)
+	cstar_low = -1.0+i*pointspacing
+	cstar = -1.0+(i+0.5)*pointspacing
+	cstar_hi  = -1.0+(i+1)*pointspacing
 	xpoints_alpha[i]=cstar
 	ypoints_alpha[i]=f_alpha.Integral(0.,1.,cstar_low,cstar_hi)
-sumypoints_alpha = 0.
-for i in range(npoints_alpha) :
-	sumypoints_alpha+=ypoints_alpha[i]
-for i in range(npoints_alpha) :
-	fac = npoints_alpha/csvb_qq_global_hist.GetYaxis().GetNbins()
-	ypoints_alpha[i]  = fac*ypoints_alpha[i]/sumypoints_alpha
+sumypoints_alpha = 0. 
+for i in range(npoints_alpha) : 
+	sumypoints_alpha+=ypoints_alpha[i] 
+for i in range(npoints_alpha) : 
+	fac = npoints_alpha/csvb_qq_global_hist.GetYaxis().GetNbins() 
+	ypoints_alpha[i]  = fac*ypoints_alpha[i]/sumypoints_alpha 
 alpha_graph = TGraph(npoints_alpha,xpoints_alpha,ypoints_alpha)
 alpha_graph.SetMarkerStyle(20)
 alpha_graph.SetLineWidth(3)
@@ -182,7 +182,7 @@ alpha_proj_histo.Draw('E0')
 alpha_graph.Draw('L SAME')
 leg_alpha = TLegend(0.1,0.7,0.48,0.9)
 leg_alpha.AddEntry(alpha_proj_histo,"MC Events","PE0")
-leg_alpha.AddEntry(alpha_graph,"Fit (#alpha="+str(fitted_alpha)+")","L")
+leg_alpha.AddEntry(alpha_graph,"Fit (#alpha="+str(fit_alpha)+")","L")
 leg_alpha.Draw('SAME')
 #plot epsilon projected plots
 canv_epsilon_proj = TCanvas('canv_epsilon_proj','canv_epsilon_proj',1100,900)
@@ -193,10 +193,10 @@ npoints_epsilon = 10*csvb_gg_global_hist.GetYaxis().GetNbins()
 xpoints_epsilon = array('d',npoints_epsilon*[0.])
 ypoints_epsilon = array('d',npoints_epsilon*[0.])
 for i in range(npoints_epsilon) :
-	pointspacing = 1./(npoints_epsilon)
-	cstar_low = i*pointspacing
-	cstar = (i+0.5)*pointspacing
-	cstar_hi  = (i+1)*pointspacing
+	pointspacing = 2./(npoints_epsilon)
+	cstar_low = -1.0+i*pointspacing
+	cstar = -1.0+(i+0.5)*pointspacing
+	cstar_hi  = -1.0+(i+1)*pointspacing
 	xpoints_epsilon[i]=cstar
 	ypoints_epsilon[i]=f_epsilon.Integral(0.,1.,cstar_low,cstar_hi)
 sumypoints_epsilon = 0.
@@ -214,7 +214,7 @@ epsilon_proj_histo.Draw('E0')
 epsilon_graph.Draw('L SAME')
 leg_epsilon = TLegend(0.1,0.7,0.48,0.9)
 leg_epsilon.AddEntry(epsilon_proj_histo,"MC Events","PE0")
-leg_epsilon.AddEntry(epsilon_graph,"Fit (#epsilon="+str(fitted_epsilon)+")","L")
+leg_epsilon.AddEntry(epsilon_graph,"Fit (#epsilon="+str(fit_epsilon)+")","L")
 leg_epsilon.Draw('SAME')
 
 #write plots to file

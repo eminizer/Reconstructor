@@ -122,31 +122,31 @@ for name in sample_names :
         #newTree = t.CopyTree('eventTopology==1')
         newTree.Write()
         newFile.Close()
-    i = 0
-    while i<len(filelist) :
-        if filelist[i].find('JES')!=-1 or filelist[i].find('JER')!=-1 or filelist[i].find('skim')!=-1 :
-            filelist.pop(i)
-        else :
-            i+=1
-    cmd = 'hadd -f '+name+'_skim_all.root '+name+'_?_skim_tree.root'
-    if len(filelist) > 10 :
-        cmd += ' '+name+'_??_skim_tree.root'
-        if len(filelist) > 100 :
-            cmd += ' '+name+'_???_skim_tree.root'
-            if len(filelist) > 1000 :
-                cmd += ' '+name+'_????_skim_tree.root'
-    os.system(cmd)
-    #if name.find('Run2012')==-1 :
-    #    cmd = 'hadd -f '+name+'_JES_up_skim_all.root '+name+'_JES_up_*_skim_tree.root'
-    #    os.system(cmd)
-    #    cmd = 'hadd -f '+name+'_JES_down_skim_all.root '+name+'_JES_down_*_skim_tree.root'
-    #    os.system(cmd)
-    #    cmd = 'hadd -f '+name+'_JER_up_skim_all.root '+name+'_JER_up_*_skim_tree.root'
-    #    os.system(cmd)
-    #    cmd = 'hadd -f '+name+'_JER_down_skim_all.root '+name+'_JER_down_*_skim_tree.root'
-    #    os.system(cmd)
-    os.system('mv *_all.root ../total_ttree_files')
-    os.system('rm -rf *_skim_tree.root')
+    #i = 0
+    #while i<len(filelist) :
+    #    if filelist[i].find('JES')!=-1 or filelist[i].find('JER')!=-1 or filelist[i].find('skim')!=-1 :
+    #        filelist.pop(i)
+    #    else :
+    #        i+=1
+    #cmd = 'hadd -f '+name+'_skim_all.root '+name+'_?_skim_tree.root'
+    #if len(filelist) > 10 :
+    #    cmd += ' '+name+'_??_skim_tree.root'
+    #    if len(filelist) > 100 :
+    #        cmd += ' '+name+'_???_skim_tree.root'
+    #        if len(filelist) > 1000 :
+    #            cmd += ' '+name+'_????_skim_tree.root'
+    #os.system(cmd)
+    ##if name.find('Run2012')==-1 :
+    ##    cmd = 'hadd -f '+name+'_JES_up_skim_all.root '+name+'_JES_up_*_skim_tree.root'
+    ##    os.system(cmd)
+    ##    cmd = 'hadd -f '+name+'_JES_down_skim_all.root '+name+'_JES_down_*_skim_tree.root'
+    ##    os.system(cmd)
+    ##    cmd = 'hadd -f '+name+'_JER_up_skim_all.root '+name+'_JER_up_*_skim_tree.root'
+    ##    os.system(cmd)
+    ##    cmd = 'hadd -f '+name+'_JER_down_skim_all.root '+name+'_JER_down_*_skim_tree.root'
+    ##    os.system(cmd)
+    #os.system('mv *_all.root ../total_ttree_files')
+    #os.system('rm -rf *_skim_tree.root')
 
 #    #skim files (e/mu selection)
 #    filelist = glob.glob('*_tree.root')

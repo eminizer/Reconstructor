@@ -289,10 +289,6 @@ class Reconstructor(object) :
 	nbTags = AddBranch(writename='nbTags',ttreetype='I',inival=0,dictlist=thisdictlist)
 	#number of b-tagged AK4 jets used in the chosen jet assignment hypothesis
 	nbTagsUsed = AddBranch(writename='nbTagsUsed',ttreetype='I',inival=0,dictlist=thisdictlist)
-	#number of hadronic side jets used in the 'correct' jet assignment hypothesis
-	nHadSideJetsCorrect = AddBranch(writename='nHadSideJetsCorrect',ttreetype='I',inival=0,dictlist=thisdictlist)
-	#number of hadronic side jets used in the chosen jet assignment hypothesis
-	nHadSideJets = AddBranch(writename='nHadSideJets',ttreetype='I',inival=0,dictlist=thisdictlist)
 	#number of AK4 jets
 	nak4jets = AddBranch(writename='nak4jets',ttreetype='I',inival=0,dictlist=thisdictlist)
 	#number of AK8 jets
@@ -482,12 +478,10 @@ class Reconstructor(object) :
 		self.ntTags.setWriteValue(n_ttags); self.nWTags.setWriteValue(n_Wtags)
 		if n_ttags>=1 : #If there is a t-tagged AK8 jet than this event has a type-1 (fully merged) topology
 			topology=1
-		elif n_Wtags>=1 : #If there is instead a W-tagged AK8 jet than this event has a type-2 (partially merged) topology
+		elif len(ak8jets)>=1 and len(ak4jets)>=4 : #If there are no t-tagged AK8 jets, but there IS at least one AK8 jet, the event is "boosted untagged" (type-2 topology)
 			topology=2
-		elif len(ak8jets)>=1 : #If there are no t- or W-tagged AK8 jets, but there IS at least one AK8 jet, the event is "boosted untagged" (type-3 topology)
+		elif len(ak4jets)>=4 and nbtags>=2 : #If there are no AK8 jets at all, but there are at least 4 AK4 jets (at least two b-tagged), the event is "resolved" (type-3 topology)
 			topology=3
-		elif len(ak4jets)>=4 and nbtags>=2 : #If there are no AK8 jets at all, but there are at least 4 AK4 jets (at least two b-tagged), the event is "resolved" (type-4 topology)
-			topology=4
 		else : #otherwise this event is GARBAGE! GARBAGE I tell you!!
 			#print 'EVENT NUMBER %d NOT VALID; EVENT TOPOLOGY CANNOT BE DETERMINED! (# top tags = %d, # W tags = %d, #AK4 jets=%d, #b-tags=%d)'%(eventnumber,ttags,wtags,len(ak4jets),nbtags) #DEBUG
 			return
@@ -499,14 +493,15 @@ class Reconstructor(object) :
 		allleps.sort(key=lambda x: x.getPt(), reverse=True)
 		lep = allleps[0]
 		for lepcand in allleps[1:] :
-			if (topology<4 and (lepcand.getRelPt()>20. or lepcand.getDR()>0.4)) or (topology==4 and lepcand.isIso()) :
+			if (topology<3 and (lepcand.getRelPt()>20. or lepcand.getDR()>0.4)) or (topology==3 and lepcand.isIso()) :
 				lep = lepcand
-				if lep.getType()=='mu' : self.lepflavor.setWriteValue(1)
-				elif lep.getType()=='el' : self.lepflavor.setWriteValue(2)
-				else :
-					#print 'EVENT NUMBER %d NOT VALID; LEPTON FLAVOR %s UNIDENTIFIED'%(eventnumber, lep.getType()) #DEBUG
-					return
 				break
+		if lep.getType()=='mu' : self.lepflavor.setWriteValue(1)
+		elif lep.getType()=='el' : self.lepflavor.setWriteValue(2)
+		else :
+			#print 'EVENT NUMBER %d NOT VALID; LEPTON FLAVOR %s UNIDENTIFIED'%(eventnumber, lep.getType()) #DEBUG
+			return
+				
 		#write the analysis lepton variables
 		self.__setLeptonBranchValues__('lep',lep)
 		#print '	Lepton assigned (leading isolated %s).'%('muon' if self.lepflavor.getWriteValue()==1 else 'electron') #DEBUG
@@ -560,9 +555,9 @@ class Reconstructor(object) :
 				metfiltercuts.append(False)
 		self.cut_branches['metfilters'].setWriteValue(1) if metfiltercuts.count(False)==0 else self.cut_branches['metfilters'].setWriteValue(0)
 		#isolated lepton
-		if topology<4 :
+		if topology<3 :
 			self.cut_branches['isolepton'].setWriteValue(1) if (lep.getRelPt()>20. or lep.getDR()>0.4) else self.cut_branches['isolepton'].setWriteValue(0)
-		elif topology==4 :
+		elif topology==3 :
 			self.cut_branches['isolepton'].setWriteValue(1) if lep.isIso() else self.cut_branches['isolepton'].setWriteValue(0)
 		#other cuts are lepton flavor specific
 		other_leps = []; allcuts = []
@@ -579,16 +574,16 @@ class Reconstructor(object) :
 			i=0
 			while len(other_leps)>0 and i<len(other_leps) :
 				lepcand = other_leps[i]
-				if (topology<4 and not (lep.getRelPt()>20. or lep.getDR()>0.4)) or (topology==4 and not lep.isIso()) :
+				if (topology<3 and not (lep.getRelPt()>20. or lep.getDR()>0.4)) or (topology==3 and not lep.isIso()) :
 					other_leps.pop(i)
 				else :
 					i+=1
 			self.cut_branches['onelepton'].setWriteValue(1) if len(other_leps)==0 else self.cut_branches['onelepton'].setWriteValue(0)
 			#leading ak4 jets
-			self.cut_branches['jetcuts'].setWriteValue(1) if (topology==4 or (ak4jets[0].getPt()>150. and ak4jets[1].getPt()>50.)) else self.cut_branches['jetcuts'].setWriteValue(0)
+			self.cut_branches['jetcuts'].setWriteValue(1) if (topology==3 or (ak4jets[0].getPt()>150. and ak4jets[1].getPt()>50.)) else self.cut_branches['jetcuts'].setWriteValue(0)
 			#add'l cuts
-			allcuts.append(topology==4 or (lep.getPt()+met.E())>150.)
-			allcuts.append(topology==4 or met.E()>50.)
+			allcuts.append(topology==3 or (lep.getPt()+met.E())>150.)
+			allcuts.append(topology==3 or met.E()>50.)
 		elif self.lepflavor.getWriteValue()==2 :
 			#trigger
 			for trigName in EL_TRIG_PATHS :
@@ -601,7 +596,7 @@ class Reconstructor(object) :
 			i=0
 			while len(other_leps)>0 and i<len(other_leps) :
 				lepcand = other_leps[i]
-				if (topology<4 and not (lep.getRelPt()>20. or lep.getDR()>0.4)) or (topology==4 and not lep.isIso()) :
+				if (topology<3 and not (lep.getRelPt()>20. or lep.getDR()>0.4)) or (topology==3 and not lep.isIso()) :
 					other_leps.pop(i)
 				else :
 					i+=1
@@ -609,7 +604,7 @@ class Reconstructor(object) :
 			#leading ak4 jets
 			self.cut_branches['jetcuts'].setWriteValue(1) if (topology==4 or (ak4jets[0].getPt()>250. and ak4jets[1].getPt()>70.)) else self.cut_branches['jetcuts'].setWriteValue(0)
 			#add'l cuts
-			allcuts.append(topology==4 or met.E()>120.)
+			allcuts.append(topology==3 or met.E()>120.)
 		#full selection
 		for cutbranch in self.cut_branches.values() :
 			if cutbranch.getWriteValue()==0 :
@@ -654,26 +649,7 @@ class Reconstructor(object) :
 						continue
 					had1CandJet = ak4jets[k]
 					had1istagged = had1CandJet.isbTagged()
-					hadsidehasbtag = had1istagged
-					#PARTIALLY-MERGED EVENTS: 
-					#the hadronic top candidate is the W-tagged AK8 jet with an additional AK4 jet
-					#hypotheses are [lepton, neutrino, leptonic b-jet, hadronic W jet, hadronic b jet]
-					if topology==2 :
-						#if the btags are in place
-						if (nbtags==1 and not (hadsidehasbtag or lepbistagged)) or (nbtags>1 and not (hadsidehasbtag and lepbistagged)) :
-							continue
-						#for any choice of W-tag
-						for wtag in wtags :
-							#append this hypothesis
-							hypotheses.append([lep,thismet,lepbCandJet,[wtag,had1CandJet]])
-						continue
-					#BOOSTED UNTAGGED AND RESOLVED EVENTS:
-					#the hadronic side of the decay can have up to three jets 
-					#hypotheses are [lepton, neutrino, leptonic b-jet, [list of up to three hadronic-side jets (exactly three for resolved events)]]
-					#BOOSTED UNTAGGED WITH ONE HADRONIC_SIDE JET
-					if topology==3 and (nbtags==0 or lepbistagged) :
-						#append this hypothesis
-						hypotheses.append([lep,thismet,lepbCandJet,[had1CandJet]])
+					hadsidehasbtag = had1istagged					
 					#loop over the remaining AK4 jets for a second hadronic-side jet
 					for m in range(k+1,len(ak4jets)) :
 						if j==m :
@@ -681,10 +657,6 @@ class Reconstructor(object) :
 						had2CandJet = ak4jets[m]
 						had2istagged = had2CandJet.isbTagged()
 						hadsidehasbtag = had1istagged or had2istagged
-						#BOOSTED UNTAGGED WITH TWO HADRONIC SIDE JETS
-						if topology==3 and (nbtags==0 or (nbtags==1 and (hadsidehasbtag or lepbistagged)) or (nbtags>1 and (hadsidehasbtag and lepbistagged))) :
-							#append this hypothesis
-							hypotheses.append([lep,thismet,lepbCandJet,[had1CandJet,had2CandJet]])
 						#loop one last time over the remaining AK4 jets for a third and final hadronic-side jet
 						for n in range(m+1,len(ak4jets)) :
 							if j==n :
@@ -693,7 +665,9 @@ class Reconstructor(object) :
 							had3istagged = had3CandJet.isbTagged()
 							hadsidehasbtag = had1istagged or had2istagged or had3istagged
 							#BOOSTED UNTAGGED WITH THREE HADRONIC SIDE JETS, AND FULLY RESOLVED
-							if topology==3 or topology==4 :
+							#the hadronic side of the decay has three jets 
+							#hypotheses are [lepton, neutrino, leptonic b-jet, [list of three hadronic-side jets]]
+							if topology==2 or topology==3 :
 								#make sure the btags are in place
 								if (nbtags==1 and not (hadsidehasbtag or lepbistagged)) or (nbtags==2 and not (hadsidehasbtag and lepbistagged)) :
 									continue
@@ -702,7 +676,7 @@ class Reconstructor(object) :
 		#print '		Will try %d jet assignment hypotheses...'%(len(hypotheses)) #DEBUG
 		self.nhypotheses.setWriteValue(len(hypotheses))
 		#do the monte carlo matching
-		corrhypindex=-1; mindMdR = 10000.
+		corrhypindex=-1; mindRdM = 10000.
 		if self.event_type.getWriteValue()<2 and not self.is_data :
 			#print '----------------event %d--------------------'%(eventnumber) #DEBUG
 			for i in range(len(hypotheses)) :
@@ -728,116 +702,95 @@ class Reconstructor(object) :
 				ltdR = hypltvec.DeltaR(MClept_vec)
 				ltdM = hypltvec.M()-MClept_vec.M()
 				#the rest are topology-dependent
-				hyphtvec = None; hyphWvec = None; hyphbvec = None
-				if topology==1 : hyphtvec = hypothesis[3][0].getFourVector()
-				elif topology==2 : 
-					hyphtvec = hypothesis[3][0].getFourVector()+hypothesis[3][1].getFourVector()
-					hyphWvec = hypothesis[3][0].getFourVector()
-					hyphbvec = hypothesis[3][1].getFourVector()
-				elif topology==3 :
-					hyphtvec = hypothesis[3][0].getFourVector()
-					for otherjet in hypothesis[3][1:] :
-						hyphtvec = hyphtvec+otherjet.getFourVector()
-				elif topology==4 : hyphtvec = hypothesis[3][0].getFourVector()+hypothesis[3][1].getFourVector()+hypothesis[3][2].getFourVector()
-				if hyphtvec!=None :
-					htdR = hyphtvec.DeltaR(MChadt_vec)
-					htdM = hyphtvec.M()-MChadt_vec.M()
-				if hyphWvec!=None and hyphbvec!=None :
-					hWdR = hyphWvec.DeltaR(MChadW_vec)
-					hWdM = hyphWvec.M()-MChadW_vec.M()
-					hbdR = hyphbvec.DeltaR(MChadb_vec)
-					hbdM = hyphbvec.M()-MChadb_vec.M()
-				sumdMdR = ltdR*abs(ltdM/MClept_vec.M())+htdR*abs(htdM/MChadt_vec.M())
-				#print 'hypothesis number %d: ldR/dM=%.2f/%.2f, vdP=%.2f, lbdR/dM=%.2f/%.2f, ltdR/dM=%.2f/%.2f, htdR/dM=%.2f/%.2f, sumdMdR=%.2f, mindMdR=%.2f'%(i,ldR,ldM,vdP,lbdR,lbdM,ltdR,ltdM,htdR,htdM,sumdMdR,mindMdR) #DEBUG					
+				hyphtvec = hypothesis[3][0].getFourVector()
+				if topology>1 : 
+					hyphtvec = hyphtvec+hypothesis[3][1].getFourVector()+hypothesis[3][2].getFourVector()
+				htdR = hyphtvec.DeltaR(MChadt_vec)
+				htdM = hyphtvec.M()-MChadt_vec.M()
+				sumdRdM = ltdR*abs(ltdM/MClept_vec.M())+htdR*abs(htdM/MChadt_vec.M())
+				#print 'hypothesis number %d: ldR/dM=%.2f/%.2f, vdP=%.2f, lbdR/dM=%.2f/%.2f, ltdR/dM=%.2f/%.2f, htdR/dM=%.2f/%.2f, sumdRdM=%.2f, mindRdM=%.2f'%(i,ldR,ldM,vdP,lbdR,lbdM,ltdR,ltdM,htdR,htdM,sumdRdM,mindRdM) #DEBUG					
 				#if the matching deltaR requirements are satisfied and this hypothesis has the most accurate mass thus far it's the new matched hypothesis.
-				if htdR<0.8 and (topology!=2 or (topology==2 and hWdR<0.8 and hbdR<0.4)) and sumdMdR<mindMdR :
-					mindMdR = sumdMdR; corrhypindex = i; self.nHadSideJetsCorrect.setWriteValue(len(hypothesis[3])); self.ismatchable.setWriteValue(1)
+				if htdR<0.8 and sumdRdM<mindRdM :
+					mindRdM = sumdRdM; corrhypindex = i; self.ismatchable.setWriteValue(1)
 			#print '------------------------------------------------------------------------' #DEBUG
 			if corrhypindex==-1 :
 				#print 'EVENT NUMBER %d IS NOT MATCHABLE'%(eventnumber) #DEBUG
 				self.ismatchable.setWriteValue(0)
 			#else : #DEBUG
 				#print 'Event number %d has a correct assignment hypothesis at index %d'%(eventnumber,corrhypindex) #DEBUG
-		#send the hypotheses to the kinematic fit
-		scaledlep = TLorentzVector(); scaledmet = TLorentzVector(); scaledlepb = TLorentzVector(); 
-		scaledhadWs1 = TLorentzVector(); scaledhadWs2 = TLorentzVector(); scaledhadW = TLorentzVector();
-		scaledhadb = TLorentzVector(); scaledhadt = TLorentzVector()
-		hypindex, scaledlep, scaledmet, scaledlepb, scaledbigjet, scaledhad1, scaledhad2, scaledhad3, fitchi2, finalpars = self.ttbarreconstructor.reconstruct(hypotheses,topology)
-		if scaledlep==None :
-			#print 'EVENT NUMBER '+str(eventnumber)+' NOT VALID; NO KINEMATIC FITS CONVERGED' #DEBUG
-			self.cut_branches['validminimization'].setWriteValue(0)
-			self.cut_branches['fullselection'].setWriteValue(0)
-			self.__closeout__()
-			return
-		self.cut_branches['validminimization'].setWriteValue(1)
-		#build the post-fit hadronic top
-		scaledhadt = scaledbigjet if scaledbigjet!=None else scaledhad1
-		if topology==2 :
-			scaledhadt = scaledhadt+scaledhad3
-		elif topology>2 :
-			if scaledhad2!=None :
-				scaledhadt = scaledhadt+scaledhad2
-				if scaledhad3!=None :
-					scaledhadt = scaledhadt+scaledhad3
-		#set the number of bTags used
-		nusedbtags=0
-		if hypotheses[hypindex][2].isbTagged() : nusedbtags+=1 #leptonic side b-jet
-		for thisjet in hypotheses[hypindex][3] : #hadronic side jets
-			if thisjet.isbTagged() : nusedbtags+=1
-		self.nbTagsUsed.setWriteValue(nusedbtags)
-		self.nHadSideJets.setWriteValue(3-[scaledhad1,scaledhad2,scaledhad3].count(None))
-
-		#print '		Done.' #DEBUG
-
-		#-----------------------------------------------------Below here is a bunch of variable and weight calculation-----------------------------------------------------#
-
-		if not self.is_data :
-			#if the fit returned the correct hypothesis with either MET solution, it was correct
-			if hypindex==corrhypindex or (corrhypindex!=-1 and hypotheses[hypindex][2]==hypotheses[corrhypindex][2]) : 
-				self.iscorrect.setWriteValue(1)
-			elif corrhypindex!=-1 : 
-				self.iscorrect.setWriteValue(0)
-		#try the MC matching again with the postfit quantities
-		if self.event_type.getWriteValue()<2 and not self.is_data :
-			hypothesis=hypotheses[hypindex]
-			self.ismatchedpostfit.setWriteValue(1) if (scaledlep.DeltaR(MClep_vec)<0.1 and scaledmet.DeltaPhi(MCv_vec)<0.3 and scaledlepb.DeltaR(MClepb_vec)<0.6 and scaledhadt.DeltaR(MChadt_vec)<1.2) else self.ismatchedpostfit.setWriteValue(0)
-		#	print 'ismatchedpostfit = %d'%(self.ismatchedpostfit.getWriteValue()) #DEBUG
-							
-		#Kinematic fit debugging variables
-		self.chi2.setWriteValue(fitchi2)
-		locs = [self.par_0,self.par_1,self.par_2,self.par_3,self.par_4,self.par_5]
-		for i in range(len(finalpars)) :
-			locs[i].setWriteValue(finalpars[i])
-
-		#fill the TTree with the scaled fourvector variables
-		self.__setFourVectorBranchValues__('scaled_lep',scaledlep)
-		self.__setFourVectorBranchValues__('scaled_met',scaledmet)
-		self.__setFourVectorBranchValues__('scaled_lepW',scaledlep+scaledmet)
-		self.__setFourVectorBranchValues__('scaled_lepb',scaledlepb)
-		self.__setFourVectorBranchValues__('scaled_lept',scaledlep+scaledmet+scaledlepb)
-		if scaledbigjet!=None : 
-			self.__setFourVectorBranchValues__('scaled_bigjet',scaledbigjet)
-			self.allBranches['scaled_bigjet_tau32'].setWriteValue(hypotheses[hypindex][3][0].getTau32())
-			self.allBranches['scaled_bigjet_tau21'].setWriteValue(hypotheses[hypindex][3][0].getTau21())
-			self.allBranches['scaled_bigjet_SDM'].setWriteValue(hypotheses[hypindex][3][0].getSDM())
-			self.allBranches['scaled_bigjet_isttagged'].setWriteValue(1) if hypotheses[hypindex][3][0].isTopTagged() else self.allBranches['scaled_bigjet_isttagged'].setWriteValue(0)
-			self.allBranches['scaled_bigjet_isWtagged'].setWriteValue(1) if hypotheses[hypindex][3][0].isWTagged() else self.allBranches['scaled_bigjet_isWtagged'].setWriteValue(0)
-		if scaledhad1!=None : self.__setFourVectorBranchValues__('scaled_had1',scaledhad1)
-		if scaledhad2!=None : self.__setFourVectorBranchValues__('scaled_had2',scaledhad2)
-		if scaledhad3!=None : self.__setFourVectorBranchValues__('scaled_had3',scaledhad3)
-
-		#reconstruct the observables 
-		#using the chosen postfit
-		cstar_s,xF_s,M_s = getObservables(scaledlep+scaledmet+scaledlepb,scaledhadt,lep.getQ()) 
-		self.cstar.setWriteValue(cstar_s); self.x_F.setWriteValue(xF_s); self.M.setWriteValue(M_s)
-		#using the chosen prefit
-		hypothesis = hypotheses[hypindex]
-		prefitlept = hypothesis[0].getFourVector()+hypothesis[1]+hypothesis[2].getFourVector()
-		prefithadt = hypothesis[3][0].getFourVector()
-		for otherjet in hypothesis[3][1:] :
-			prefithadt = prefithadt+otherjet.getFourVector()
-		cstar,xF,M = getObservables(prefitlept,prefithadt,hypothesis[0].getQ()) 
-		self.cstar_prefit.setWriteValue(cstar); self.x_F_prefit.setWriteValue(xF); self.M_prefit.setWriteValue(M)
+		#send the hypotheses to the kinematic fit 
+		hypindex, scaledlep, scaledmet, scaledlepb, scaledbigjet, scaledhad1, scaledhad2, scaledhad3, fitchi2, finalpars = self.ttbarreconstructor.reconstruct(hypotheses,topology) 
+		if scaledlep==None : 
+			#print 'EVENT NUMBER '+str(eventnumber)+' NOT VALID; NO KINEMATIC FITS CONVERGED' #DEBUG 
+			self.cut_branches['validminimization'].setWriteValue(0) 
+			self.cut_branches['fullselection'].setWriteValue(0) 
+			self.__closeout__() 
+			return 
+		self.cut_branches['validminimization'].setWriteValue(1) 
+		#build the post-fit hadronic top 
+		scaledhadt = scaledbigjet if topology==1 else scaledhad1+scaledhad2+scaledhad3 
+		#set the number of bTags used 
+		nusedbtags=0 
+		if hypotheses[hypindex][2].isbTagged() : nusedbtags+=1 #leptonic side b-jet 
+		for thisjet in hypotheses[hypindex][3] : #hadronic side jets 
+			if thisjet.isbTagged() : nusedbtags+=1 
+		self.nbTagsUsed.setWriteValue(nusedbtags) 
+ 
+		#print '		Done.' #DEBUG 
+ 
+		#-----------------------------------------------------Below here is a bunch of variable and weight calculation-----------------------------------------------------# 
+ 
+		if not self.is_data : 
+			#if the fit returned the correct hypothesis with either MET solution, it was correct 
+			self.iscorrect.setWriteValue(0)
+			if hypindex==corrhypindex :
+				self.iscorrect.setWriteValue(1) 
+			elif corrhypindex!=-1 :
+				thishyp = hypotheses[hypindex]
+				corrhyp = hypotheses[corrhypindex]
+				if thishyp[0]==corrhyp[0] and thishyp[2]==corrhyp[2] and thishyp[3][0]==corrhyp[3][0] and (topology==1 or (thishyp[3][1]==corrhyp[3][1] and thishyp[3][2]==corrhyp[3][2])) :  
+					self.iscorrect.setWriteValue(1) 
+		#try the MC matching again with the postfit quantities 
+		if self.event_type.getWriteValue()<2 and not self.is_data : 
+			hypothesis=hypotheses[hypindex] 
+			self.ismatchedpostfit.setWriteValue(1) if (scaledlep.DeltaR(MClep_vec)<0.1 and scaledmet.DeltaPhi(MCv_vec)<0.3 and scaledlepb.DeltaR(MClepb_vec)<0.4 and scaledhadt.DeltaR(MChadt_vec)<0.8) else self.ismatchedpostfit.setWriteValue(0) 
+		#	print 'ismatchedpostfit = %d'%(self.ismatchedpostfit.getWriteValue()) #DEBUG 
+							 
+		#Kinematic fit debugging variables 
+		self.chi2.setWriteValue(fitchi2) 
+		locs = [self.par_0,self.par_1,self.par_2,self.par_3,self.par_4,self.par_5] 
+		for i in range(len(finalpars)) : 
+			locs[i].setWriteValue(finalpars[i]) 
+ 
+		#fill the TTree with the scaled fourvector variables 
+		self.__setFourVectorBranchValues__('scaled_lep',scaledlep) 
+		self.__setFourVectorBranchValues__('scaled_met',scaledmet) 
+		self.__setFourVectorBranchValues__('scaled_lepW',scaledlep+scaledmet) 
+		self.__setFourVectorBranchValues__('scaled_lepb',scaledlepb) 
+		self.__setFourVectorBranchValues__('scaled_lept',scaledlep+scaledmet+scaledlepb) 
+		if scaledbigjet!=None :  
+			self.__setFourVectorBranchValues__('scaled_bigjet',scaledbigjet) 
+			self.allBranches['scaled_bigjet_tau32'].setWriteValue(hypotheses[hypindex][3][0].getTau32()) 
+			self.allBranches['scaled_bigjet_tau21'].setWriteValue(hypotheses[hypindex][3][0].getTau21()) 
+			self.allBranches['scaled_bigjet_SDM'].setWriteValue(hypotheses[hypindex][3][0].getSDM()) 
+			self.allBranches['scaled_bigjet_isttagged'].setWriteValue(1) if hypotheses[hypindex][3][0].isTopTagged() else self.allBranches['scaled_bigjet_isttagged'].setWriteValue(0) 
+			self.allBranches['scaled_bigjet_isWtagged'].setWriteValue(1) if hypotheses[hypindex][3][0].isWTagged() else self.allBranches['scaled_bigjet_isWtagged'].setWriteValue(0) 
+		if scaledhad1!=None : self.__setFourVectorBranchValues__('scaled_had1',scaledhad1) 
+		if scaledhad2!=None : self.__setFourVectorBranchValues__('scaled_had2',scaledhad2) 
+		if scaledhad3!=None : self.__setFourVectorBranchValues__('scaled_had3',scaledhad3) 
+ 
+		#reconstruct the observables  
+		#using the chosen postfit 
+		cstar_s,xF_s,M_s = getObservables(scaledlep+scaledmet+scaledlepb,scaledhadt,lep.getQ())  
+		self.cstar.setWriteValue(cstar_s); self.x_F.setWriteValue(xF_s); self.M.setWriteValue(M_s) 
+		#using the chosen prefit 
+		hypothesis = hypotheses[hypindex] 
+		prefitlept = hypothesis[0].getFourVector()+hypothesis[1]+hypothesis[2].getFourVector() 
+		prefithadt = hypothesis[3][0].getFourVector() 
+		for otherjet in hypothesis[3][1:] : 
+			prefithadt = prefithadt+otherjet.getFourVector() 
+		cstar,xF,M = getObservables(prefitlept,prefithadt,hypothesis[0].getQ())  
+		self.cstar_prefit.setWriteValue(cstar); self.x_F_prefit.setWriteValue(xF); self.M_prefit.setWriteValue(M) 
 		#using the correct assignment prefit
 		#print 'isData = %s, corrhypindex=%d'%(self.is_data,corrhypindex) #DEBUG
 		if (not self.is_data) and corrhypindex!=-1 : 
@@ -854,35 +807,35 @@ class Reconstructor(object) :
 			cstar,xF,M = getObservables(prefitlept,prefithadt,hypothesis[0].getQ()) 
 			#print 'setting correct prefit observable values: cstar = %.2f, x_F = %.2f, M = %.2f'%(cstar,x_F,M) #DEBUG
 			self.cstar_corprefit.setWriteValue(cstar); self.x_F_corprefit.setWriteValue(xF); self.M_corprefit.setWriteValue(M)
-		#MC Truth observable and reweighting calculation
-		if self.event_type.getWriteValue()<2 and not self.is_data :
-			self.cstar_MC.setWriteValue(self.mcGenEventBranches['MC_cstar'].getReadValue())
-			self.x_F_MC.setWriteValue(self.mcGenEventBranches['MC_x_F'].getReadValue())
-			self.M_MC.setWriteValue(self.mcGenEventBranches['MC_Mtt'].getReadValue())
-			if self.event_type.getWriteValue()!=4 :
-				( wg1,wg2,wg3,wg4,wqs1,wqs2,wqa0,wqa1,wqa2,
-					wg1_opp,wg2_opp,wg3_opp,wg4_opp,wqs1_opp,wqs2_opp,wqa0_opp,wqa1_opp,wqa2_opp,
-					wega, wegc ) = getMCRWs(self.cstar_MC.getWriteValue(),MCt_vec,MCtbar_vec,self.alpha,self.epsilon) 
-			self.wg1.setWriteValue(wg1)
-			self.wg2.setWriteValue(wg2)
-			self.wg3.setWriteValue(wg3)
-			self.wg4.setWriteValue(wg4)
-			self.wqs1.setWriteValue(wqs1)
-			self.wqs2.setWriteValue(wqs2)
-			self.wqa0.setWriteValue(wqa0)
-			self.wqa1.setWriteValue(wqa1)
-			self.wqa2.setWriteValue(wqa2)
-			self.wg1_opp.setWriteValue(wg1_opp)
-			self.wg2_opp.setWriteValue(wg2_opp)
-			self.wg3_opp.setWriteValue(wg3_opp)
-			self.wg4_opp.setWriteValue(wg4_opp)
-			self.wqs1_opp.setWriteValue(wqs1_opp)
-			self.wqs2_opp.setWriteValue(wqs2_opp)
-			self.wqa0_opp.setWriteValue(wqa0_opp)
-			self.wqa1_opp.setWriteValue(wqa1_opp)
-			self.wqa2_opp.setWriteValue(wqa2_opp)
-			self.wega.setWriteValue(wega)
-			self.wegc.setWriteValue(wegc)
+		#MC Truth observable and reweighting calculation 
+		if self.event_type.getWriteValue()<2 and not self.is_data : 
+			self.cstar_MC.setWriteValue(self.mcGenEventBranches['MC_cstar'].getReadValue()) 
+			self.x_F_MC.setWriteValue(self.mcGenEventBranches['MC_x_F'].getReadValue()) 
+			self.M_MC.setWriteValue(self.mcGenEventBranches['MC_Mtt'].getReadValue()) 
+			if self.event_type.getWriteValue()!=4 : 
+				( wg1,wg2,wg3,wg4,wqs1,wqs2,wqa0,wqa1,wqa2, 
+					wg1_opp,wg2_opp,wg3_opp,wg4_opp,wqs1_opp,wqs2_opp,wqa0_opp,wqa1_opp,wqa2_opp, 
+					wega, wegc ) = getMCRWs(self.cstar_MC.getWriteValue(),MCt_vec,MCtbar_vec,self.alpha,self.epsilon)  
+			self.wg1.setWriteValue(wg1) 
+			self.wg2.setWriteValue(wg2) 
+			self.wg3.setWriteValue(wg3) 
+			self.wg4.setWriteValue(wg4) 
+			self.wqs1.setWriteValue(wqs1) 
+			self.wqs2.setWriteValue(wqs2) 
+			self.wqa0.setWriteValue(wqa0) 
+			self.wqa1.setWriteValue(wqa1) 
+			self.wqa2.setWriteValue(wqa2) 
+			self.wg1_opp.setWriteValue(wg1_opp) 
+			self.wg2_opp.setWriteValue(wg2_opp) 
+			self.wg3_opp.setWriteValue(wg3_opp) 
+			self.wg4_opp.setWriteValue(wg4_opp) 
+			self.wqs1_opp.setWriteValue(wqs1_opp) 
+			self.wqs2_opp.setWriteValue(wqs2_opp) 
+			self.wqa0_opp.setWriteValue(wqa0_opp) 
+			self.wqa1_opp.setWriteValue(wqa1_opp) 
+			self.wqa2_opp.setWriteValue(wqa2_opp) 
+			self.wega.setWriteValue(wega) 
+			self.wegc.setWriteValue(wegc) 
 			#scale factor and reweighting calculations
 			#Pileup reweighting
 			pu_sf, pu_sf_up, pu_sf_down = self.corrector.getPileupReweight(self.allBranches['npv'].getReadValue())

@@ -167,8 +167,8 @@ chain = TChain(options.ttree_name)
 print 'Getting these files: '
 #Read files in line by line and get the tree, pileup,cstar vs. beta,pdf_alphas/F_up/down,scale_comb_sf_up/down,pdf_alphas_sf_up/down histograms, and total weight value from each
 total_pileup_histo               = TH1D('total_pileup_histo','total MC pileup; pileup; events',100,0.,100.); total_pileup_histo.SetDirectory(0)
-total_cstar_vs_beta_qqbar_histo  = TH2D('total_cstar_vs_beta_qqbar_histo','MC truth c* vs. #beta (q#bar{q} events); #beta; c*; events',10,0.,1.,20,-1.,1.); total_cstar_vs_beta_qqbar_histo.SetDirectory(0)
-total_cstar_vs_beta_gg_histo     = TH2D('total_cstar_vs_beta_gg_histo','MC truth c* vs. #beta (qg/gg events); #beta; c*; events',10,0.,1.,20,-1.,1.); total_cstar_vs_beta_gg_histo.SetDirectory(0)
+total_cstar_vs_beta_qqbar_histo  = TH2D('total_cstar_vs_beta_qqbar_histo','MC truth c* vs. #beta (q#bar{q} events); #beta; c*; events',10,0.,1.,20,0.,1.); total_cstar_vs_beta_qqbar_histo.SetDirectory(0)
+total_cstar_vs_beta_gg_histo     = TH2D('total_cstar_vs_beta_gg_histo','MC truth c* vs. #beta (qg/gg events); #beta; c*; events',10,0.,1.,20,0.,1.); total_cstar_vs_beta_gg_histo.SetDirectory(0)
 total_mu_R_sf_up_histo           = TH1D('total_mu_R_sf_up_histo','total #mu_{R} sf (up); #mu_{R} sf up; events',4,-1.,3.); total_mu_R_sf_up_histo.SetDirectory(0);
 total_mu_R_sf_down_histo         = TH1D('total_mu_R_sf_down_histo','total #mu_{R} sf (down); #mu_{R} sf down; events',4,-1.,3.); total_mu_R_sf_down_histo.SetDirectory(0);
 total_mu_F_sf_up_histo           = TH1D('total_mu_F_sf_up_histo','total #mu_{F} sf (up); #mu_{F} sf up; events',4,-1.,3.); total_mu_F_sf_up_histo.SetDirectory(0);
@@ -281,3 +281,4 @@ for event in range(nanalysisevents) :
 	analyzer.reset()
 #clean up after yourself
 del analyzer
+garbageFile.Close()
