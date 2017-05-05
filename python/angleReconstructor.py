@@ -81,10 +81,12 @@ def getObservables(lept_vec,hadt_vec,lepton_charge) :
 	return (cos_theta_cs,x_f,ttbar_mass)
 
 #Given the fourvectors of the initial state partons and the MC tops, and the event type, returns the MC truth observables and a ton of reweights
-def getMCRWs(cos_theta_cs,t_vec,tbar_vec,alpha,epsilon) :
+def getMCRWs(cos_theta_cs,t_vec,tbar_vec,corrector) :
 	#calculating beta
 	M2_1 = t_vec.Mag2(); M2_2 = tbar_vec.Mag2(); ttbar_mass=(t_vec+tbar_vec).Mag()
 	beta = sqrt(1. - 2.*(M2_1+M2_2)/(ttbar_mass*ttbar_mass) + (M2_1-M2_2)*(M2_1-M2_2)/(ttbar_mass*ttbar_mass*ttbar_mass*ttbar_mass))
+	#get the alpha/epsilon values for this beta
+	alpha, epsilon = corrector.getAlphaEpsilon(beta)
 	#calculate the reweighting factors
 	b2 = beta*beta;
 	b2c2 = beta*beta*cos_theta_cs*cos_theta_cs;

@@ -2,7 +2,7 @@
 from ROOT import *
 
 #name of file to run on
-inputfilename = '../total_ttree_files/powheg_TT_skim_all_4_18_2017.root'
+inputfilename = '../total_ttree_files/powheg_TT_skim_all.root'
 
 #open the input file
 infile = TFile(inputfilename)
@@ -25,7 +25,7 @@ for histo in allhistos :
 	histo.SetDirectory(0)
 
 #start up the output file
-outfile = TFile('kinfit_tuning_plots_4_18_2017.root','recreate')
+outfile = TFile('kinfit_tuning_plots_powheg_5_5_2017.root','recreate')
 
 #set up tree
 com_cuts = 'fullselection==1 && ismatchable==1'
@@ -33,7 +33,7 @@ tree=fullTree.CopyTree(com_cuts)
 #tree.SetDirectory(0)
 
 #plot plots
-weights = '35867.*weight*sf_pileup*sf_lep_ID*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
+weights = '35867.*weight*sf_pileup*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
 print 'Drawing type-1 leptonic top mass...'
 tree.Draw('leptcorprefitM>>t1leptM('+str(ntbins)+','+str(tmass_low)+','+str(tmass_high)+')','('+weights+')*('+com_cuts+' && eventTopology==1)')
 print 'Drawing type-1 hadronic top mass...'

@@ -618,61 +618,17 @@ class Reconstructor(object) :
 		#print '	Reconstructing event...' #DEBUG
 
 		#build the list of jet assignment hypotheses
-		hypotheses = []
-		met_options = [met1_vec,met2_vec]
-		for i in range(self.nMETs.getWriteValue()) :
-			#The leptonic side is the same for everything
-			#there's only one lepton, so first choose the MET hypothesis
-			thismet = met_options[i]
-			#for any choice of leptonic-side b-jet
-			for j in range(len(ak4jets)) :
-				lepbCandJet = ak4jets[j]
-				lepbistagged = lepbCandJet.isbTagged()
-				#the rest is topology-dependent
-				#FULLY-MERGED EVENTS: 
-				#the hadronic top candidate is the AK8 jet
-				#just choose the leptonic b candidate from all AK4 jets
-				#hypotheses are [lepton, neutrino, leptonic b-jet, [hadronic top jet]]
-				if topology==1 : 
-					#if there are btags the leptonic b candidate must be one of them
-					if nbtags>0 and not lepbistagged :
-						continue
-					#for all the choices of a merged top
-					for ttag in ttags :
-						#append this hypothesis
-						hypotheses.append([lep,thismet,lepbCandJet,[ttag]])
-					continue
-				#other events need more than one AK4 jet
-				#loop over the other ak4 jets to find the first hadronic-side AK4 jet
-				for k in range(len(ak4jets)) :
-					if j==k :
-						continue
-					had1CandJet = ak4jets[k]
-					had1istagged = had1CandJet.isbTagged()
-					hadsidehasbtag = had1istagged					
-					#loop over the remaining AK4 jets for a second hadronic-side jet
-					for m in range(k+1,len(ak4jets)) :
-						if j==m :
-							continue
-						had2CandJet = ak4jets[m]
-						had2istagged = had2CandJet.isbTagged()
-						hadsidehasbtag = had1istagged or had2istagged
-						#loop one last time over the remaining AK4 jets for a third and final hadronic-side jet
-						for n in range(m+1,len(ak4jets)) :
-							if j==n :
-								continue
-							had3CandJet = ak4jets[n]
-							had3istagged = had3CandJet.isbTagged()
-							hadsidehasbtag = had1istagged or had2istagged or had3istagged
-							#BOOSTED UNTAGGED WITH THREE HADRONIC SIDE JETS, AND FULLY RESOLVED
-							#the hadronic side of the decay has three jets 
-							#hypotheses are [lepton, neutrino, leptonic b-jet, [list of three hadronic-side jets]]
-							if topology==2 or topology==3 :
-								#make sure the btags are in place
-								if (nbtags==1 and not (hadsidehasbtag or lepbistagged)) or (nbtags==2 and not (hadsidehasbtag and lepbistagged)) :
-									continue
-								#append this hypothesis
-								hypotheses.append([lep,thismet,lepbCandJet,[had1CandJet,had2CandJet,had3CandJet]])
+		hypotheses = getHypothesisList(topology,lep,met1_vec,met2_vec,self.nMETs.getWriteValue(),ak4jets,ttags,nbtags)
+		#if there's no valid type-1 hypotheses, try again as type-2
+		if topology==1 and len(hypotheses)==0 :
+			if len(ak4jets)>3 :
+				topology=2
+				self.event_topology.setWriteValue(topology)
+				hypotheses = getHypothesisList(topology,lep,met1_vec,met2_vec,self.nMETs.getWriteValue(),ak4jets,ttags,nbtags)
+			else :
+				#print 'event %d invalid; no separated top tagged jets and not enough AK4 jets'%(eventnumber) #DEBUG
+				self.cut_branches['fullselection'].setWriteValue(0)
+				return
 		#print '		Will try %d jet assignment hypotheses...'%(len(hypotheses)) #DEBUG
 		self.nhypotheses.setWriteValue(len(hypotheses))
 		#do the monte carlo matching
@@ -815,7 +771,7 @@ class Reconstructor(object) :
 			if self.event_type.getWriteValue()!=4 : 
 				( wg1,wg2,wg3,wg4,wqs1,wqs2,wqa0,wqa1,wqa2, 
 					wg1_opp,wg2_opp,wg3_opp,wg4_opp,wqs1_opp,wqs2_opp,wqa0_opp,wqa1_opp,wqa2_opp, 
-					wega, wegc ) = getMCRWs(self.cstar_MC.getWriteValue(),MCt_vec,MCtbar_vec,self.alpha,self.epsilon)  
+					wega, wegc ) = getMCRWs(self.cstar_MC.getWriteValue(),MCt_vec,MCtbar_vec,self.corrector)  
 			self.wg1.setWriteValue(wg1) 
 			self.wg2.setWriteValue(wg2) 
 			self.wg3.setWriteValue(wg3) 
@@ -881,9 +837,6 @@ class Reconstructor(object) :
 		self.JER = jer
 		#Set the total weight
 		self.totalweight = totweight
-		#Set the alpha and epsilon values used to calculate event reweights
-		self.alpha = renormdict['alpha']
-		self.epsilon = renormdict['epsilon']
 		#Set the ttbar reconstructor object
 		self.ttbarreconstructor = TTBarReconstructor()
 		#Set the corrector that does event weights and JEC calculations
@@ -921,4 +874,64 @@ class Reconstructor(object) :
 		self.outfile.Write()
 		self.outfile.Close()
 
- 
+def getHypothesisList(topology,lep,met1_vec,met2_vec,nMETs,ak4jets,ttags,nbtags) :
+	hypotheses = []
+	met_options = [met1_vec,met2_vec]
+	for i in range(nMETs) :
+		#The leptonic side is the same for everything
+		#there's only one lepton, so first choose the MET hypothesis
+		thismet = met_options[i]
+		#for any choice of leptonic-side b-jet
+		for j in range(len(ak4jets)) :
+			lepbCandJet = ak4jets[j]
+			lepbistagged = lepbCandJet.isbTagged()
+			#the rest is topology-dependent
+			#FULLY-MERGED EVENTS: 
+			#the hadronic top candidate is the AK8 jet
+			#just choose the leptonic b candidate from all AK4 jets
+			#hypotheses are [lepton, neutrino, leptonic b-jet, [hadronic top jet]]
+			if topology==1 : 
+				#if there are btags the leptonic b candidate must be one of them
+				if nbtags>0 and not lepbistagged :
+					continue
+				#check the reco leptonic side top
+				thisleptop = lep.getFourVector()+thismet+lepbCandJet.getFourVector()
+				#for all the choices of a merged top
+				for ttag in ttags :
+					#check the separation
+					if thisleptop.DeltaR(ttag.getFourVector())>2. :
+						#append this hypothesis
+						hypotheses.append([lep,thismet,lepbCandJet,[ttag]])
+				continue
+			#other events need more than one AK4 jet
+			#loop over the other ak4 jets to find the first hadronic-side AK4 jet
+			for k in range(len(ak4jets)) :
+				if j==k :
+					continue
+				had1CandJet = ak4jets[k]
+				had1istagged = had1CandJet.isbTagged()
+				hadsidehasbtag = had1istagged					
+				#loop over the remaining AK4 jets for a second hadronic-side jet
+				for m in range(k+1,len(ak4jets)) :
+					if j==m :
+						continue
+					had2CandJet = ak4jets[m]
+					had2istagged = had2CandJet.isbTagged()
+					hadsidehasbtag = had1istagged or had2istagged
+					#loop one last time over the remaining AK4 jets for a third and final hadronic-side jet
+					for n in range(m+1,len(ak4jets)) :
+						if j==n :
+							continue
+						had3CandJet = ak4jets[n]
+						had3istagged = had3CandJet.isbTagged()
+						hadsidehasbtag = had1istagged or had2istagged or had3istagged
+						#BOOSTED UNTAGGED WITH THREE HADRONIC SIDE JETS, AND FULLY RESOLVED
+						#the hadronic side of the decay has three jets 
+						#hypotheses are [lepton, neutrino, leptonic b-jet, [list of three hadronic-side jets]]
+						if topology==2 or topology==3 :
+							#make sure the btags are in place
+							if (nbtags==1 and not (hadsidehasbtag or lepbistagged)) or (nbtags==2 and not (hadsidehasbtag and lepbistagged)) :
+								continue
+							#append this hypothesis
+							hypotheses.append([lep,thismet,lepbCandJet,[had1CandJet,had2CandJet,had3CandJet]])
+	return hypotheses

@@ -37,22 +37,6 @@ if len(rootfilelist) < nJobs :
 			if len(glob.glob('*_'+str(i)+'_tree.root'))==0 :
 				print 'Job number '+str(i)+' had no output!'
 				failedjobnumbers.append(i)
-##now check each output file to see if the job failed
-#for outputfile in outputfilelist :
-#	jobend = os.popen('tail -n 5 '+outputfile+' | head -n 1').read()
-#	if not jobend.startswith('Count at ') :
-#		if jobend.find(' Xrd: XrdClientMessage::ReadRaw: Failed to read header')!=-1 : continue
-#		if jobend.find('Xrd: CheckErrorStatus: Server [cmseos.fnal.gov:')!=-1 : continue
-#		if jobend.find('NOT VALID; MISSING JETS (# AK4jets = ')!=-1 : continue
-#		if jobend.find('WARNING -- pdf is negative!!!')!=-1 : continue
-#		if jobend.find('IS NOT MATCHABLE')!=-1 : continue
-#		if jobend.find('has a correct assignment hypothesis at index')!=-1 : continue
-#		if jobend.find('NOT VALID; NO AK4 JET ASSIGNMENT CREATES HEMISPHERICALLY SEPARATED TOPS')!=-1 : continue
-#		if jobend.find('NOT VALID; NO KINEMATIC FITS CONVERGED')!=-1 : continue
-#		if jobend.find('/storage/local/data1/condor/execute/dir_')!=-1 and jobend.find('/condor_exec.exe: line 68: ')!=-1 and jobend.find(' Aborted                 $COMMAND')!=-1 : continue
-#		jobnumber = outputfile.rstrip('.log').split('_')[len(outputfile.rstrip('.log').split('_'))-1]
-#		print 'Job '+jobnumber+' failed with last line "'+jobend.rstrip('\n')+'"'
-#		if not int(jobnumber) in failedjobnumbers : failedjobnumbers.append(int(jobnumber))
 #now check the file sizes to find any that are abnormally small
 totalsize = 0.
 for rootfile in rootfilelist :

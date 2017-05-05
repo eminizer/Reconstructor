@@ -11,23 +11,38 @@ from reconstructor import Reconstructor
 
 #global 2D histograms needed for alpha and epsilon fits
 csvb_qq_global_hist = TH2D(); csvb_gg_global_hist = TH2D()
+qq_global_hist_projection = TH1D(); gg_global_hist_projection = TH1D()
+BETA = [-1.]
+
+#function to symmetrize the distributions
+def symmetrize(hist) :
+	newhist = hist.Clone(); newhist.Reset()
+	#loop over the bins and add half the content in each to the bins with the same and opposite c* values
+	for i in range(1,hist.GetXaxis().GetNbins()+1) :
+		bincenter = hist.GetXaxis().GetBinCenter(i)
+		content = hist.GetBinContent(i)
+		add_err = hist.GetBinError(i)
+		old_err = newhist.GetBinError(i)
+		newhist.Fill(bincenter,0.5*content)
+		newhist.Fill(-1.*bincenter,0.5*content)
+		newhist.SetBinError(newhist.FindFixBin(bincenter),sqrt(old_err**2+add_err**2))
+		newhist.SetBinError(newhist.FindFixBin(-1.*bincenter),sqrt(old_err**2+add_err**2))
+	return newhist
 
 #minuit fitting function for alpha
 def alpha_fcn(npar, deriv, f, par, flag) :
 	alpha = par[0]
 	lnL=0.
 	#loop over the costheta bins
-	for i in range(1,csvb_qq_global_hist.GetYaxis().GetNbins()+1) :
-		cstar = csvb_qq_global_hist.GetYaxis().GetBinCenter(i)
-		#loop over the beta bins
-		nbetabins = csvb_qq_global_hist.GetXaxis().GetNbins()
-		for j in range(1,nbetabins+1) :
-			beta = csvb_qq_global_hist.GetXaxis().GetBinCenter(j)
-			#increment the values
-			globalBin = csvb_qq_global_hist.FindFixBin(beta,cstar)
-			cont=csvb_qq_global_hist.GetBinContent(globalBin)
-			f_L = (2.+(beta*beta)*(cstar*cstar)-(beta*beta)+alpha*(1.-(beta*beta)*(cstar*cstar)))/(2.*(2-2.*(beta*beta)/3.+alpha*(1.-(beta*beta)/3.)))
+	for i in range(1,qq_global_hist_projection.GetNbinsX()+1) :
+		cstar = qq_global_hist_projection.GetXaxis().GetBinCenter(i)
+		#increment the values
+		cont=qq_global_hist_projection.GetBinContent(i)
+		f_L = (2.+(BETA[0]*BETA[0])*(cstar*cstar)-(BETA[0]*BETA[0])+alpha*(1.-(BETA[0]*BETA[0])*(cstar*cstar)))/(2.*(2-2.*(BETA[0]*BETA[0])/3.+alpha*(1.-(BETA[0]*BETA[0])/3.)))
+		if f_L>0 :
 			lnL+=-2.0*cont*log(f_L)
+		else :
+			lnL+=10000000000.
 	print '	lnL = %.8f, alpha = %.8f'%(lnL,alpha) #DEBUG
 	f[0] = lnL
 
@@ -36,30 +51,28 @@ def epsilon_fcn(npar, deriv, f, par, flag) :
 	epsilon = par[0]
 	lnL = 0.0
 	#loop over the costheta bins
-	for i in range(1,csvb_gg_global_hist.GetYaxis().GetNbins()+1) :
-		cstar = csvb_gg_global_hist.GetYaxis().GetBinCenter(i)
-		#loop over the beta bins
-		nbetabins = csvb_gg_global_hist.GetXaxis().GetNbins()
-		for j in range(1,nbetabins+1) :
-			beta = csvb_gg_global_hist.GetXaxis().GetBinCenter(j)
-			#increment the values
-			globalBin = csvb_gg_global_hist.FindFixBin(beta,cstar)
-			cont=csvb_gg_global_hist.GetBinContent(globalBin)
-			beta2 = beta*beta
-			cstar2 = cstar*cstar
-			bc2 = beta2*cstar2
-			omb2 = 1. - beta2
-			beta4 = beta2*beta2
-			rnorm = ( (epsilon*(34.*beta4-100.*beta2+98.)+2.*beta4-36.*beta2+66.)*atanh(beta)/beta
-						-9./5.*epsilon*beta4+6.*beta2*(epsilon*(beta2-2.38889)-0.5)-16.*(1.+epsilon)*(beta4-2.*beta2+1.)/(1.-beta2)
-						-epsilon*(18.*beta4-68.*beta2+82.)+18.*beta2-43. )
-			f_L = (7.+9.*bc2)/(1.-bc2)*((1.+bc2)/2.+omb2*beta2*(1.-cstar2)/(1.-bc2))*(1.+epsilon*bc2)/rnorm
-			lnL+=-2.0*cont*log(f_L)
+	for i in range(1,gg_global_hist_projection.GetXaxis().GetNbins()+1) :
+		cstar = gg_global_hist_projection.GetXaxis().GetBinCenter(i)
+		#increment the values
+		cont=gg_global_hist_projection.GetBinContent(i)
+		beta2 = (BETA[0])*(BETA[0])
+		cstar2 = cstar*cstar
+		bc2 = beta2*cstar2
+		omb2 = 1. - beta2
+		beta4 = beta2*beta2
+		rnorm = ( (epsilon*(34.*beta4-100.*beta2+98.)+2.*beta4-36.*beta2+66.)*atanh(BETA[0])/(BETA[0])
+					-9./5.*epsilon*beta4+6.*beta2*(epsilon*(beta2-2.38889)-0.5)-16.*(1.+epsilon)*(beta4-2.*beta2+1.)/(1.-beta2)
+					-epsilon*(18.*beta4-68.*beta2+82.)+18.*beta2-43. )
+		num = (7.+9.*bc2)/(1.-bc2)*((1.+bc2)/2.+omb2*beta2*(1.-cstar2)/(1.-bc2))*(1.+epsilon*bc2)
+		f_L = num/rnorm
+		lnL+=-2.0*cont*log(f_L)
 	print '	lnL = %.8f, epsilon = %.8f'%(lnL,epsilon) #DEBUG
 	f[0] = lnL
 
 #Helper function for making the renormalization dictionary
-def make_renormalization_dict(muRup,muRdown,muFup,muFdown,scup,scdown,pdfas,pdfasup,pdfasdown) :
+def make_renormalization_dict(name,alpha,epsilon,muRup,muRdown,muFup,muFdown,scup,scdown,pdfas,pdfasup,pdfasdown) :
+	global qq_global_hist_projection
+	global gg_global_hist_projection
 	returndict = {}
 	#start with the simple values
 	returndict['muRup']=muRup.GetMean() 
@@ -71,29 +84,42 @@ def make_renormalization_dict(muRup,muRdown,muFup,muFdown,scup,scdown,pdfas,pdfa
 	returndict['pdfas']=pdfas.GetMean() 
 	returndict['pdfasup']=pdfasup.GetMean() 
 	returndict['pdfasdown']=pdfasdown.GetMean() 
-	#now we've got to do the fits for the "deweighting" alpha and epsilon values
-	print 'fitting for alpha... '
-	#Define the Minuit instance we'll use
-	alpha_minuit = TMinuit(1); alpha_minuit.SetFCN(alpha_fcn)
-	#miscellaneous minuit stuff
-	ierflag = Long(1); arglist = array('d',[100000.])
-	#add parameter
-	alpha_minuit.mnparm(0,'alpha',0.1,0.5,0.,0.,ierflag)
-	#minimize
-	alpha_minuit.mnexcm('MIGRAD',arglist,1,ierflag)
-	#get back the fitted alpha value
-	fitted_alpha=Double(0.0); fitted_alpha_err=Double(0.0)
-	alpha_minuit.GetParameter(0,fitted_alpha,fitted_alpha_err)	
-	returndict['alpha']=fitted_alpha
-	#Do the same thing except for epsilon
-	print 'fitting for epsilon...'
-	epsilon_minuit = TMinuit(1); epsilon_minuit.SetFCN(epsilon_fcn)
-	ierflag = Long(1); arglist = array('d',[100000.])
-	epsilon_minuit.mnparm(0,'epsilon',0.1,0.5,0.,0.,ierflag)
-	epsilon_minuit.mnexcm('MIGRAD',arglist,1,ierflag)
-	fitted_epsilon=Double(0.0); fitted_epsilon_err=Double(0.0)
-	epsilon_minuit.GetParameter(0,fitted_epsilon,fitted_epsilon_err)
-	returndict['epsilon']=fitted_epsilon
+	printlines = []
+	if alpha==1.0 and epsilon==1.0 and (name.find('_TT')!=-1 or name.find('_TTJets')!=-1) :
+		#now we've got to do the fits for the "deweighting" alpha and epsilon values
+		print 'fitting for alpha/epsilon values... '
+		#Define the Minuit instance we'll use
+		alpha_minuit = TMinuit(1); alpha_minuit.SetFCN(alpha_fcn)
+		epsilon_minuit = TMinuit(1); epsilon_minuit.SetFCN(epsilon_fcn)
+		#miscellaneous minuit stuff
+		ierflag = Long(1); arglist = array('d',[100000.])
+		#for each bin in beta
+		for i in range(1,csvb_qq_global_hist.GetXaxis().GetNbins()+1) :
+			BETA[0] = csvb_qq_global_hist.GetXaxis().GetBinCenter(i)
+			qq_global_hist_projection = symmetrize(csvb_qq_global_hist.ProjectionY('qq_proj_'+str(i),i,i))
+			#add parameter
+			alpha_minuit.mnparm(0,'alpha',0.1,0.5,0.,0.,ierflag)
+			#minimize
+			alpha_minuit.mnexcm('MIGRAD',arglist,1,ierflag)
+			#get back the fitted alpha value
+			fitted_alpha=Double(0.0); fitted_alpha_err=Double(0.0)
+			alpha_minuit.GetParameter(0,fitted_alpha,fitted_alpha_err)
+			#print 'NEW NAME = alpha_'+str(csvb_qq_global_hist.GetXaxis().GetBinLowEdge(i))
+			returndict['alpha_'+str(csvb_qq_global_hist.GetXaxis().GetBinLowEdge(i))]=fitted_alpha
+			printlines.append('fitted alpha value in bin %d = %.4f +/- %.4f'%(i,fitted_alpha,fitted_alpha_err))
+		#epsilon stuff
+		for i in range(1,csvb_gg_global_hist.GetXaxis().GetNbins()+1) :
+			BETA[0] = csvb_gg_global_hist.GetXaxis().GetBinCenter(i)
+			gg_global_hist_projection = symmetrize(csvb_gg_global_hist.ProjectionY('gg_proj_'+str(i),i,i))
+			epsilon_minuit.mnparm(0,'epsilon',0.1,0.5,0.,0.,ierflag)
+			epsilon_minuit.mnexcm('MIGRAD',arglist,1,ierflag)
+			fitted_epsilon=Double(0.0); fitted_epsilon_err=Double(0.0)
+			epsilon_minuit.GetParameter(0,fitted_epsilon,fitted_epsilon_err)
+			returndict['epsilon_'+str(csvb_gg_global_hist.GetXaxis().GetBinLowEdge(i))]=fitted_epsilon
+			printlines.append('fitted epsilon value in bin %d = %.4f +/- %.4f'%(i,fitted_epsilon,fitted_epsilon_err))
+	else :
+		returndict['alpha']=alpha; returndict['epsilon']=epsilon
+		fitted_alpha_err = 1.0; fitted_epsilon_err = 1.0
 	#print the values
 	print 'muRup value = %.4f'%(returndict['muRup'])
 	print 'muRdown value = %.4f'%(returndict['muRdown'])
@@ -104,8 +130,8 @@ def make_renormalization_dict(muRup,muRdown,muFup,muFdown,scup,scdown,pdfas,pdfa
 	print 'pdfas value = %.4f'%(returndict['pdfas'])
 	print 'pdfasup value = %.4f'%(returndict['pdfasup'])
 	print 'pdfasdown value = %.4f'%(returndict['pdfasdown'])
-	print 'Fitted alpha value = %.4f +/- %.4f'%(fitted_alpha, fitted_alpha_err)
-	print 'Fitted epsilon value = %.4f +/- %.4f'%(fitted_epsilon, fitted_epsilon_err)
+	for line in printlines :
+		print line
 	#return the dictionary
 	return returndict
 
@@ -134,7 +160,11 @@ parser.add_option('--i_job', 	  type='int',    action='store', default=0,		  des
 #Sample options
 parser.add_option('--name', 		 type='string', action='store', 			  	dest='name', 		    
 	help='Name of sample or process (used to name output files, etc.)')
-parser.add_option('--xSec', 		 type='float', action='store', 			  	dest='xSec', 		    
+parser.add_option('--xSec', 		 type='float', action='store', default=1.0,	dest='xSec', 		    
+	help="Cross section of sample's process")
+parser.add_option('--alpha', 		 type='float', action='store', default=1.0,	dest='alphaOverride', 		    
+	help="Cross section of sample's process")
+parser.add_option('--epsilon', 		 type='float', action='store', default=1.0,	dest='epsilonOverride', 		    
 	help="Cross section of sample's process")
 parser.add_option('--JES', type='string', action='store', default='nominal',  dest='JES',  
 	help='JES systematics: shift JES up or down (default is nominal)')
@@ -167,17 +197,17 @@ chain = TChain(options.ttree_name)
 print 'Getting these files: '
 #Read files in line by line and get the tree, pileup,cstar vs. beta,pdf_alphas/F_up/down,scale_comb_sf_up/down,pdf_alphas_sf_up/down histograms, and total weight value from each
 total_pileup_histo               = TH1D('total_pileup_histo','total MC pileup; pileup; events',100,0.,100.); total_pileup_histo.SetDirectory(0)
-total_cstar_vs_beta_qqbar_histo  = TH2D('total_cstar_vs_beta_qqbar_histo','MC truth c* vs. #beta (q#bar{q} events); #beta; c*; events',10,0.,1.,20,0.,1.); total_cstar_vs_beta_qqbar_histo.SetDirectory(0)
-total_cstar_vs_beta_gg_histo     = TH2D('total_cstar_vs_beta_gg_histo','MC truth c* vs. #beta (qg/gg events); #beta; c*; events',10,0.,1.,20,0.,1.); total_cstar_vs_beta_gg_histo.SetDirectory(0)
-total_mu_R_sf_up_histo           = TH1D('total_mu_R_sf_up_histo','total #mu_{R} sf (up); #mu_{R} sf up; events',4,-1.,3.); total_mu_R_sf_up_histo.SetDirectory(0);
-total_mu_R_sf_down_histo         = TH1D('total_mu_R_sf_down_histo','total #mu_{R} sf (down); #mu_{R} sf down; events',4,-1.,3.); total_mu_R_sf_down_histo.SetDirectory(0);
-total_mu_F_sf_up_histo           = TH1D('total_mu_F_sf_up_histo','total #mu_{F} sf (up); #mu_{F} sf up; events',4,-1.,3.); total_mu_F_sf_up_histo.SetDirectory(0);
-total_mu_F_sf_down_histo         = TH1D('total_mu_F_sf_down_histo','total #mu_{F} sf (down); #mu_{F} sf down; events',4,-1.,3.); total_mu_F_sf_down_histo.SetDirectory(0);
-total_scale_comb_sf_up_histo     = TH1D('total_scale_comb_sf_up_histo','total comb. scale sf (up); comb. scale sf up; events',4,-1.,3.); total_scale_comb_sf_up_histo.SetDirectory(0);
-total_scale_comb_sf_down_histo   = TH1D('total_scale_comb_sf_down_histo','total comb. scale sf (down); comb. scale sf down; events',4,-1.,3.); total_scale_comb_sf_down_histo.SetDirectory(0);
-total_pdf_alphas_sf_histo        = TH1D('total_pdf_alphas_sf_histo','total pdf/alpha_{s} sf; pdf/alpha_{s} sf; events',4,-1.,3.); total_pdf_alphas_sf_histo.SetDirectory(0);
-total_pdf_alphas_sf_up_histo     = TH1D('total_pdf_alphas_sf_up_histo','total pdf/alpha_{s} sf (up); pdf/alpha_{s} sf up; events',4,-1.,3.); total_pdf_alphas_sf_up_histo.SetDirectory(0);
-total_pdf_alphas_sf_down_histo   = TH1D('total_pdf_alphas_sf_down_histo','total pdf/alpha_{s} sf (down); pdf/alpha_{s} sf down; events',4,-1.,3.); total_pdf_alphas_sf_down_histo.SetDirectory(0);
+total_cstar_vs_beta_qqbar_histo  = TH2D('total_cstar_vs_beta_qqbar_histo','MC truth c* vs. #beta (q#bar{q} events); #beta; c*; events',10,0.,1.,20,-1.,1.); total_cstar_vs_beta_qqbar_histo.SetDirectory(0)
+total_cstar_vs_beta_gg_histo     = TH2D('total_cstar_vs_beta_gg_histo','MC truth c* vs. #beta (qg/gg events); #beta; c*; events',10,0.,1.,20,-1.,1.); total_cstar_vs_beta_gg_histo.SetDirectory(0)
+total_mu_R_sf_up_histo           = TH1D('total_mu_R_sf_up_histo','total #mu_{R} sf (up); #mu_{R} sf up; events',100,-1.,3.); total_mu_R_sf_up_histo.SetDirectory(0);
+total_mu_R_sf_down_histo         = TH1D('total_mu_R_sf_down_histo','total #mu_{R} sf (down); #mu_{R} sf down; events',100,-1.,3.); total_mu_R_sf_down_histo.SetDirectory(0);
+total_mu_F_sf_up_histo           = TH1D('total_mu_F_sf_up_histo','total #mu_{F} sf (up); #mu_{F} sf up; events',100,-1.,3.); total_mu_F_sf_up_histo.SetDirectory(0);
+total_mu_F_sf_down_histo         = TH1D('total_mu_F_sf_down_histo','total #mu_{F} sf (down); #mu_{F} sf down; events',100,-1.,3.); total_mu_F_sf_down_histo.SetDirectory(0);
+total_scale_comb_sf_up_histo     = TH1D('total_scale_comb_sf_up_histo','total comb. scale sf (up); comb. scale sf up; events',100,-1.,3.); total_scale_comb_sf_up_histo.SetDirectory(0);
+total_scale_comb_sf_down_histo   = TH1D('total_scale_comb_sf_down_histo','total comb. scale sf (down); comb. scale sf down; events',100,-1.,3.); total_scale_comb_sf_down_histo.SetDirectory(0);
+total_pdf_alphas_sf_histo        = TH1D('total_pdf_alphas_sf_histo','total pdf/alpha_{s} sf; pdf/alpha_{s} sf; events',100,-1.,3.); total_pdf_alphas_sf_histo.SetDirectory(0);
+total_pdf_alphas_sf_up_histo     = TH1D('total_pdf_alphas_sf_up_histo','total pdf/alpha_{s} sf (up); pdf/alpha_{s} sf up; events',100,-1.,3.); total_pdf_alphas_sf_up_histo.SetDirectory(0);
+total_pdf_alphas_sf_down_histo   = TH1D('total_pdf_alphas_sf_down_histo','total pdf/alpha_{s} sf (down); pdf/alpha_{s} sf down; events',100,-1.,3.); total_pdf_alphas_sf_down_histo.SetDirectory(0);
 totweight = 0.
 for input_file in input_files_list :
 	print '	'+input_file.rstrip()+''
@@ -214,20 +244,22 @@ for input_file in input_files_list :
 	f.Close()
 print 'TOTAL SUM OF EVENT WEIGHTS = '+str(totweight)
 #set the global histograms (normalized)
-total_cstar_vs_beta_qqbar_histo.Sumw2(); #total_cstar_vs_beta_qqbar_histo.Scale(1./total_cstar_vs_beta_qqbar_histo.Integral()) 
-total_cstar_vs_beta_gg_histo.Sumw2(); #total_cstar_vs_beta_gg_histo.Scale(1./total_cstar_vs_beta_gg_histo.Integral())
+if options.name.lower().find('mcatnlo')!=-1 :
+	total_cstar_vs_beta_qqbar_histo.Scale(1./totweight) 
+	total_cstar_vs_beta_gg_histo.Scale(1./totweight)
 csvb_qq_global_hist=total_cstar_vs_beta_qqbar_histo
 csvb_gg_global_hist=total_cstar_vs_beta_gg_histo
-renormalization_dict = make_renormalization_dict(total_mu_R_sf_up_histo,total_mu_R_sf_down_histo,total_mu_F_sf_up_histo,total_mu_F_sf_down_histo,
+renormalization_dict = make_renormalization_dict(options.name,options.alphaOverride,options.epsilonOverride,total_mu_R_sf_up_histo,total_mu_R_sf_down_histo,total_mu_F_sf_up_histo,total_mu_F_sf_down_histo,
 												 total_scale_comb_sf_up_histo,total_scale_comb_sf_down_histo,total_pdf_alphas_sf_histo,total_pdf_alphas_sf_up_histo,total_pdf_alphas_sf_down_histo)
 #Get the total number of events
 ntotalevents = chain.GetEntries()
 print 'number of total events = %d'%(ntotalevents) 
 #find how many events should be in this tree 
-nanalysisevents = int(ntotalevents/options.n_jobs)  
-#adjust so they don't all pile up in the last job
-while ntotalevents-options.n_jobs*nanalysisevents > nanalysisevents :
-	nanalysisevents+=1
+nanalysisevents = min(options.max_events, abs(int(ntotalevents/options.n_jobs)))
+if options.n_jobs>1 :
+	#adjust so they don't all pile up in the last job
+	while ntotalevents-options.n_jobs*nanalysisevents > nanalysisevents :
+		nanalysisevents+=1
 #if this job isn't needed based on the splitting just return
 if options.i_job*nanalysisevents>ntotalevents :
 	print 'This job is unnecessary because of the grid splitting.'

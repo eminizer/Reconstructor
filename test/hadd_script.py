@@ -2,7 +2,8 @@ import os, glob
 from ROOT import *
 
 sample_names = []
-#sample_names.append('SingleEl_Run2016Bv3')
+####Electron data
+#sample_names.append('SingleEl_Run2016Bv2')
 #sample_names.append('SingleEl_Run2016C')
 #sample_names.append('SingleEl_Run2016D')
 #sample_names.append('SingleEl_Run2016E')
@@ -10,7 +11,8 @@ sample_names = []
 #sample_names.append('SingleEl_Run2016G')
 #sample_names.append('SingleEl_Run2016Hv2')
 #sample_names.append('SingleEl_Run2016Hv3')
-#sample_names.append('SingleMu_Run2016Bv3')
+####Muon data
+#sample_names.append('SingleMu_Run2016Bv2')
 #sample_names.append('SingleMu_Run2016C')
 #sample_names.append('SingleMu_Run2016D')
 #sample_names.append('SingleMu_Run2016E')
@@ -18,24 +20,16 @@ sample_names = []
 #sample_names.append('SingleMu_Run2016G')
 #sample_names.append('SingleMu_Run2016Hv2')
 #sample_names.append('SingleMu_Run2016Hv3')
+###TTBar
 sample_names.append('powheg_TT')
-#sample_names.append('mcatnlo_TT')
+##sample_names.append('mcatnlo_TT')
+####Single Top
 #sample_names.append('ST_s-c')
 #sample_names.append('ST_t-c_top')
 #sample_names.append('ST_tW-c_top')
 #sample_names.append('ST_t-c_antitop')
 #sample_names.append('ST_tW-c_antitop')
-#sample_names.append('QCD_HT-50to100')
-#sample_names.append('QCD_HT-100to200')
-#sample_names.append('QCD_HT-100to200')
-#sample_names.append('QCD_HT-200to300')
-#sample_names.append('QCD_HT-300to500')
-#sample_names.append('QCD_HT-500to700')
-#sample_names.append('QCD_HT-700to1000')
-#sample_names.append('QCD_HT-700to1000')
-#sample_names.append('QCD_HT-1000to1500')
-#sample_names.append('QCD_HT-1500to2000')
-#sample_names.append('QCD_HT-2000toInf')
+####DYJets
 #sample_names.append('DYJets_M-50_HT-70to100')
 #sample_names.append('DYJets_M-50_HT-100to200')
 #sample_names.append('DYJets_M-50_HT-200to400')
@@ -44,16 +38,28 @@ sample_names.append('powheg_TT')
 #sample_names.append('DYJets_M-50_HT-800to1200')
 #sample_names.append('DYJets_M-50_HT-1200to2500')
 #sample_names.append('DYJets_M-50_HT-2500toInf')
-#sample_names.append('WJets_HT-70to100')
-#sample_names.append('WJets_HT-100to200')
+####WJets
+##sample_names.append('WJets_HT-70to100')
+##sample_names.append('WJets_HT-100to200')
 #sample_names.append('WJets_HT-200to400')
 #sample_names.append('WJets_HT-400to600')
 #sample_names.append('WJets_HT-600to800')
 #sample_names.append('WJets_HT-800to1200')
 #sample_names.append('WJets_HT-1200to2500')
 #sample_names.append('WJets_HT-2500toInf')
-#sample_names.append('WW_to_2L_2Nu')
+####QCD
+##sample_names.append('QCD_HT-50to100')
+#sample_names.append('QCD_HT-100to200')
+#sample_names.append('QCD_HT-200to300')
+#sample_names.append('QCD_HT-300to500')
+#sample_names.append('QCD_HT-500to700')
+#sample_names.append('QCD_HT-700to1000')
+#sample_names.append('QCD_HT-1000to1500')
+#sample_names.append('QCD_HT-1500to2000')
+#sample_names.append('QCD_HT-2000toInf')
+####Multiboson
 #sample_names.append('WW_to_L_Nu_2Q')
+#sample_names.append('WW_to_2L_2Nu')
 #sample_names.append('WZ_to_L_Nu_2Q')
 #sample_names.append('WZ_to_L_3Nu')
 #sample_names.append('WZ_to_2L_2Q')
@@ -85,22 +91,18 @@ for name in sample_names :
     
 #    #make input file
 #    os.system('rm -rf input.txt')
-#    directory = raw_input('nTuple directory for '+name+': ')
-#    os.system('python ../make_ttree_input_file.py --directory '+directory)
+#    directory = 'ay'
+#    while directory!='' :
+#        directory = raw_input('nTuple directory for '+name+': ')
+#        if directory!='' :
+#            os.system('python ../make_ttree_input_file.py --directory '+directory)
     
 #    #make new ana.listOfJobs
+#    #os.system('echo "old number of jobs:"; cat ana.listOfJobs | wc -l')
 #    os.system('rm -rf ana.listOfJobs')
 #    nJobs = raw_input('number of jobs for '+name+': ')
 #    xSec  = raw_input('cross section for '+name+': ')
-#    generator = None
-#    if name.lower().find('powheg')!=-1 :
-#    	generator='powheg'
-#    elif name.lower().find('mcatnlo')!=-1 :
-#    	generator='mcatnlo'
-#    else :
-#	    generator = raw_input('MC generator for '+name+': ')
-#    cmd = 'python ../make_list_of_jobs.py --n_jobs '+nJobs+' --name '+name+' --on_grid yes'
-#    cmd+= ' --generator '+generator+' --xSec '+xSec
+#    cmd = 'python ../make_list_of_jobs.py --n_jobs '+nJobs+' --name '+name+' --on_grid yes --xSec '+xSec
 #    os.system(cmd)
 
 #    #make list of failed jobs

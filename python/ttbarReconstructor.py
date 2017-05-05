@@ -52,26 +52,28 @@ class TTBarReconstructor(object) :
 
 	#reconstruct takes in the list of hypotheses and returns a tuple of fit information invluded the corrected fourvectors and chi2 value
 	def reconstruct(self,hypotheses,topology) :
-		#lists of final parameters and chi2 values
-		bestParValues = []; finalChi2s = []; errflags = []
+		#set the number of fit parameters based on topology
+		fitpars = 6
+		if topology==1 :
+			self.minuit.mnfixp(5,self.ierflag)
+			fitpars = 5
+		#list of best parameter values
+		bestParValues = []
+		for i in range(fitpars) :
+			bestParValues.append(self.parinivals[i])
+		#list of flags for each fit
+		errflags = []
 		for i in range(len(hypotheses)): 
-			bestParValues.append([hypotheses[i][1].Pz(),1.0,1.0,1.0,1.0,1.0])
-			finalChi2s.append(1000000000.)
 			errflags.append(-1)
 		#perform the fit once for each jet/MET hypothesis
 		#print '------------------------------------------------------------------------' #DEBUG
+		bestfitchi2 = 10000000.; bestfitindex = -1; 
 		for i in range(len(hypotheses)) :
-			freeparameters = False
 			#print 'Running with hypothesis number = %d'%(i) #DEBUG
 			hypothesis = hypotheses[i]
-			#pop unneeded parameter values
-			if topology==1 :
-				bestParValues[i].pop(5)
-				self.minuit.mnfixp(5,self.ierflag)
-				freeparameters=True
 			#set parameter values
-			for j in range(len(bestParValues[i])) :
-				self.minuit.mnparm(j,self.parNames[j],bestParValues[i][j],1.0,0,0,self.ierflag)
+			for j in range(fitpars) :
+				self.minuit.mnparm(j,self.parNames[j],self.parinivals[j],1.0,0,0,self.ierflag)
 			#set constants
 			lep_vec = hypothesis[0].getFourVector()
 			met = hypothesis[1]
@@ -110,27 +112,21 @@ class TTBarReconstructor(object) :
 			self.minuit.mnexcm('MIGRAD', self.arglist, 1, self.ierflag)
 			#print 'errflag = '+str(ierflag) #DEBUG
 			errflags[i] = self.ierflag
-			#Get the bestfit parameters back from minuit
-			for j in range(len(bestParValues[i])) :
-				tmp = Double(1.0)
-				self.minuit.GetParameter(j,tmp,Double(self.parerrs[j]))
-				bestParValues[i][j] = tmp
-			#check to make sure it didn't just get stuck in the "negative LL" trap
-			gotstuck = True 
-			for j in range(1,len(bestParValues[i])) : 
-				if bestParValues[i][j]!=1.0 :  
-					gotstuck = False; break 
-			if gotstuck :
-				print 'This fit never had positive likelihood' #DEBUG
-				errflags[i] = -1
-			#Set fit Chi2 for this pZ solution
+			#Check fit Chi2 for this hypothesis
 			tmp1 = Double(1.0); tmp2 = Double(1.0); tmp3 = Double(1.0)
 			self.minuit.mnstat(tmp1,tmp2,tmp3,Long(1),Long(1),Long(1))
 			#print 'chi2 = %.4f'%(tmp1) #DEBUG
-			finalChi2s[i] = tmp1
-			if freeparameters :
-				self.minuit.mnfree(0)
-				freeparameters=False
+			if tmp1<bestfitchi2 :
+				bestfitchi2=tmp1
+				bestfitindex=i
+				#Get the bestfit parameters back from minuit
+				for j in range(fitpars) :
+					tmp = Double(1.0)
+					self.minuit.GetParameter(j,tmp,Double(self.parerrs[j]))
+					bestParValues[j] = tmp
+		#undo fixing parameters if necessary
+		if fitpars==5 :
+			self.minuit.mnfree(0)
 		#if no fits converged, return garbage
 		noneconverged = True
 		for errflag in errflags :
@@ -139,50 +135,45 @@ class TTBarReconstructor(object) :
 		if noneconverged :
 			return -1, None, None, None, None, None, None, None, 1000000000., []
 		#find which fit gave the best results and record best parameter values
-		final_pars = []
-		bestfitchi2 = min(finalChi2s)
-		bestfitindex = finalChi2s.index(bestfitchi2)
-		for i in range(len(bestParValues[bestfitindex])) :
-			final_pars.append(bestParValues[bestfitindex][i])
 		besthypothesis = hypotheses[bestfitindex]
 		final_met = TLorentzVector(); final_met.SetPtEtaPhiE(besthypothesis[1].Pt(),besthypothesis[1].Eta(),besthypothesis[1].Phi(),besthypothesis[1].E())
 		#print 'bestfitindex = %d, bestfitchi2 = %.4f'%(bestfitindex,bestfitchi2) #DEBUG
 		#rescale the lepton and jet four vectors based on the final parameters
 		bigjet_return = None; had1_return = None; had2_return = None; had3_return = None
 		orig_lep = besthypothesis[0].getFourVector()
-		lep_return = rescale(orig_lep,final_pars[1])
+		lep_return = rescale(orig_lep,bestParValues[1])
 		orig_lepb = besthypothesis[2].getFourVector()
-		lepb_return = rescale(orig_lepb,final_pars[2])
+		lepb_return = rescale(orig_lepb,bestParValues[2])
 		if topology==1 :
 			orig_bigjet = besthypothesis[3][0].getFourVector()
 			orig_had1 = besthypothesis[3][0].getSubjet(0).getFourVector()
-			had1_return = rescale(orig_had1,final_pars[3])
+			had1_return = rescale(orig_had1,bestParValues[3])
 			orig_had2 = besthypothesis[3][0].getSubjet(1).getFourVector()
-			had2_return = rescale(orig_had2,final_pars[4])
+			had2_return = rescale(orig_had2,bestParValues[4])
 			bigjet_return = orig_bigjet-orig_had1+had1_return-orig_had2+had2_return
 		else :
 			orig_had1 = besthypothesis[3][0].getFourVector()
-			had1_return = rescale(orig_had1,final_pars[3])
+			had1_return = rescale(orig_had1,bestParValues[3])
 			orig_had2 = besthypothesis[3][1].getFourVector()
-			had2_return = rescale(orig_had2,final_pars[4])
+			had2_return = rescale(orig_had2,bestParValues[4])
 			orig_had3 = besthypothesis[3][2].getFourVector()
-			had3_return = rescale(orig_had3,final_pars[5])
+			had3_return = rescale(orig_had3,bestParValues[5])
 		#rebuild the neutrino post-rescaling
-		newmetx = final_met.Px()+ (1.0-final_pars[1])*orig_lep.Px()
-		newmety = final_met.Py()+ (1.0-final_pars[1])*orig_lep.Py()
-		newmetx += (1.0-final_pars[2])*orig_lepb.Px()
-		newmety += (1.0-final_pars[2])*orig_lepb.Py()
-		newmetx += (1.0-final_pars[3])*orig_had1.Px()
-		newmety += (1.0-final_pars[3])*orig_had1.Py()
-		newmetx += (1.0-final_pars[4])*orig_had2.Px()
-		newmety += (1.0-final_pars[4])*orig_had2.Py()
+		newmetx = final_met.Px()+ (1.0-bestParValues[1])*orig_lep.Px()
+		newmety = final_met.Py()+ (1.0-bestParValues[1])*orig_lep.Py()
+		newmetx += (1.0-bestParValues[2])*orig_lepb.Px()
+		newmety += (1.0-bestParValues[2])*orig_lepb.Py()
+		newmetx += (1.0-bestParValues[3])*orig_had1.Px()
+		newmety += (1.0-bestParValues[3])*orig_had1.Py()
+		newmetx += (1.0-bestParValues[4])*orig_had2.Px()
+		newmety += (1.0-bestParValues[4])*orig_had2.Py()
 		if had3_return!=None :
-			newmetx += (1.0-final_pars[5])*orig_had3.Px()
-			newmety += (1.0-final_pars[5])*orig_had3.Py()
-		final_met.SetPx(newmetx); final_met.SetPy(newmety); final_met.SetPz(final_pars[0])
+			newmetx += (1.0-bestParValues[5])*orig_had3.Px()
+			newmety += (1.0-bestParValues[5])*orig_had3.Py()
+		final_met.SetPx(newmetx); final_met.SetPy(newmety); final_met.SetPz(bestParValues[0])
 		final_met.SetE(final_met.Vect().Mag())
 		#return everything
-		return (bestfitindex,lep_return,final_met,lepb_return,bigjet_return,had1_return,had2_return,had3_return,bestfitchi2,final_pars)
+		return (bestfitindex,lep_return,final_met,lepb_return,bigjet_return,had1_return,had2_return,had3_return,bestfitchi2,bestParValues)
 
 	#type 1 (fully merged) top minimization function
 	@staticmethod

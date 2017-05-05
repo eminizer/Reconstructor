@@ -35,6 +35,8 @@ class Corrector(object) :
 		self.__ele_trk_eff_sceta_low = self.__ele_trk_eff_2D_histo.GetXaxis().GetBinCenter(0)
 		self.__ele_trk_eff_sceta_hi  = self.__ele_trk_eff_2D_histo.GetXaxis().GetBinCenter(self.__ele_trk_eff_2D_histo.GetNbinsX())
 		self.__renormdict = renormdict
+		self.__alphalist = getList(renormdict,'alpha')
+		self.__epsilonlist = getList(renormdict,'epsilon')
 
 	def getJECforJet(self,jetvec,area,rho,npv,pp) :
 		corrector=None
@@ -171,8 +173,8 @@ class Corrector(object) :
 			pdfvalues2array.append(pdfvaluearray[i]**2)
 		pdfunc = sqrt(abs((sum(pdfvalues2array)/npdfweights)-(pdfmean**2)))
 		#get the alpha_s values
-		alphas_up_unc 	= abs(branches['alphas_Weights'].getReadValue(1)*0.75-1.)
-		alphas_down_unc = abs(branches['alphas_Weights'].getReadValue(0)*0.75-1.)
+		alphas_up_unc 	= abs(branches['alphas_Weights'].getReadValue(1)*0.75-1.) if len(branches['alphas_Weights'].getReadArray())>1 else 0.
+		alphas_down_unc = abs(branches['alphas_Weights'].getReadValue(0)*0.75-1.) if len(branches['alphas_Weights'].getReadArray())>1 else 0.
 		#nominal value
 		returnlist.append(pdfmean/self.__renormdict['pdfas'])
 		#up/down with pdf and alpha_s added in quadrature
@@ -180,6 +182,19 @@ class Corrector(object) :
 		returnlist.append(pdfmean-sqrt(pdfunc**2+alphas_down_unc**2)/self.__renormdict['pdfasdown'])
 		#return the list, made into a tuple so it's immutable
 		return tuple(returnlist)
+
+	def getAlphaEpsilon(self,beta) :
+		alpha = 0.0; epsilon = 0.0
+		for i in range(len(self.__alphalist)) :
+			if (i==0 and beta<self.__alphalist[i][0]) or (i==len(self.__alphalist)-1 and beta>self.__alphalist[i][0]) or (beta>self.__alphalist[i][0] and beta<self.__alphalist[i+1][0]) :
+				alpha = self.__alphalist[i][1]
+				break
+		for i in range(len(self.__epsilonlist)) :
+			if (i==0 and beta<self.__epsilonlist[i][0]) or (i==len(self.__epsilonlist)-1 and beta>self.__epsilonlist[i][0]) or (beta>self.__epsilonlist[i][0] and beta<self.__epsilonlist[i+1][0]) :
+				epsilon = self.__epsilonlist[i][1]
+				break
+		#print 'beta = %.4f, alpha = %.4f, epsilon = %.4f'%(beta,alpha,epsilon) #DEBUG
+		return alpha, epsilon
 
 	def __del__(self) :
 		pass
@@ -192,35 +207,35 @@ def setupJECCorrector(onGrid,isdata,jetType,runera) :
 	pp = './tardir/' if onGrid == 'yes' else '../other_input_files/'
 	#Get the files linked below from https://twiki.cern.ch/twiki/bin/view/CMS/JECDataMC
 	if not isdata :
-		L1JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10_MC_L1FastJet_'+jetType+'.txt')
-		L2JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10_MC_L2Relative_'+jetType+'.txt')
-		L3JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10_MC_L3Absolute_'+jetType+'.txt')
-		jetUncertainty = JetCorrectionUncertainty(pp+'Spring16_25nsV10_MC_Uncertainty_'+jetType+'.txt')
+		L1JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016V4_MC_L1FastJet_'+jetType+'.txt')
+		L2JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016V4_MC_L2Relative_'+jetType+'.txt')
+		L3JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016V4_MC_L3Absolute_'+jetType+'.txt')
+		jetUncertainty = JetCorrectionUncertainty(pp+'Summer16_23Sep2016V4_MC_Uncertainty_'+jetType+'.txt')
 	else :
 		if runera=='B' or runera=='C' or runera=='D' :
-			L1JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10BCD_DATA_L1FastJet_'+jetType+'.txt')
-			L2JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10BCD_DATA_L2Relative_'+jetType+'.txt')
-			L3JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10BCD_DATA_L3Absolute_'+jetType+'.txt')
-			ResJetPar = JetCorrectorParameters(pp+'Spring16_25nsV10BCD_DATA_L2L3Residual_'+jetType+'.txt')
-			jetUncertainty = JetCorrectionUncertainty(pp+'Spring16_25nsV10BCD_DATA_Uncertainty_'+jetType+'.txt')
-		elif runera=='E' :
-			L1JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10E_DATA_L1FastJet_'+jetType+'.txt')
-			L2JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10E_DATA_L2Relative_'+jetType+'.txt')
-			L3JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10E_DATA_L3Absolute_'+jetType+'.txt')
-			ResJetPar = JetCorrectorParameters(pp+'Spring16_25nsV10E_DATA_L2L3Residual_'+jetType+'.txt')
-			jetUncertainty = JetCorrectionUncertainty(pp+'Spring16_25nsV10E_DATA_Uncertainty_'+jetType+'.txt')
-		elif runera=='F' :
-			L1JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10F_DATA_L1FastJet_'+jetType+'.txt')
-			L2JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10F_DATA_L2Relative_'+jetType+'.txt')
-			L3JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10F_DATA_L3Absolute_'+jetType+'.txt')
-			ResJetPar = JetCorrectorParameters(pp+'Spring16_25nsV10F_DATA_L2L3Residual_'+jetType+'.txt')
-			jetUncertainty = JetCorrectionUncertainty(pp+'Spring16_25nsV10F_DATA_Uncertainty_'+jetType+'.txt')
-		elif runera=='G' or runera=='H' :
-			L1JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10p2_DATA_L1FastJet_'+jetType+'.txt')
-			L2JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10p2_DATA_L2Relative_'+jetType+'.txt')
-			L3JetPar  = JetCorrectorParameters(pp+'Spring16_25nsV10p2_DATA_L3Absolute_'+jetType+'.txt')
-			ResJetPar = JetCorrectorParameters(pp+'Spring16_25nsV10p2_DATA_L2L3Residual_'+jetType+'.txt')
-			jetUncertainty = JetCorrectionUncertainty(pp+'Spring16_25nsV10p2_DATA_Uncertainty_'+jetType+'.txt')
+			L1JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016BCDV4_DATA_L1FastJet_'+jetType+'.txt')
+			L2JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016BCDV4_DATA_L2Relative_'+jetType+'.txt')
+			L3JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016BCDV4_DATA_L3Absolute_'+jetType+'.txt')
+			ResJetPar = JetCorrectorParameters(pp+'Summer16_23Sep2016BCDV4_DATA_L2L3Residual_'+jetType+'.txt')
+			jetUncertainty = JetCorrectionUncertainty(pp+'Summer16_23Sep2016BCDV4_DATA_Uncertainty_'+jetType+'.txt')
+		elif runera=='E' or runera=='F' :
+			L1JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016EFV4_DATA_L1FastJet_'+jetType+'.txt')
+			L2JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016EFV4_DATA_L2Relative_'+jetType+'.txt')
+			L3JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016EFV4_DATA_L3Absolute_'+jetType+'.txt')
+			ResJetPar = JetCorrectorParameters(pp+'Summer16_23Sep2016EFV4_DATA_L2L3Residual_'+jetType+'.txt')
+			jetUncertainty = JetCorrectionUncertainty(pp+'Summer16_23Sep2016EFV4_DATA_Uncertainty_'+jetType+'.txt')
+		elif runera=='G' :
+			L1JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016GV4_DATA_L1FastJet_'+jetType+'.txt')
+			L2JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016GV4_DATA_L2Relative_'+jetType+'.txt')
+			L3JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016GV4_DATA_L3Absolute_'+jetType+'.txt')
+			ResJetPar = JetCorrectorParameters(pp+'Summer16_23Sep2016GV4_DATA_L2L3Residual_'+jetType+'.txt')
+			jetUncertainty = JetCorrectionUncertainty(pp+'Summer16_23Sep2016GV4_DATA_Uncertainty_'+jetType+'.txt')
+		elif runera=='H' :
+			L1JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016HV4_DATA_L1FastJet_'+jetType+'.txt')
+			L2JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016HV4_DATA_L2Relative_'+jetType+'.txt')
+			L3JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016HV4_DATA_L3Absolute_'+jetType+'.txt')
+			ResJetPar = JetCorrectorParameters(pp+'Summer16_23Sep2016HV4_DATA_L2L3Residual_'+jetType+'.txt')
+			jetUncertainty = JetCorrectionUncertainty(pp+'Summer16_23Sep2016HV4_DATA_Uncertainty_'+jetType+'.txt')
 		else :
 			print 'WARNING: Can\'t recognize Data Run Era based on filename (Run Era variable is '+str(runera)+')! This will crash I think'
 			return None, None
@@ -290,3 +305,21 @@ def setupEleTrkHisto(onGrid) :
 	histo.SetDirectory(0)
 	ele_id_file.Close()
 	return histo
+
+def getList(fulldict,pp) :
+	#find all the relevant keys
+	keys = []
+	for key in fulldict :
+		if key.find(pp)!=-1 :
+			keys.append(key)
+	#if there was only one just return this single value
+	if len(keys)==1 :
+		return [(0.5,fulldict[keys[0]])]
+	#otherwise split off the number and add a tuple to the list
+	returnlist = []
+	for key in keys :
+		num = key.split('_')[1]
+		returnlist.append((float(num),fulldict[key]))
+	#sort the list based on the numbers
+	returnlist.sort(key=lambda x: x[0])
+	return returnlist
