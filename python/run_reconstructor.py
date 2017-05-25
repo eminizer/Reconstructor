@@ -43,7 +43,7 @@ def alpha_fcn(npar, deriv, f, par, flag) :
 			lnL+=-2.0*cont*log(f_L)
 		else :
 			lnL+=10000000000.
-	print '	lnL = %.8f, alpha = %.8f'%(lnL,alpha) #DEBUG
+	#print '	lnL = %.8f, alpha = %.8f'%(lnL,alpha) #DEBUG
 	f[0] = lnL
 
 #minuit fitting function for epsilon
@@ -66,7 +66,7 @@ def epsilon_fcn(npar, deriv, f, par, flag) :
 		num = (7.+9.*bc2)/(1.-bc2)*((1.+bc2)/2.+omb2*beta2*(1.-cstar2)/(1.-bc2))*(1.+epsilon*bc2)
 		f_L = num/rnorm
 		lnL+=-2.0*cont*log(f_L)
-	print '	lnL = %.8f, epsilon = %.8f'%(lnL,epsilon) #DEBUG
+	#print '	lnL = %.8f, epsilon = %.8f'%(lnL,epsilon) #DEBUG
 	f[0] = lnL
 
 #Helper function for making the renormalization dictionary
@@ -151,7 +151,7 @@ parser.add_option('--on_grid', 	  type='string', action='store', default='no',	 
 	help='Changes everything to relative paths if running on the grid, default is "no"')
 parser.add_option('--max_events', type='int',    action='store', default=-1,	  dest='max_events',  
 	help='Maximum number of events to process (default is -1 for "all")')
-parser.add_option('--print_every',type='int',    action='store', default=1000,	  dest='print_every', 
+parser.add_option('--print_every',type='int',    action='store', default=100,	  dest='print_every', 
 	help='Print progress after how many events?')
 parser.add_option('--n_jobs', 	  type='int',    action='store', default=1,		  dest='n_jobs',	  
 	help='Number of total grid jobs')
@@ -211,7 +211,7 @@ total_pdf_alphas_sf_down_histo   = TH1D('total_pdf_alphas_sf_down_histo','total 
 totweight = 0.
 for input_file in input_files_list :
 	print '	'+input_file.rstrip()+''
-	chain.AddFile(input_file.rstrip()+'/'+options.ttree_dir_name+'/'+options.ttree_name)
+	chain.Add(input_file.rstrip()+'/'+options.ttree_dir_name+'/'+options.ttree_name)
 	f = TFile.Open(input_file.rstrip()) 
 	pu_histo = f.Get('EventCounter/pileup')
 	total_pileup_histo.Add(pu_histo)
@@ -266,7 +266,7 @@ if options.i_job*nanalysisevents>ntotalevents :
 	quit()
 #copy the subset tree to be analyzed 
 garbageFile.cd()
-analysisTree = chain.CopyTree('','',nanalysisevents,options.i_job*nanalysisevents) 
+analysisTree = chain.CopyTree('','',nanalysisevents,options.i_job*nanalysisevents); analysisTree.SetDirectory(garbageFile) 
 nanalysisevents = analysisTree.GetEntries() 
 print 'number of analyzed events for this job = %d'%(nanalysisevents) 
 #Set filename for analyzer from sample name
@@ -314,3 +314,4 @@ for event in range(nanalysisevents) :
 #clean up after yourself
 del analyzer
 garbageFile.Close()
+os.system('rm -rf '+garbageFileName)

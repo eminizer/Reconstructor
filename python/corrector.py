@@ -83,7 +83,8 @@ class Corrector(object) :
 			print 'WARNING: JER OPTION '+str(jer)+' NOT RECOGNIZED!!'
 			return None
 		#see which smearing method we should use based on MC matching
-		if jetvec.DeltaR(genJetVec)<dRCheck/2. and abs(jetvec.Pt()-genJetVec.Pt())<3.*ptres*jetvec.Pt() : #scaling
+		#print '	ptsmearfac=%.3f, reco/gen dR = %.2f, abs(dpT)=%.3f, 3*ptres*pT=%.3f'%(ptsmearfac,jetvec.DeltaR(genJetVec),abs(jetvec.Pt()-genJetVec.Pt()),3.*ptres*jetvec.Pt()) #DEBUG
+		if genJetVec!=None and jetvec.DeltaR(genJetVec)<dRCheck/2. and abs(jetvec.Pt()-genJetVec.Pt())<3.*ptres*jetvec.Pt() : #scaling
 			#smear the pt
 			recopt = jetvec.Pt()
 			deltapt = (recopt-genJetVec.Pt())*(ptsmearfac-1.0)
@@ -91,8 +92,10 @@ class Corrector(object) :
 		else : #gaussian smearing
 			sigma = sqrt(abs(ptsmearfac**2-1.))*ptres #Note the absolute value here, this is to handle cases where ptsmearfac<1., which are always out of selection range
 			ptsmear = 1.+gauss(0.,sigma)
+			#print '	sigma = %.4f, ptsmear = %.4f'%(sigma,ptsmear) #DEBUG
 		ptsmearedjet = jetvec*ptsmear
 		#return the smeared fourvector
+		#print '	old jet = (%.1f,%.1f,%.1f,%.1f), newjet = (%.1f,%.1f,%.1f,%.1f)'%(jetvec.Pt(),jetvec.Eta(),jetvec.Phi(),jetvec.M(),ptsmearedjet.Pt(),ptsmearedjet.Eta(),ptsmearedjet.Phi(),ptsmearedjet.M()) #DEBUG
 		return ptsmearedjet
 
 	def getPileupReweight(self,pu_value) :
@@ -257,9 +260,9 @@ def getJER(jetEta, sysType) :
         print "ERROR: Can't get JER! use type=0 (nom), -1 (down), +1 (up)"
         return float(jerSF)
     # Values from https://twiki.cern.ch/twiki/bin/view/CMS/JetResolution
-    etamin = [0.0,0.5,0.8,1.1,1.3,1.7,1.9,2.1,2.3,2.5,2.8,3.0,3.2]
-    etamax = [0.5,0.8,1.1,1.3,1.7,1.9,2.1,2.3,2.5,2.8,3.0,3.2,5.0]
-    scale_nom =    [1.109,1.138,1.114,1.1234,1.084,1.082,1.140,1.067,1.177,1.364,1.857,1.328,1.16]
+    etamin = 	   [0.0,  0.5,  0.8,  1.1,  1.3,  1.7,  1.9,  2.1,  2.3,  2.5,  2.8,  3.0,  3.2]
+    etamax = 	   [0.5,  0.8,  1.1,  1.3,  1.7,  1.9,  2.1,  2.3,  2.5,  2.8,  3.0,  3.2,  5.0]
+    scale_nom =    [1.109,1.138,1.114,1.123,1.084,1.082,1.140,1.067,1.177,1.364,1.857,1.328,1.16]
     scale_uncert = [0.008,0.013,0.013,0.024,0.011,0.035,0.047,0.053,0.041,0.039,0.071,0.022,0.029]
     for iSF in range(0,len(scale_nom)) :
         if abs(jetEta) >= etamin[iSF] and abs(jetEta) < etamax[iSF] :

@@ -52,11 +52,6 @@ def getObservables(lept_vec,hadt_vec,lepton_charge) :
 	x_f = 2*Q.Pz()/SQRT_S
 	#defining the Px, Py,and Pz, and energies to boost into the ttbar rest frame
 	Bx = -1*Q.Px()/Q.E(); By = -1*Q.Py()/Q.E(); Bz = -1*Q.Pz()/Q.E()
-	#calculating beta for the boost
-	M2_1 = Top.Mag2(); M2_2 = ATop.Mag2()
-	beta = 0
-	if ttbar_mass!=0. and (1. - 2.*(M2_1+M2_2)/(ttbar_mass*ttbar_mass) + (M2_1-M2_2)*(M2_1-M2_2)/(ttbar_mass*ttbar_mass*ttbar_mass*ttbar_mass))>0. :
-		beta = sqrt(1. - 2.*(M2_1+M2_2)/(ttbar_mass*ttbar_mass) + (M2_1-M2_2)*(M2_1-M2_2)/(ttbar_mass*ttbar_mass*ttbar_mass*ttbar_mass))
 	#Doing the boost
 	R = R.Boost(Bx,By,Bz)
 	Top = R*Top; ATop = R*ATop

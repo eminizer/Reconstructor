@@ -1,15 +1,49 @@
 #imports
 from ROOT import *
+from glob import glob
+from datetime import date
+import os
+from optparse import OptionParser
 
-#name of file to run on
-inputfilename = '../total_ttree_files/powheg_TT_skim_all.root'
+# COMMAND LINE OPTIONS
+parser = OptionParser()
+parser.add_option('--sample',  metavar='F', type='string', action='store', 
+                              dest='sample') 
+parser.add_option('--outtag',  metavar='F', type='string', action='store', 
+                              default='', 
+                              dest='outtag') ## name for output file
+(options, args) = parser.parse_args()
+sample = options.sample
+outtag = options.outtag
+if sample==None :
+	optstring = raw_input('samplename (outfilename_append) >  ')
+	optlist = optstring.split()
+	if len(optlist)<1 :
+		print 'must input sample name'
+		exit()
+	sample = optlist[0]
+	if len(optlist)>1 :
+		outtag = optlist[1]
 
-#open the input file
-infile = TFile(inputfilename)
+if not os.path.isdir('../'+sample) :
+	print 'sample name '+sample+' is not valid!'
+	exit()
 
-#get the tree from the file
-fullTree = infile.Get('tree')
-#fullTree.SetDirectory(0)
+#open the input files
+infiles = glob('../'+sample+'/aggregated_*.root')
+
+#start up the output file
+outfilename = 'kinfit_tuning_plots_'+sample+'_'+str(date.today())
+if outtag!='' :
+	outfilename+='_'+outtag
+outfilename+='.root'
+outfile = TFile(outfilename,'recreate')
+
+#build the chain
+fullchain = TChain('tree')
+for f in infiles :
+	print 'adding file '+str(f)+'...'
+	fullchain.Add(f)
 
 #declare the plots
 #tmass_low=100.; tmass_high=350.; ntbins=75
@@ -24,28 +58,24 @@ t3hadtM = TH1F('t3hadtM','type-3 hadronic top mass, correct hypothesis; M_{top}^
 for histo in allhistos :
 	histo.SetDirectory(0)
 
-#start up the output file
-outfile = TFile('kinfit_tuning_plots_powheg_5_5_2017.root','recreate')
-
-#set up tree
+#set up skimmed chain
 com_cuts = 'fullselection==1 && ismatchable==1'
-tree=fullTree.CopyTree(com_cuts)
-#tree.SetDirectory(0)
+chain=fullchain.CopyTree(com_cuts)
 
 #plot plots
 weights = '35867.*weight*sf_pileup*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
 print 'Drawing type-1 leptonic top mass...'
-tree.Draw('leptcorprefitM>>t1leptM('+str(ntbins)+','+str(tmass_low)+','+str(tmass_high)+')','('+weights+')*('+com_cuts+' && eventTopology==1)')
+chain.Draw('leptcorprefitM>>t1leptM('+str(ntbins)+','+str(tmass_low)+','+str(tmass_high)+')','('+weights+')*('+com_cuts+' && eventTopology==1)')
 print 'Drawing type-1 hadronic top mass...'
-tree.Draw('hadtcorprefitM>>t1hadtM('+str(ntbins)+','+str(tmass_low)+','+str(tmass_high)+')','('+weights+')*('+com_cuts+' && eventTopology==1)')
+chain.Draw('hadtcorprefitM>>t1hadtM('+str(ntbins)+','+str(tmass_low)+','+str(tmass_high)+')','('+weights+')*('+com_cuts+' && eventTopology==1)')
 print 'Drawing type-2 leptonic top mass...'
-tree.Draw('leptcorprefitM>>t2leptM('+str(ntbins)+','+str(tmass_low)+','+str(tmass_high)+')','('+weights+')*('+com_cuts+' && eventTopology==2)')
+chain.Draw('leptcorprefitM>>t2leptM('+str(ntbins)+','+str(tmass_low)+','+str(tmass_high)+')','('+weights+')*('+com_cuts+' && eventTopology==2)')
 print 'Drawing type-2 hadronic top mass...'
-tree.Draw('hadtcorprefitM>>t2hadtM('+str(ntbins)+','+str(tmass_low)+','+str(tmass_high)+')','('+weights+')*('+com_cuts+' && eventTopology==2)')
+chain.Draw('hadtcorprefitM>>t2hadtM('+str(ntbins)+','+str(tmass_low)+','+str(tmass_high)+')','('+weights+')*('+com_cuts+' && eventTopology==2)')
 print 'Drawing type-3 leptonic top mass...'
-tree.Draw('leptcorprefitM>>t3leptM('+str(ntbins)+','+str(tmass_low)+','+str(tmass_high)+')','('+weights+')*('+com_cuts+' && eventTopology==3)')
+chain.Draw('leptcorprefitM>>t3leptM('+str(ntbins)+','+str(tmass_low)+','+str(tmass_high)+')','('+weights+')*('+com_cuts+' && eventTopology==3)')
 print 'Drawing type-3 hadronic top mass...'
-tree.Draw('hadtcorprefitM>>t3hadtM('+str(ntbins)+','+str(tmass_low)+','+str(tmass_high)+')','('+weights+')*('+com_cuts+' && eventTopology==3)')
+chain.Draw('hadtcorprefitM>>t3hadtM('+str(ntbins)+','+str(tmass_low)+','+str(tmass_high)+')','('+weights+')*('+com_cuts+' && eventTopology==3)')
 print 'Done.'
 for histo in allhistos :
 	thisName = histo.GetName()
@@ -91,9 +121,6 @@ for i in range(len(allhistos)) :
 	histo.Fit(gausfunc,"","",gmean-20.,gmean+20.)
 	gausfunc.Draw('SAME')
 	gmean = gausfunc.GetParameter(1); gwidth = gausfunc.GetParameter(2)
-	leg = TLegend(0.1,0.7,0.48,0.9)
-	leg.AddEntry(gausfunc,"Gaussian Fit","L")
-	leg.Draw('SAME')
 	lines.append('%s, Gaussian: %.1f +/- %.1f'%(allhistos[i].GetName(),gmean,gwidth))
 	total_canv.cd()
 	histo.SetMarkerColor(colors[i])
@@ -116,3 +143,5 @@ for histo in allhistos :
 for canv in allcanvs :
 	canv.Write()
 total_canv.Write()
+outfile.Write()
+outfile.Close()

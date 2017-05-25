@@ -14,9 +14,13 @@ class Lepton(object) :
 		self.__type = pp
 
 	def calculateIsolation(self,jets) :
-		nearestJetVec = findNearestJet(self.__fourvec,jets).getFourVector()
+		nearestJet = findNearestJet(self.__fourvec,jets)
+		nearestJetVec = nearestJet.getFourVector()
 		self.__dR = self.__fourvec.DeltaR(nearestJetVec)
 		self.__relPt = self.__fourvec.Pt(nearestJetVec.Vect())
+		self.__nearestJetPt = nearestJetVec.Pt()
+		cleanedleplist = nearestJet.getListOfCleanedLeptons()
+		self.__wasCleanedFromNearestJet = 1 if cleanedleplist!=None and self in cleanedleplist else 0
 
 	def getPt(self) :
 		return self.__pt
@@ -32,8 +36,12 @@ class Lepton(object) :
 		return self.__relPt
 	def getDR(self) :
 		return self.__dR
+	def getNearestJetPt(self) :
+		return self.__nearestJetPt
 	def getType(self) :
 		return self.__type
+	def wasCleanedFromNearestJet(self) :
+		return self.__wasCleanedFromNearestJet
 
 class Muon(Lepton) :
 
@@ -44,11 +52,18 @@ class Muon(Lepton) :
 		else :
 			self.__ID = branches['mu_IsMediumMuon'].getReadValue(index)
 		self.__iso = branches['mu_Iso04'].getReadValue(index)
+		self.__miniIso = branches['mu_MiniIso'].getReadValue(index)
+		self.__isValid = self.getPt()>55. and abs(self.getEta())<2.5 and self.__ID==1 #my selection
+		#self.__isValid = self.getPt()>50. and abs(self.getEta())<2.1 and self.__ID==1 #Susan's selection
 
+	def isValid(self) :
+		return self.__isValid
 	def getID(self) :
 		return self.__ID
 	def isIso(self) :
 		return (self.__iso/Lepton.getPt(self))<0.1
+	def isMiniIso(self) :
+		return (self.__miniIso/Lepton.getPt(self))<0.2
 
 class Electron(Lepton) :
 
@@ -57,22 +72,29 @@ class Electron(Lepton) :
 		self.__ID = branches['el_IDMedium_NoIso'].getReadValue(index)
 		self.__scEta = branches['el_SCEta'].getReadValue(index)
 		self.__iso = branches['el_Iso03'].getReadValue(index)
+		self.__miniIso = branches['el_MiniIso'].getReadValue(index)
+		self.__isValid = self.getPt()>50. and abs(self.__scEta)<2.5 and self.__ID==1 #my selection
+		#self.__isValid = self.getPt()>50. and abs(self.getEta())<2.5 and self.__ID==1 #Susan's selection
 
+	def isValid(self) :
+		return self.__isValid
 	def getID(self) :
 		return self.__ID
 	def getEtaSC(self) :
 		return self.__scEta
 	def isIso(self) :
 		return (self.__iso/Lepton.getPt(self))<0.12
+	def isMiniIso(self) :
+		return (self.__miniIso/Lepton.getPt(self))<0.2
 
 def findNearestJet(lepvec,jets) :
 	closestJet = jets[0]
-	closestDR = closestJet.getFourVector().DeltaR(lepvec)
+	closestDR = lepvec.DeltaR(closestJet.getFourVector())
 	for i in range(1,len(jets)) :
 		jet = jets[i]
 		if jet.getPt()<15. or abs(jet.getEta())>3. :
 			break
-		checkDR = jet.getFourVector().DeltaR(lepvec)
+		checkDR = lepvec.DeltaR(jet.getFourVector())
 		if checkDR < closestDR :
 			closestDR = checkDR
 			closestJet = jet

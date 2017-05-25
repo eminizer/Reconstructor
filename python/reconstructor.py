@@ -7,7 +7,8 @@ BEAM_ENERGY=SQRT_S/2.0
 #MU_TRIG_PATH = 'HLT_Mu45_eta2p1'
 MU_TRIG_PATHS = ['HLT_Mu50','HLT_TkMu50']
 #EL_TRIG_PATH = 'HLT_Ele35_CaloIdVT_GsfTrkIdT_PFJet150_PFJet50'
-EL_TRIG_PATHS = ['HLT_Ele45_CaloIdVT_GsfTrkIdT_PFJet200_PFJet50']
+#EL_TRIG_PATHS = ['HLT_Ele45_CaloIdVT_GsfTrkIdT_PFJet200_PFJet50']
+EL_TRIG_PATHS = ['HLT_Ele45_WPLoose_Gsf']
 
 ##########								   Imports  								##########
 
@@ -105,6 +106,7 @@ class Reconstructor(object) :
 	mu_es 		  = AddBranch(readname='mu_E',size='mu_size',dictlist=thisdictlist)
 	mu_charges 	  = AddBranch(readname='mu_Charge',size='mu_size',dictlist=thisdictlist)
 	mu_isos 	  = AddBranch(readname='mu_Iso04',size='mu_size',dictlist=thisdictlist)
+	mu_miniIsos   = AddBranch(readname='mu_MiniIso',size='mu_size',dictlist=thisdictlist)
 	mus_isMed     = AddBranch(readname='mu_IsMediumMuon',size='mu_size',dictlist=thisdictlist)
 	mus_isMed2016 = AddBranch(readname='mu_IsMediumMuon2016',size='mu_size',dictlist=thisdictlist)
 	mu_Keys 	  = AddBranch(readname='mu_Key',size='mu_size',dictlist=thisdictlist)
@@ -119,6 +121,7 @@ class Reconstructor(object) :
 	el_es 		  = AddBranch(readname='el_E',size='el_size',dictlist=thisdictlist)
 	el_charges 	  = AddBranch(readname='el_Charge',size='el_size',dictlist=thisdictlist)
 	el_isos 	  = AddBranch(readname='el_Iso03',size='el_size',dictlist=thisdictlist)
+	el_miniIsos   = AddBranch(readname='el_MiniIso',size='el_size',dictlist=thisdictlist)
 	el_id 		  = AddBranch(readname='el_IDMedium_NoIso',ttreetype='I',size='el_size',dictlist=thisdictlist)
 	el_Keys 	  = AddBranch(readname='el_Key',size='el_size',dictlist=thisdictlist)
 	#AK4 Jets
@@ -262,6 +265,8 @@ class Reconstructor(object) :
 		AddBranch(writename=lepname+'_Q',ttreetype='I',inival=0,dictlist=thisdictlist)
 		AddBranch(writename=lepname+'_relPt',dictlist=thisdictlist)
 		AddBranch(writename=lepname+'_dR',dictlist=thisdictlist)
+		AddBranch(writename=lepname+'_isIso',ttreetype='i',inival=2,dictlist=thisdictlist)
+		AddBranch(writename=lepname+'_isMiniIso',ttreetype='i',inival=2,dictlist=thisdictlist)
 	ak8names = ['ak81','ak82','scaled_bigjet']
 	for ak8name in ak8names :
 		AddBranch(writename=ak8name+'_tau32',dictlist=thisdictlist)
@@ -328,8 +333,8 @@ class Reconstructor(object) :
 	for cutname in cutnames :
 		AddBranch(writename=cutname,ttreetype='i',inival=2,dictlist=thisdictlist)
 	#debugging variables
-	kinfit_debug_branches = {}
-	thisdictlist=[kinfit_debug_branches,allBranches]
+	debug_branches = {}
+	thisdictlist=[debug_branches,allBranches]
 	chi2 = AddBranch(writename='chi2',inival=0.0,dictlist=thisdictlist)
 	par_0 = AddBranch(writename='par_0',dictlist=thisdictlist)
 	par_1 = AddBranch(writename='par_1',dictlist=thisdictlist)
@@ -344,6 +349,10 @@ class Reconstructor(object) :
 	lepWcorprefitM = AddBranch(writename='lepWcorprefitM',dictlist=thisdictlist)
 	leptcorprefitM = AddBranch(writename='leptcorprefitM',dictlist=thisdictlist)
 	hadtcorprefitM = AddBranch(writename='hadtcorprefitM',dictlist=thisdictlist)
+	nearestJetPt = AddBranch(writename='nearestJetPt',dictlist=thisdictlist)
+	#wasCleanedFromAnyJet = AddBranch(writename='wasCleanedFromAnyJet',dictlist=thisdictlist)
+	#wasCleanedFromAnyAnalysisJet = AddBranch(writename='wasCleanedFromAnyAnalysisJet',dictlist=thisdictlist)
+	wasCleanedFromNearestJet = AddBranch(writename='wasCleanedFromNearestJet',dictlist=thisdictlist)
 
 	##################################  ANALYZE FUNCTION  ##################################
 	def analyze(self,eventnumber) :
@@ -361,6 +370,15 @@ class Reconstructor(object) :
 		if not (metsize>0 and (musize>0 or elsize>0) and ak4jetsize>0) :
 			#print 'EVENT NUMBER %d NOT VALID; MISSING REQUISITE PHYSICS OBJECTS (metsize = %d, musize = %d, elsize = %d, ak4jetsize = %d, ak8jetsize = %d)'%(eventnumber,metsize,musize,elsize,ak4jetsize,ak8jetsize)
 			return
+
+		##Make Susan's selection cuts (These are a very common skim for boosted semileptonic top so I'm leaving this here)
+		#goodleptons = 0
+		#for i in range(musize) :
+		#	if self.mu_pts.getReadValue(i)>50. and abs(self.mu_etas.getReadValue(i))<2.1 and self.mus_isMed.getReadValue(i)==1 : goodleptons+=1
+		#for i in range(elsize) :
+		#	if self.el_pts.getReadValue(i)>50. and abs(self.el_etas.getReadValue(i))<2.5 and self.el_id.getReadValue(i)==1 : goodleptons+=1
+		#if not (ak8jetsize>0 and ak4jetsize>1 and self.ak8_pts.getReadValue(0)>400. and self.ak4_pts.getReadValue(0)>50. and self.ak4_pts.getReadValue(1)>50. and goodleptons==1) : 
+		#	return 
 
 		#MC stuff
 		if not self.is_data :
@@ -397,8 +415,8 @@ class Reconstructor(object) :
 		muons = []
 		for i in range(musize) :
 			newmuon=Muon(self.muonBranches,i,self.run_era)
-			if newmuon.getPt()>55. and abs(newmuon.getEta())<2.5 and newmuon.getID()==1 : muons.append(newmuon)
-		muons.sort(key=lambda x: x.getPt(), reverse=True)
+			if newmuon.isValid() :
+				muons.append(newmuon)
 		#print '		Added %d Muons.'%(len(muons)) #DEBUG
 
 		#electrons
@@ -406,8 +424,8 @@ class Reconstructor(object) :
 		electrons = []
 		for i in range(elsize) :
 			newele = Electron(self.electronBranches,i)
-			if newele.getPt()>55. and abs(newele.getEtaSC())<2.5 and newele.getID()==1 : electrons.append(newele)
-		electrons.sort(key=lambda x: x.getPt(), reverse=True)
+			if newele.isValid() :
+				electrons.append(newele)
 		#print '		Added %d Electrons.'%(len(electrons)) #DEBUG
 
 		if len(muons)==0 and len(electrons)==0 :
@@ -415,48 +433,34 @@ class Reconstructor(object) :
 			return
 
 		#jets
-		ak4jets = []; ak8jets = [];
+		#print 'met before = (%.1f,%.1f,%.1f,%.1f)'%(met.Pt(),met.Eta(),met.Phi(),met.M()) #DEBUG
+		ak4jets = []; ak4jetsforisocalc = []; ak8jets = [];
 		#print '	Adding AK4 Jets...' #DEBUG
 		for i in range(ak4jetsize) :
 			newJet = AK4Jet(self.ak4JetBranches,i,self.JES,self.JER,muons+electrons,self.corrector,self.is_data)
-			if newJet.getFourVector()!=None and newJet.getPt()>15. and abs(newJet.getEta())<3.0 and newJet.isIDed() :
+			met=met+newJet.getMETCorrectionVec()
+			if newJet.isValidForIsoCalc() :
+				ak4jetsforisocalc.append(newJet)
+			if newJet.isValid() :
 				ak4jets.append(newJet)
-		#print '		Added %d AK4 Jets.'%(len(ak4jets)) #DEBUG
+		#print '		Added %d AK4 Jets (%d for the isolation calcuations).'%(len(ak4jets),len(ak4jetsforisocalc)) #DEBUG
 		#print '	Adding AK8 Jets...' #DEBUG
 		for i in range(ak8jetsize) :
 			newJet = AK8Jet(self.ak8JetBranches,i,self.JES,self.JER,muons+electrons,self.corrector,self.is_data)
-			if newJet.getFourVector()!=None and newJet.getPt()>200. and abs(newJet.getEta())<2.4 and newJet.getNSubjets()>1 and newJet.isIDed() :
+			met=met+newJet.getMETCorrectionVec()
+			if newJet.isValid() :
 				ak8jets.append(newJet)
 		ak4jets.sort(key=lambda x: x.getPt(), reverse=True)
 		ak8jets.sort(key=lambda x: x.getPt(), reverse=True)
 		#print '		Added %d AK8 Jets.'%(len(ak8jets)) #DEBUG
+		met.SetPz(0.); met.SetE(met.Vect().Mag()) #reset the eta and mass of the MET
+		#print 'met after = (%.1f,%.1f,%.1f,%.1f)'%(met.Pt(),met.Eta(),met.Phi(),met.M()) #DEBUG
 		#if the lepton cleaning got rid of too many jets toss the event
 		if not len(ak4jets)>0 :
 			#print 'EVENT NUMBER %d NOT VALID; MISSING JETS (# AK4jets = %d, # AK8Jets = %d)'%(eventnumber,len(ak4jets),len(ak8jets)) #DEBUG
 			return
 		#set the numbers of jets in the event
 		self.nak4jets.setWriteValue(len(ak4jets)); self.nak8jets.setWriteValue(len(ak8jets));
-
-		#calculate lepton isolation variables
-		#print '	Calculating lepton isolation values...' #DEBUG
-		for muon in muons :
-			muon.calculateIsolation(ak4jets)
-		for electron in electrons :
-			electron.calculateIsolation(ak4jets)
-		#print '		Done.'#DEBUG
-
-		#remove the ak4 jets we needed just for isolation calculations
-		i=0
-		while len(ak4jets)>0 and i<len(ak4jets) :
-			ak4jet = ak4jets[i]
-			if not (ak4jet.getPt()>30. and abs(ak4jet.getEta())<2.4) :
-				ak4jets.pop(i)
-			else :
-				i+=1
-		#print '	Refined AK4 Jets (there are now %d in the event)'%(len(ak4jets)) #DEBUG
-		if not len(ak4jets)>1 :
-			#print 'EVENT NUMBER %d NOT VALID; MISSING JETS (# AK4jets = %d)'%(eventnumber,len(ak4jets)) #DEBUG
-			return
 		#count the number of b-tagged AK4 jets
 		nbtags = 0
 		for ak4jet in ak4jets :
@@ -464,6 +468,14 @@ class Reconstructor(object) :
 				nbtags+=1
 		self.nbTags.setWriteValue(nbtags)
 		#print '		%d of the AK4 jets are b-tagged.'%(nbtags) #DEBUG
+
+		#calculate lepton isolation variables
+		#print '	Calculating lepton isolation values...' #DEBUG
+		for muon in muons :
+			muon.calculateIsolation(ak4jetsforisocalc)
+		for electron in electrons :
+			electron.calculateIsolation(ak4jetsforisocalc)
+		#print '		Done.'#DEBUG
 
 		#Set the event toplogy
 		#print '	Setting event topology...' #DEBUG
@@ -478,7 +490,7 @@ class Reconstructor(object) :
 		self.ntTags.setWriteValue(n_ttags); self.nWTags.setWriteValue(n_Wtags)
 		if n_ttags>=1 : #If there is a t-tagged AK8 jet than this event has a type-1 (fully merged) topology
 			topology=1
-		elif len(ak8jets)>=1 and len(ak4jets)>=4 : #If there are no t-tagged AK8 jets, but there IS at least one AK8 jet, the event is "boosted untagged" (type-2 topology)
+		elif len(ak8jets)>=1 and len(ak4jets)>=4 : #If there are no t-tagged AK8 jets, but there IS at least one AK8 jet and four AK4 jets, the event is "boosted untagged" (type-2 topology)
 			topology=2
 		elif len(ak4jets)>=4 and nbtags>=2 : #If there are no AK8 jets at all, but there are at least 4 AK4 jets (at least two b-tagged), the event is "resolved" (type-3 topology)
 			topology=3
@@ -492,16 +504,19 @@ class Reconstructor(object) :
 		allleps = muons+electrons
 		allleps.sort(key=lambda x: x.getPt(), reverse=True)
 		lep = allleps[0]
-		for lepcand in allleps[1:] :
-			if (topology<3 and (lepcand.getRelPt()>20. or lepcand.getDR()>0.4)) or (topology==3 and lepcand.isIso()) :
-				lep = lepcand
-				break
+		if not lep.isIso() :
+			for lepcand in allleps[1:] :
+				if (topology<3 and (lepcand.getRelPt()>20. or lepcand.getDR()>0.4)) or (topology==3 and lepcand.isIso()) :
+					lep = lepcand
+					break
 		if lep.getType()=='mu' : self.lepflavor.setWriteValue(1)
 		elif lep.getType()=='el' : self.lepflavor.setWriteValue(2)
 		else :
 			#print 'EVENT NUMBER %d NOT VALID; LEPTON FLAVOR %s UNIDENTIFIED'%(eventnumber, lep.getType()) #DEBUG
 			return
-				
+		self.nearestJetPt.setWriteValue(lep.getNearestJetPt())
+		self.wasCleanedFromNearestJet.setWriteValue(lep.wasCleanedFromNearestJet())
+
 		#write the analysis lepton variables
 		self.__setLeptonBranchValues__('lep',lep)
 		#print '	Lepton assigned (leading isolated %s).'%('muon' if self.lepflavor.getWriteValue()==1 else 'electron') #DEBUG
@@ -518,11 +533,12 @@ class Reconstructor(object) :
 			if ellen>1 :
 				self.__setLeptonBranchValues__('ele2',electrons[1])
 		self.__setFourVectorBranchValues__('ak41',ak4jets[0].getFourVector())
-		self.__setFourVectorBranchValues__('ak42',ak4jets[1].getFourVector())
-		if len(ak4jets)>2 :
-			self.__setFourVectorBranchValues__('ak43',ak4jets[2].getFourVector())
-			if len(ak4jets)>3 :
-				self.__setFourVectorBranchValues__('ak44',ak4jets[3].getFourVector())
+		if len(ak4jets)>1 :
+			self.__setFourVectorBranchValues__('ak42',ak4jets[1].getFourVector())
+			if len(ak4jets)>2 :
+				self.__setFourVectorBranchValues__('ak43',ak4jets[2].getFourVector())
+				if len(ak4jets)>3 :
+					self.__setFourVectorBranchValues__('ak44',ak4jets[3].getFourVector())
 		if len(ak8jets)>0 : 
 			self.__setFourVectorBranchValues__('ak81',ak8jets[0].getFourVector())
 			self.allBranches['ak81_tau32'].setWriteValue(ak8jets[0].getTau32())
@@ -580,7 +596,7 @@ class Reconstructor(object) :
 					i+=1
 			self.cut_branches['onelepton'].setWriteValue(1) if len(other_leps)==0 else self.cut_branches['onelepton'].setWriteValue(0)
 			#leading ak4 jets
-			self.cut_branches['jetcuts'].setWriteValue(1) if (topology==3 or (ak4jets[0].getPt()>150. and ak4jets[1].getPt()>50.)) else self.cut_branches['jetcuts'].setWriteValue(0)
+			self.cut_branches['jetcuts'].setWriteValue(1) if (topology==3 or (len(ak4jets)>1 and ak4jets[0].getPt()>150. and ak4jets[1].getPt()>50.)) else self.cut_branches['jetcuts'].setWriteValue(0)
 			#add'l cuts
 			allcuts.append(topology==3 or (lep.getPt()+met.E())>150.)
 			allcuts.append(topology==3 or met.E()>50.)
@@ -602,7 +618,7 @@ class Reconstructor(object) :
 					i+=1
 			self.cut_branches['onelepton'].setWriteValue(1) if len(other_leps)==0 else self.cut_branches['onelepton'].setWriteValue(0)
 			#leading ak4 jets
-			self.cut_branches['jetcuts'].setWriteValue(1) if (topology==4 or (ak4jets[0].getPt()>250. and ak4jets[1].getPt()>70.)) else self.cut_branches['jetcuts'].setWriteValue(0)
+			self.cut_branches['jetcuts'].setWriteValue(1) if (topology==3 or (len(ak4jets)>1 and ak4jets[0].getPt()>250. and ak4jets[1].getPt()>70.)) else self.cut_branches['jetcuts'].setWriteValue(0)
 			#add'l cuts
 			allcuts.append(topology==3 or met.E()>120.)
 		#full selection
@@ -861,11 +877,14 @@ class Reconstructor(object) :
 		self.allBranches[name+'_Q'].setWriteValue(int(lep.getQ()))
 		self.allBranches[name+'_relPt'].setWriteValue(lep.getRelPt())
 		self.allBranches[name+'_dR'].setWriteValue(lep.getDR())
+		self.allBranches[name+'_isIso'].setWriteValue(1) if lep.isIso() else self.allBranches[name+'_isIso'].setWriteValue(0)
+		self.allBranches[name+'_isMiniIso'].setWriteValue(1) if lep.isMiniIso() else self.allBranches[name+'_isMiniIso'].setWriteValue(0)
 
 	########## function to close out the event, called before kicking back to runner #########
 	def __closeout__(self) :
 		#fill ttree
 		#print 'written M = %.4f, written M_prefit = %.4f'%(self.M.getWriteValue(),self.M_prefit.getWriteValue()) #DEBUG
+		self.outfile.cd()
 		self.tree.Fill()
 
 	################################## __del__ function  ###################################
