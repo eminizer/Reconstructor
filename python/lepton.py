@@ -12,6 +12,7 @@ class Lepton(object) :
 		self.__Q = branches[pp+'_Charge'].getReadValue(index)
 		self.__Key = branches[pp+'_Key'].getReadValue(index)
 		self.__type = pp
+		self.__dR = None; self.__relPt = None; self.__nearestJetPt = None
 
 	def calculateIsolation(self,jets) :
 		nearestJet = findNearestJet(self.__fourvec,jets)
@@ -60,32 +61,52 @@ class Muon(Lepton) :
 		return self.__isValid
 	def getID(self) :
 		return self.__ID
-	def isIso(self) :
-		return (self.__iso/Lepton.getPt(self))<0.1
+	def getIso(self) :
+		return self.__iso
+	def getMiniIso(self) :
+		return self.__miniIso
+	def isLooseIso(self) :
+		return self.__iso<0.25 #loose WP https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
+	def isTightIso(self) :
+		return self.__iso<0.15 #tight WP, already divided by pt https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
+	def isIso(self) : #really just to match with electron functions
+		return self.__iso<0.15 #tight WP, already divided by pt https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
 	def isMiniIso(self) :
-		return (self.__miniIso/Lepton.getPt(self))<0.2
+		return (self.__miniIso/self.getPt())<0.2
 
 class Electron(Lepton) :
 
 	def __init__(self,branches,index) :
 		Lepton.__init__(self,branches,index,'el')
 		self.__ID = branches['el_IDMedium_NoIso'].getReadValue(index)
+		self.__tightID = branches['el_IDTight_NoIso'].getReadValue(index)
 		self.__scEta = branches['el_SCEta'].getReadValue(index)
 		self.__iso = branches['el_Iso03'].getReadValue(index)
 		self.__miniIso = branches['el_MiniIso'].getReadValue(index)
-		self.__isValid = self.getPt()>50. and abs(self.__scEta)<2.5 and self.__ID==1 #my selection
+		self.__isValid = self.getPt()>55. and abs(self.__scEta)<2.5 and self.__ID==1 #my selection
 		#self.__isValid = self.getPt()>50. and abs(self.getEta())<2.5 and self.__ID==1 #Susan's selection
+		self.__isValidProbe = self.getPt()>55. and abs(self.__scEta)<2.5 
 
 	def isValid(self) :
 		return self.__isValid
+	def isValidProbe(self) :
+		return self.__isValidProbe
 	def getID(self) :
 		return self.__ID
+	def getTightID(self) :
+		return self.__tightID
 	def getEtaSC(self) :
 		return self.__scEta
+	def getIso(self) :
+		return self.__iso
+	def getMiniIso(self) :
+		return self.__miniIso
+	def isLooseIso(self) :
+		return self.__iso<0.0695 #what was removed from the Medium ID https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
 	def isIso(self) :
-		return (self.__iso/Lepton.getPt(self))<0.12
+		return self.__iso<0.0695 #what was removed from the Medium ID https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
 	def isMiniIso(self) :
-		return (self.__miniIso/Lepton.getPt(self))<0.2
+		return (self.__miniIso/self.getPt())<0.2
 
 def findNearestJet(lepvec,jets) :
 	closestJet = jets[0]

@@ -96,7 +96,8 @@ def make_renormalization_dict(name,alpha,epsilon,muRup,muRdown,muFup,muFdown,scu
 		#for each bin in beta
 		for i in range(1,csvb_qq_global_hist.GetXaxis().GetNbins()+1) :
 			BETA[0] = csvb_qq_global_hist.GetXaxis().GetBinCenter(i)
-			qq_global_hist_projection = symmetrize(csvb_qq_global_hist.ProjectionY('qq_proj_'+str(i),i,i))
+			#qq_global_hist_projection = symmetrize(csvb_qq_global_hist.ProjectionY('qq_proj_'+str(i),i,i))
+			qq_global_hist_projection = csvb_qq_global_hist.ProjectionY('qq_proj_'+str(i),i,i)
 			#add parameter
 			alpha_minuit.mnparm(0,'alpha',0.1,0.5,0.,0.,ierflag)
 			#minimize
@@ -110,7 +111,8 @@ def make_renormalization_dict(name,alpha,epsilon,muRup,muRdown,muFup,muFdown,scu
 		#epsilon stuff
 		for i in range(1,csvb_gg_global_hist.GetXaxis().GetNbins()+1) :
 			BETA[0] = csvb_gg_global_hist.GetXaxis().GetBinCenter(i)
-			gg_global_hist_projection = symmetrize(csvb_gg_global_hist.ProjectionY('gg_proj_'+str(i),i,i))
+			#gg_global_hist_projection = symmetrize(csvb_gg_global_hist.ProjectionY('gg_proj_'+str(i),i,i))
+			gg_global_hist_projection = csvb_gg_global_hist.ProjectionY('gg_proj_'+str(i),i,i)
 			epsilon_minuit.mnparm(0,'epsilon',0.1,0.5,0.,0.,ierflag)
 			epsilon_minuit.mnexcm('MIGRAD',arglist,1,ierflag)
 			fitted_epsilon=Double(0.0); fitted_epsilon_err=Double(0.0)
@@ -162,6 +164,8 @@ parser.add_option('--name', 		 type='string', action='store', 			  	dest='name',
 	help='Name of sample or process (used to name output files, etc.)')
 parser.add_option('--xSec', 		 type='float', action='store', default=1.0,	dest='xSec', 		    
 	help="Cross section of sample's process")
+parser.add_option('--kFac', 		 type='float', action='store', default=1.0,	dest='kFac', 		    
+	help="NNLO/NLO xSec correction factor")
 parser.add_option('--alpha', 		 type='float', action='store', default=1.0,	dest='alphaOverride', 		    
 	help="Cross section of sample's process")
 parser.add_option('--epsilon', 		 type='float', action='store', default=1.0,	dest='epsilonOverride', 		    
@@ -255,7 +259,9 @@ renormalization_dict = make_renormalization_dict(options.name,options.alphaOverr
 ntotalevents = chain.GetEntries()
 print 'number of total events = %d'%(ntotalevents) 
 #find how many events should be in this tree 
-nanalysisevents = min(options.max_events, abs(int(ntotalevents/options.n_jobs)))
+nanalysisevents = abs(int(ntotalevents/options.n_jobs))
+if options.max_events!=-1 :
+	nanalysisevents = min(options.max_events, nanalysisevents)
 if options.n_jobs>1 :
 	#adjust so they don't all pile up in the last job
 	while ntotalevents-options.n_jobs*nanalysisevents > nanalysisevents :
@@ -282,7 +288,7 @@ filename+='_tree.root'
 data=False
 if options.name.lower().find('singlemu')!=-1 or options.name.lower().find('singleel')!=-1 :
 	data=True
-analyzer = Reconstructor(filename, analysisTree, data, options.xSec, options.JES.lower(), options.JER.lower(), options.on_grid, total_pileup_histo, totweight, renormalization_dict) 
+analyzer = Reconstructor(filename, analysisTree, data, options.xSec, options.kFac, options.JES.lower(), options.JER.lower(), options.on_grid, total_pileup_histo, totweight, renormalization_dict) 
 
 #Counter 
 count = 0

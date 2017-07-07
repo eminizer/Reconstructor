@@ -1,9 +1,12 @@
 #imports
 from ROOT import *
+import CMS_lumi, tdrstyle
 from glob import glob
 from datetime import date
 import os
 from optparse import OptionParser
+
+tdrstyle.setTDRStyle()
 
 # COMMAND LINE OPTIONS
 parser = OptionParser()
@@ -42,14 +45,14 @@ outfile = TFile(outfilename,'recreate')
 #build the chain
 fullchain = TChain('tree')
 for f in infiles :
-	print 'adding file '+str(f)+'...'
+	#print 'adding file '+str(f)+'...'
 	fullchain.Add(f)
 
 #declare the plots
 #tmass_low=100.; tmass_high=350.; ntbins=75
 tmass_low=100.; tmass_high=300.; ntbins=100
 allhistos = []
-t1leptM = TH1F('t1leptM','type-1 leptonic top mass, correct hypothesis; M_{top}^{lep} (GeV); fraction',ntbins,tmass_low,tmass_high); allhistos.append(t1leptM)
+t1leptM = TH1F('t1leptM','; M_{top} [GeV]; fraction',ntbins,tmass_low,tmass_high); allhistos.append(t1leptM)
 t1hadtM = TH1F('t1hadtM','type-1 hadronic top mass, correct hypothesis; M_{top}^{had} (GeV); fraction',ntbins,tmass_low,tmass_high); allhistos.append(t1hadtM)
 t2leptM = TH1F('t2leptM','type-2 leptonic top mass, correct hypothesis; M_{top}^{lep} (GeV); fraction',ntbins,tmass_low,tmass_high); allhistos.append(t2leptM)
 t2hadtM = TH1F('t2hadtM','type-2 hadronic top mass, correct hypothesis; M_{top}^{had} (GeV); fraction',ntbins,tmass_low,tmass_high); allhistos.append(t2hadtM)
@@ -63,7 +66,7 @@ com_cuts = 'fullselection==1 && ismatchable==1'
 chain=fullchain.CopyTree(com_cuts)
 
 #plot plots
-weights = '35867.*weight*sf_pileup*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
+weights = '(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF*sf_lep_iso_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH*sf_lep_iso_GH))*weight*sf_pileup*sf_lep_trk*sf_btag_eff*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
 print 'Drawing type-1 leptonic top mass...'
 chain.Draw('leptcorprefitM>>t1leptM('+str(ntbins)+','+str(tmass_low)+','+str(tmass_high)+')','('+weights+')*('+com_cuts+' && eventTopology==1)')
 print 'Drawing type-1 hadronic top mass...'
@@ -88,6 +91,7 @@ for histo in allhistos :
 	histo.Scale(1./histo.Integral())
 	histo.SetMarkerStyle(20)
 	histo.GetYaxis().SetTitleOffset(1.2)
+	histo.SetStats(0)
 
 #declare canvases
 allcanvs = []
@@ -98,13 +102,14 @@ t2hadtM_canv = TCanvas('t2hadtM_canv','t2hadtM_canv',1100,900); allcanvs.append(
 t3leptM_canv = TCanvas('t3leptM_canv','t3leptM_canv',1100,900); allcanvs.append(t3leptM_canv)
 t3hadtM_canv = TCanvas('t3hadtM_canv','t3hadtM_canv',1100,900); allcanvs.append(t3hadtM_canv)
 total_canv = TCanvas('total_canv','total_canv',1100,900)
+total_canv.SetRightMargin(0.12)
 
 colors = [kRed,kBlue,kGreen,kOrange,kMagenta,kCyan+2]
 legEntries = ['type-1, leptonic','type-1, hadronic','type-2, leptonic','type-2, hadronic','type-3, leptonic','type-3, hadronic']
 
 #draw plots on canvases and fit with gaussians, print results
 lines = []
-total_leg = TLegend(0.1,0.7,0.48,0.9)
+total_leg = TLegend(0.62,0.67,0.75,0.8)
 for i in range(len(allhistos)) :
 	histo = allhistos[i]
 	print 'Doing '+str(allhistos[i].GetName())
@@ -135,6 +140,16 @@ total_leg.Draw('SAME')
 print '\n\n\nFit Results:'	
 for line in lines :
 	print line
+
+#plot the CMS_Lumi lines on the canvases
+iPeriod = 0 #free form since it's only simulation
+iPos = 11 #iPos = 10*(alignment) + position (1/2/3 = left/center/right)
+CMS_lumi.writeExtraText = 1
+CMS_lumi.extraText = "Simulation Preliminary"
+#CMS_lumi.lumi_sqrtS = "13 TeV" # used with iPeriod = 0, e.g. for simulation-only plots (default is an empty string)
+for canv in allcanvs :
+	CMS_lumi.CMS_lumi(canv, iPeriod, iPos)
+CMS_lumi.CMS_lumi(total_canv, iPeriod, iPos)
 
 #save plots and canvases
 outfile.cd()

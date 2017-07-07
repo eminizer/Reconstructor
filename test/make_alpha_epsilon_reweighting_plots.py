@@ -2,9 +2,12 @@
 import os
 import sys
 from ROOT import *
+import CMS_lumi, tdrstyle
 from array import array
 from math import *
 from optparse import OptionParser
+
+tdrstyle.setTDRStyle()
 
 #global 2D histograms needed for alpha and epsilon fits
 csvb_qq_global_hist = TH2D(); csvb_gg_global_hist = TH2D()
@@ -84,7 +87,8 @@ def get_alpha_epsilon_list() :
 		BETA[0] = csvb_qq_global_hist.GetXaxis().GetBinCenter(i)
 		beta_low = csvb_qq_global_hist.GetXaxis().GetBinLowEdge(i)
 		beta_hi = beta_low+csvb_qq_global_hist.GetXaxis().GetBinWidth(i)
-		qq_global_hist_projection = symmetrize(csvb_qq_global_hist.ProjectionY('qq_proj_'+str(i),i,i))
+		#qq_global_hist_projection = symmetrize(csvb_qq_global_hist.ProjectionY('qq_proj_'+str(i),i,i))
+		qq_global_hist_projection = csvb_qq_global_hist.ProjectionY('qq_proj_'+str(i),i,i)
 		#add parameter
 		alpha_minuit.mnparm(0,'alpha',0.1,0.5,0.,0.,ierflag)
 		#minimize
@@ -98,7 +102,8 @@ def get_alpha_epsilon_list() :
 		BETA[0] = csvb_gg_global_hist.GetXaxis().GetBinCenter(i)
 		beta_low = csvb_gg_global_hist.GetXaxis().GetBinLowEdge(i)
 		beta_hi = beta_low+csvb_gg_global_hist.GetXaxis().GetBinWidth(i)
-		gg_global_hist_projection = symmetrize(csvb_gg_global_hist.ProjectionY('gg_proj_'+str(i),i,i))	
+		#gg_global_hist_projection = symmetrize(csvb_gg_global_hist.ProjectionY('gg_proj_'+str(i),i,i))	
+		gg_global_hist_projection = csvb_gg_global_hist.ProjectionY('gg_proj_'+str(i),i,i)	
 		epsilon_minuit.mnparm(0,'epsilon',0.1,0.5,0.,0.,ierflag)
 		epsilon_minuit.mnexcm('MIGRAD',arglist,1,ierflag)
 		fitted_epsilon=Double(0.0); fitted_epsilon_err=Double(0.0)
@@ -134,7 +139,7 @@ input_files_list = open(input_files_list,'r')
 outFileName = 'alpha_epsilon_plots.root' 
 outFile = TFile(outFileName,'recreate') 
 print 'Getting these files: '
-#Read files in line by line and get the tree, pileup,cstar vs. beta,pdf_alphas/F_up/down,scale_comb_sf_up/down,pdf_alphas_sf_up/down histograms, and total weight value from each
+#Read files in line by line and get the histograms
 total_cstar_vs_beta_qqbar_histo  = TH2D('total_cstar_vs_beta_qqbar_histo','MC truth c* vs. #beta (q#bar{q} events); #beta; c*; events',10,0.,1.,20,-1.,1.); total_cstar_vs_beta_qqbar_histo.SetDirectory(0)
 total_cstar_vs_beta_gg_histo     = TH2D('total_cstar_vs_beta_gg_histo','MC truth c* vs. #beta (qg/gg events); #beta; c*; events',10,0.,1.,20,-1.,1.); total_cstar_vs_beta_gg_histo.SetDirectory(0)
 totweight = 0.
@@ -166,8 +171,8 @@ ind_alpha_histos = []
 ind_alpha_funcs = []
 ind_epsilon_histos = []
 ind_epsilon_funcs = []
-leg_alpha = TLegend(0.1,0.7,0.48,0.9)
-leg_epsilon = TLegend(0.1,0.7,0.48,0.9)
+leg_alpha = TLegend(0.45,0.6,0.75,0.9)
+leg_epsilon = TLegend(0.45,0.6,0.75,0.9)
 
 #loop over the different bins for alpha and add functions and histograms
 for i in range(len(alphalist)) :
@@ -175,7 +180,7 @@ for i in range(len(alphalist)) :
 	beta = alphalist[i][0]
 	#add the histogram
 	ind_alpha_histos.append(symmetrize(csvb_qq_global_hist.ProjectionY('qq_proj_'+str(i),i,i+1)))
-	ind_alpha_histos[i].SetTitle('c* for qqbar events (beta bin %d); c*'%(i))
+	ind_alpha_histos[i].SetTitle('; c*; Events/0.1')
 	#add the function
 	thisalpha = alphalist[i][1]
 	f_alpha_num = '(2.+(%f*%f)*(x*x)-(%f*%f)+%f*(1.-(%f*%f)*(x*x)))'%(beta,beta,beta,beta,thisalpha,beta,beta)
@@ -190,7 +195,7 @@ for i in range(len(epsilonlist)) :
 	beta = epsilonlist[i][0]
 	#add the histogram
 	ind_epsilon_histos.append(symmetrize(csvb_gg_global_hist.ProjectionY('gg_proj_'+str(i),i,i+1)))
-	ind_epsilon_histos[i].SetTitle('c* for gg/qg events (beta bin %d); c*'%(i))
+	ind_epsilon_histos[i].SetTitle('; c*; Events/0.1')
 	#add the function
 	thisepsilon = epsilonlist[i][1]
 	rnorm = '((%f*(34.*%f*%f*%f*%f-100.*%f*%f+98.)+2.*%f*%f*%f*%f-36.*%f*%f+66.)'%(thisepsilon,beta,beta,beta,beta,beta,beta,beta,beta,beta,beta,beta,beta)
@@ -207,6 +212,7 @@ for i in range(len(epsilonlist)) :
 #write out raw histograms and functions, setting properties after
 outFile.cd()
 for i in range(len(ind_alpha_histos)) :
+	ind_alpha_histos[i].SetStats(0)
 	ind_alpha_histos[i].Write()
 	ind_alpha_funcs[i].Write()
 	ind_alpha_funcs[i].SetLineWidth(4);
@@ -215,8 +221,9 @@ for i in range(len(ind_alpha_histos)) :
 	ind_alpha_histos[i].SetMarkerColor(colors[i])
 	ind_alpha_histos[i].SetLineColor(colors[i])
 	ind_alpha_histos[i].SetLineWidth(2)
-	ind_alpha_histos[i].GetYaxis().SetRangeUser(0.,0.1)
+	ind_alpha_histos[i].GetXaxis().SetTitleOffset(1.0)
 for i in range(len(ind_epsilon_histos)) :
+	ind_epsilon_histos[i].SetStats(0)
 	ind_epsilon_histos[i].Write()
 	ind_epsilon_funcs[i].Write()
 	ind_epsilon_funcs[i].SetLineWidth(4);
@@ -225,7 +232,7 @@ for i in range(len(ind_epsilon_histos)) :
 	ind_epsilon_histos[i].SetMarkerColor(colors[i])
 	ind_epsilon_histos[i].SetLineColor(colors[i])
 	ind_epsilon_histos[i].SetLineWidth(2)
-	ind_epsilon_histos[i].GetYaxis().SetRangeUser(0.,0.1)
+	ind_epsilon_histos[i].GetXaxis().SetTitleOffset(1.0)
 
 #renormalize histograms and plot on canvases with their functions, also add to the total canvas
 for i in range(len(ind_alpha_histos)) :
@@ -237,6 +244,8 @@ for i in range(len(ind_alpha_histos)) :
 	ind_alpha_canvs[i].Write()
 	total_alpha_canv.cd()
 	ind_alpha_histos[i].Draw() if i==0 else ind_alpha_histos[i].Draw('SAME')
+	ind_alpha_histos[i].SetMinimum(0.031)
+	ind_alpha_histos[i].SetMaximum(0.085)
 	ind_alpha_funcs[i].Draw('L SAME')
 	leg_alpha.AddEntry(ind_alpha_histos[i],'%.2f < #beta < %.2f, #alpha=%.2f'%(alphalist[i][3],alphalist[i][4],alphalist[i][1]),'L')
 for i in range(len(ind_epsilon_histos)) :
@@ -248,6 +257,8 @@ for i in range(len(ind_epsilon_histos)) :
 	ind_epsilon_canvs[i].Write()
 	total_epsilon_canv.cd()
 	ind_epsilon_histos[i].Draw() if i==0 else ind_epsilon_histos[i].Draw('SAME')
+	ind_epsilon_histos[i].SetMinimum(0.0)
+	ind_epsilon_histos[i].SetMaximum(0.2)
 	ind_epsilon_funcs[i].Draw('L SAME')
 	leg_epsilon.AddEntry(ind_epsilon_histos[i],'%.2f < #beta < %.2f, #epsilon=%.2f'%(epsilonlist[i][3],epsilonlist[i][4],epsilonlist[i][1]),'L')
 
@@ -257,85 +268,24 @@ leg_alpha.Draw('SAME')
 total_epsilon_canv.cd()
 leg_epsilon.Draw('SAME')
 
+#plot the CMS_Lumi lines on the total canvases
+iPeriod = 0 #free form since it's only simulation
+iPos = 11
+if iPos==0 : CMS_lumi.relPosX = 0.12
+CMS_lumi.writeExtraText = 1
+CMS_lumi.extraText = "Simulation Preliminary"
+#CMS_lumi.lumi_sqrtS = "13 TeV" # used with iPeriod = 0, e.g. for simulation-only plots (default is an empty string)
+CMS_lumi.CMS_lumi(total_alpha_canv, iPeriod, iPos)
+CMS_lumi.CMS_lumi(total_epsilon_canv, iPeriod, iPos)
+
+#update the total canvases
+total_alpha_canv.Update()
+total_epsilon_canv.Update()
+
 #write out the total canvases
 outFile.cd()
 total_alpha_canv.Write()
 total_epsilon_canv.Write()
-
-##plot alpha 2D plot and total function
-#canv_alpha_hist = TCanvas('canv_alpha_hist','canv_alpha_hist',1100,900)
-#csvb_qq_global_hist.Draw('COLZ')
-#canv_alpha_func = TCanvas('canv_alpha_func','canv_alpha_func',1100,900)
-#f_alpha.Draw('COLZ')
-##plot epsilon 2D plot and total function
-#canv_epsilon_hist = TCanvas('canv_epsilon_hist','canv_epsilon_hist',1100,900)
-#csvb_gg_global_hist.Draw('COLZ')
-#canv_epsilon_func = TCanvas('canv_epsilon_func','canv_epsilon_func',1100,900)
-#f_epsilon.Draw('COLZ')
-##plot alpha projected plots
-#canv_alpha_proj = TCanvas('canv_alpha_proj','canv_alpha_proj',1100,900)
-#alpha_proj_histo = symmetrize(csvb_qq_global_hist.ProjectionY())
-#alpha_proj_histo.Scale(1./alpha_proj_histo.Integral()) 
-#alpha_proj_histo.GetYaxis().SetRangeUser(0.,0.07) 
-#npoints_alpha = 10*csvb_qq_global_hist.GetYaxis().GetNbins()
-#xpoints_alpha = array('d',npoints_alpha*[0.])
-#ypoints_alpha = array('d',npoints_alpha*[0.])
-#for i in range(npoints_alpha) :
-#	pointspacing = 2./(npoints_alpha)
-#	cstar_low = -1.0+i*pointspacing
-#	cstar = -1.0+(i+0.5)*pointspacing
-#	cstar_hi  = -1.0+(i+1)*pointspacing
-#	xpoints_alpha[i]=cstar
-#	ypoints_alpha[i]=f_alpha.Integral(0.,1.,cstar_low,cstar_hi)
-#sumypoints_alpha = 0. 
-#for i in range(npoints_alpha) : 
-#	sumypoints_alpha+=ypoints_alpha[i] 
-#for i in range(npoints_alpha) : 
-#	fac = npoints_alpha/csvb_qq_global_hist.GetYaxis().GetNbins() 
-#	ypoints_alpha[i]  = fac*ypoints_alpha[i]/sumypoints_alpha 
-#alpha_graph = TGraph(npoints_alpha,xpoints_alpha,ypoints_alpha)
-#alpha_graph.SetMarkerStyle(20)
-#alpha_graph.SetLineWidth(3)
-#alpha_graph.SetLineColor(kRed)
-#alpha_proj_histo.SetMarkerStyle(20)
-#alpha_proj_histo.Draw('E0')
-#alpha_graph.Draw('L SAME')
-#leg_alpha = TLegend(0.1,0.7,0.48,0.9)
-#leg_alpha.AddEntry(alpha_proj_histo,"MC Events","PE0")
-#leg_alpha.AddEntry(alpha_graph,"Fit (#alpha="+str(fit_alpha)+")","L")
-#leg_alpha.Draw('SAME')
-##plot epsilon projected plots
-#canv_epsilon_proj = TCanvas('canv_epsilon_proj','canv_epsilon_proj',1100,900)
-#epsilon_proj_histo = symmetrize(csvb_gg_global_hist.ProjectionY())
-#epsilon_proj_histo.Scale(1./epsilon_proj_histo.Integral())
-#epsilon_proj_histo.GetYaxis().SetRangeUser(0.,0.15)
-#npoints_epsilon = 10*csvb_gg_global_hist.GetYaxis().GetNbins()
-#xpoints_epsilon = array('d',npoints_epsilon*[0.])
-#ypoints_epsilon = array('d',npoints_epsilon*[0.])
-#for i in range(npoints_epsilon) :
-#	pointspacing = 2./(npoints_epsilon)
-#	cstar_low = -1.0+i*pointspacing
-#	cstar = -1.0+(i+0.5)*pointspacing
-#	cstar_hi  = -1.0+(i+1)*pointspacing
-#	xpoints_epsilon[i]=cstar
-#	ypoints_epsilon[i]=f_epsilon.Integral(0.,1.,cstar_low,cstar_hi)
-#sumypoints_epsilon = 0.
-#for i in range(npoints_epsilon) :
-#	sumypoints_epsilon+=ypoints_epsilon[i]
-#for i in range(npoints_epsilon) :
-#	fac = npoints_epsilon/csvb_gg_global_hist.GetYaxis().GetNbins()
-#	ypoints_epsilon[i]  = fac*ypoints_epsilon[i]/sumypoints_epsilon
-#epsilon_graph = TGraph(npoints_epsilon,xpoints_epsilon,ypoints_epsilon)
-#epsilon_graph.SetMarkerStyle(20)
-#epsilon_graph.SetLineWidth(3)
-#epsilon_graph.SetLineColor(kRed)
-#epsilon_proj_histo.SetMarkerStyle(20)
-#epsilon_proj_histo.Draw('E0')
-#epsilon_graph.Draw('L SAME')
-#leg_epsilon = TLegend(0.1,0.7,0.48,0.9)
-#leg_epsilon.AddEntry(epsilon_proj_histo,"MC Events","PE0")
-#leg_epsilon.AddEntry(epsilon_graph,"Fit (#epsilon="+str(fit_epsilon)+")","L")
-#leg_epsilon.Draw('SAME')
 
 #write plots to file
 outFile.cd()

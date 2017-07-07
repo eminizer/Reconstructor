@@ -11,25 +11,25 @@ class TTBarReconstructor(object) :
 	#Class variables
 	MW = 80.4 #W mass
 	MT = 172.5 #top mass
-	MT_l1 = 172.5 #leptonic top mass for type 1 tops
-	MT_h1 = 183.1 #hadronic top mass for type 1 tops
-	MT_l2 = 172.8 #leptonic top mass for type 2 tops
-	MT_h2 = 173.6 #hadronic top mass for type 2 tops
+	MT_l1 = 172.2 #leptonic top mass for type 1 tops
+	MT_h1 = 182.7 #hadronic top mass for type 1 tops
+	MT_l2 = 173.0 #leptonic top mass for type 2 tops
+	MT_h2 = 173.4 #hadronic top mass for type 2 tops
 	MT_l3 = 172.0 #leptonic top mass for type 3 tops
-	MT_h3 = 168.4 #hadronic top mass for type 3 tops
+	MT_h3 = 168.3 #hadronic top mass for type 3 tops
 	WW = 2.0 #W width
 	WT = 1.4 #top width
-	WT_l1 = 15.6 #leptonic top width for type 1 tops
-	WT_h1 = 17.0 #hadronic top width for type 1 tops
-	WT_l2 = 15.9 #leptonic top width for type 2 tops
-	WT_h2 = 16.1 #hadronic top width for type 2 tops
+	WT_l1 = 15.4 #leptonic top width for type 1 tops
+	WT_h1 = 17.3 #hadronic top width for type 1 tops
+	WT_l2 = 16.1 #leptonic top width for type 2 tops
+	WT_h2 = 16.2 #hadronic top width for type 2 tops
 	WT_l3 = 15.0 #leptonic top width for type 3 tops
-	WT_h3 = 18.3 #hadronic top width for type 3 tops
+	WT_h3 = 18.2 #hadronic top width for type 3 tops
 	#global fourvectors for the fit
 	lep_global_vec = TLorentzVector()
 	met_global_vec = TLorentzVector()
 	blep_global_vec = TLorentzVector()
-	bigjet_global_vec = TLorentzVector()
+	hadt_global_vec = TLorentzVector()
 	had1_global_vec = TLorentzVector()
 	had2_global_vec = TLorentzVector()
 	had3_global_vec = TLorentzVector()
@@ -86,7 +86,7 @@ class TTBarReconstructor(object) :
 			if topology==1 :
 				hypak8 = hypothesis[3][0] 
 				hypak8v = hypak8.getFourVector()
-				self.bigjet_global_vec.SetPtEtaPhiE(hypak8v.Pt(),hypak8v.Eta(),hypak8v.Phi(),hypak8v.E())
+				self.hadt_global_vec.SetPtEtaPhiE(hypak8v.Pt(),hypak8v.Eta(),hypak8v.Phi(),hypak8v.E())
 				h1v = hypak8.getSubjet(0).getFourVector() #had1 is the first subjet of the merged W
 				self.had1_global_vec.SetPtEtaPhiE(h1v.Pt(),h1v.Eta(),h1v.Phi(),h1v.E())
 				h2v = hypak8.getSubjet(1).getFourVector() #had2 is the second subjet of the merged W
@@ -107,7 +107,7 @@ class TTBarReconstructor(object) :
 			#print 'self.had1_global_vec = (pt,eta,phi,M) = (%.2f,%.2f,%.2f,%.2f)'%(self.had1_global_vec.Pt(),self.had1_global_vec.Eta(),self.had1_global_vec.Phi(),self.had1_global_vec.M()) #DEBUG
 			#print 'self.had2_global_vec = (pt,eta,phi,M) = (%.2f,%.2f,%.2f,%.2f)'%(self.had2_global_vec.Pt(),self.had2_global_vec.Eta(),self.had2_global_vec.Phi(),self.had2_global_vec.M()) #DEBUG
 			#print 'self.had3_global_vec = (pt,eta,phi,M) = (%.2f,%.2f,%.2f,%.2f)'%(self.had3_global_vec.Pt(),self.had3_global_vec.Eta(),self.had3_global_vec.Phi(),self.had3_global_vec.M()) #DEBUG
-			#print 'self.bigjet_global_vec = (pt,eta,phi,M) = (%.2f,%.2f,%.2f,%.2f)'%(self.bigjet_global_vec.Pt(),self.bigjet_global_vec.Eta(),self.bigjet_global_vec.Phi(),self.bigjet_global_vec.M()) #DEBUG
+			#print 'self.hadt_global_vec = (pt,eta,phi,M) = (%.2f,%.2f,%.2f,%.2f)'%(self.hadt_global_vec.Pt(),self.hadt_global_vec.Eta(),self.hadt_global_vec.Phi(),self.hadt_global_vec.M()) #DEBUG
 			#minimize
 			self.minuit.mnexcm('MIGRAD', self.arglist, 1, self.ierflag)
 			#print 'errflag = '+str(ierflag) #DEBUG
@@ -139,18 +139,18 @@ class TTBarReconstructor(object) :
 		final_met = TLorentzVector(); final_met.SetPtEtaPhiE(besthypothesis[1].Pt(),besthypothesis[1].Eta(),besthypothesis[1].Phi(),besthypothesis[1].E())
 		#print 'bestfitindex = %d, bestfitchi2 = %.4f'%(bestfitindex,bestfitchi2) #DEBUG
 		#rescale the lepton and jet four vectors based on the final parameters
-		bigjet_return = None; had1_return = None; had2_return = None; had3_return = None
+		hadt_return = None; had1_return = None; had2_return = None; had3_return = None
 		orig_lep = besthypothesis[0].getFourVector()
 		lep_return = rescale(orig_lep,bestParValues[1])
 		orig_lepb = besthypothesis[2].getFourVector()
 		lepb_return = rescale(orig_lepb,bestParValues[2])
 		if topology==1 :
-			orig_bigjet = besthypothesis[3][0].getFourVector()
+			orig_hadt = besthypothesis[3][0].getFourVector()
 			orig_had1 = besthypothesis[3][0].getSubjet(0).getFourVector()
 			had1_return = rescale(orig_had1,bestParValues[3])
 			orig_had2 = besthypothesis[3][0].getSubjet(1).getFourVector()
 			had2_return = rescale(orig_had2,bestParValues[4])
-			bigjet_return = orig_bigjet-orig_had1+had1_return-orig_had2+had2_return
+			hadt_return = orig_hadt-orig_had1+had1_return-orig_had2+had2_return
 		else :
 			orig_had1 = besthypothesis[3][0].getFourVector()
 			had1_return = rescale(orig_had1,bestParValues[3])
@@ -158,6 +158,7 @@ class TTBarReconstructor(object) :
 			had2_return = rescale(orig_had2,bestParValues[4])
 			orig_had3 = besthypothesis[3][2].getFourVector()
 			had3_return = rescale(orig_had3,bestParValues[5])
+			hadt_return=had1_return+had2_return+had3_return
 		#rebuild the neutrino post-rescaling
 		newmetx = final_met.Px()+ (1.0-bestParValues[1])*orig_lep.Px()
 		newmety = final_met.Py()+ (1.0-bestParValues[1])*orig_lep.Py()
@@ -173,7 +174,7 @@ class TTBarReconstructor(object) :
 		final_met.SetPx(newmetx); final_met.SetPy(newmety); final_met.SetPz(bestParValues[0])
 		final_met.SetE(final_met.Vect().Mag())
 		#return everything
-		return (bestfitindex,lep_return,final_met,lepb_return,bigjet_return,had1_return,had2_return,had3_return,bestfitchi2,bestParValues)
+		return (bestfitindex,lep_return,final_met,lepb_return,hadt_return,had1_return,had2_return,had3_return,bestfitchi2,bestParValues)
 
 	#type 1 (fully merged) top minimization function
 	@staticmethod
@@ -191,7 +192,7 @@ class TTBarReconstructor(object) :
 		v = rescale(TTBarReconstructor.met_global_vec,1.0)
 		v.SetPx(newmetx); v.SetPy(newmety); v.SetPz(par[0])
 		v.SetE(v.Vect().Mag())
-		wl = v + l; tl = wl + bl; th = TTBarReconstructor.bigjet_global_vec-TTBarReconstructor.had1_global_vec-TTBarReconstructor.had2_global_vec+hs1+hs2
+		wl = v + l; tl = wl + bl; th = TTBarReconstructor.hadt_global_vec-TTBarReconstructor.had1_global_vec-TTBarReconstructor.had2_global_vec+hs1+hs2
 		pdf = getPDF(tl.M(),TTBarReconstructor.MT_l1,TTBarReconstructor.WT_l1,th.M(),TTBarReconstructor.MT_h1,
 					 TTBarReconstructor.WT_h1,TTBarReconstructor.MT,wl.M2(),TTBarReconstructor.MW,TTBarReconstructor.WW)
 		f[0] = ( pdf+(par[1]-1.)*(par[1]-1.)/(SIGMAL*SIGMAL)+(par[2]-1.)*(par[2]-1.)/(SIGMAJ*SIGMAJ)

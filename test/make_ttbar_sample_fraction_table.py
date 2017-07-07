@@ -1,8 +1,14 @@
 from ROOT import *
 from math import *
 import os, glob
+from optparse import OptionParser
 
-generator = 'mcatnlo'
+parser = OptionParser()
+#Run options
+parser.add_option('--generator', 	  type='string', action='store', default='powheg', dest='generator')
+(options, args) = parser.parse_args()
+
+generator=options.generator.lower()
 
 #directory with input files
 inputdir = '../'+generator+'_TT'
@@ -34,7 +40,7 @@ cutnames.append('type-3 qqbar semilep mu+jets'); cutstrings.append('eventType==0
 cutnames.append('type-3 gg semilep mu+jets'); cutstrings.append('eventType==1 && lepflavor==1 && eventTopology==3')
 
 #weight string
-weightstring = '35867.*weight*sf_pileup*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
+weightstring = '(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF*sf_lep_iso_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH*sf_lep_iso_GH))*weight*sf_pileup*sf_lep_trk*sf_btag_eff*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
 
 os.system('echo "Event Numbers:">'+outfilename)
 

@@ -13,7 +13,7 @@ class Jet(object) :
 		self.__eta = self.__fourvec.Eta() if self.__fourvec!=None else -900
 		self.__isIDed = self.__checkID__(branches,index,pp)
 		self.__csvv2 = branches[pp+'_CSVv2'].getReadValue(index)
-		self.__isbtagged = self.__csvv2>0.46 #loose working point
+		self.__isbtagged = self.__csvv2>0.5426 #loose working point https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation80XReReco
 
 	def __checkID__(self,branches,index,pp) :
 		if self.__eta==None :
@@ -63,9 +63,13 @@ class AK4Jet(Jet) :
 
 	def __init__(self,branches,index,jes,jer,leps,corrector,isdata) :
 		Jet.__init__(self,branches,index,jes,jer,leps,corrector,isdata,'jetAK4CHS')
+		self.__flavor = branches['jetAK4CHS_HadronFlavour'].getReadValue(index)
 		self.__isValidForIsoCalc = self.getPt()>15. and abs(self.getEta())<3.0 and self.isIDed()==1
 		self.__isValid = self.getPt()>30. and abs(self.getEta())<2.4 and self.isIDed()==1
+		#print '	isvalid = %s, for iso calc = %s'%(self.__isValid,self.__isValidForIsoCalc) #DEBUG
 
+	def getFlavor(self) :
+		return self.__flavor
 	def isValidForIsoCalc(self) :
 		return self.__isValidForIsoCalc
 	def isValid(self) :
@@ -153,16 +157,19 @@ def getfourvec(branches,index,jes,jer,leps,corrector,isdata,pp) :
 	#print '		metcorrvec initial = (%.1f,%.1f,%.1f,%.1f)'%(metcorrvec.Pt(),metcorrvec.Eta(),metcorrvec.Phi(),metcorrvec.M()) #DEBUG
 	if rawjet.M()==-900 :
 		return None, None, TLorentzVector()
+	#print 'new jet with initial pT = %.2f'%(pt) #DEBUG
 	rawjet*=jec0
+	#print '	raw pT = %.2f'%(rawjet.Pt()) #DEBUG
 	jetradius = 0.8 if pp.find('jetAK8')!=-1 else 0.4
 	cleanjet, subtractedleps = cleanJet(rawjet,jetkeys,subjet1keys,subjet2keys,leps,jetradius)
 	for lep in subtractedleps :
 		metcorrvec=metcorrvec-lep.getFourVector()
 	#print '		metcorrvec after lep sub = (%.1f,%.1f,%.1f,%.1f)'%(metcorrvec.Pt(),metcorrvec.Eta(),metcorrvec.Phi(),metcorrvec.M()) #DEBUG
 	if cleanjet == None :
-	#	print 'CLEANED JET WAS "NONE"' #DEBUG
+		#print 'CLEANED JET WAS "NONE"' #DEBUG
 		return None, None, metcorrvec
 	nominalJet = cleanjet
+	#print '	cleaned pT = %.2f'%(cleanjet.Pt()) #DEBUG
 	#if this is a subjet, regardless of the systematics, return it without correcting
 	if pp.find('subjet')!=-1 :
 		return nominalJet, None, (metcorrvec-nominalJet)
@@ -175,6 +182,7 @@ def getfourvec(branches,index,jes,jer,leps,corrector,isdata,pp) :
 		npv = branches['npv'].getReadValue()
 		newJEC = corrector.getJECforJet(cleanjet,jetArea,rho,npv,pp)
 	nominalJet = cleanjet*newJEC
+	#print '	readjusted pT = %.2f'%(nominalJet.Pt()) #DEBUG
 	#If this is data, don't apply any smearing or systematics, just return the corrected, cleaned jet
 	if isdata :
 		return nominalJet, subtractedleps, metcorrvec-nominalJet
@@ -209,6 +217,7 @@ def getfourvec(branches,index,jes,jer,leps,corrector,isdata,pp) :
 		elif jes=='down' :
 			jecDownJet = cleanjet*(newJEC+newJECuncDown)
 			newJet=corrector.smearJet(jecDownJet,jer,genJetVec,ptres,dRCheck)
+	#print '	final pT = %.2f'%(newJet.Pt()) #DEBUG
 	return newJet, subtractedleps, metcorrvec-newJet
 
 def cleanJet(jetvec,jetkeys,sj1keys,sj2keys,leps,jetradius) :

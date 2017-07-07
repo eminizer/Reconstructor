@@ -15,6 +15,9 @@ leptype=options.leptype.lower()
 cutflow_filename = 'cutflow_count'
 cutflow_filename+='_'+leptype+'.csv'
 
+tex_filename = 'cutflow_count'
+tex_filename+='_'+leptype+'_texlines.txt'
+
 filenames = []
 shortnames = []
 weights = []
@@ -22,16 +25,23 @@ weights = []
 filenames.append('powheg_TT');					shortnames.append('powheg semilep')
 filenames.append('powheg_TT');					shortnames.append('powheg dilep')
 filenames.append('powheg_TT');					shortnames.append('powheg hadronic')
-#MCATNLO TT
-filenames.append('mcatnlo_TT');					shortnames.append('mcatnlo semilep')
-filenames.append('mcatnlo_TT');					shortnames.append('mcatnlo dilep')
-filenames.append('mcatnlo_TT');					shortnames.append('mcatnlo hadronic')
+##MCATNLO TT
+#filenames.append('mcatnlo_TT');					shortnames.append('mcatnlo semilep')
+#filenames.append('mcatnlo_TT');					shortnames.append('mcatnlo dilep')
+#filenames.append('mcatnlo_TT');					shortnames.append('mcatnlo hadronic')
 #Single top
 filenames.append('ST_s-c');						shortnames.append('Single T')
 filenames.append('ST_t-c_top');					shortnames.append('Single T')
 filenames.append('ST_t-c_antitop');				shortnames.append('Single T')
 filenames.append('ST_tW-c_top');				shortnames.append('Single T')
 filenames.append('ST_tW-c_antitop');			shortnames.append('Single T')
+#WJets
+filenames.append('WJets_HT-200to400');			shortnames.append('WJets')
+filenames.append('WJets_HT-400to600');			shortnames.append('WJets')
+filenames.append('WJets_HT-600to800');			shortnames.append('WJets')
+filenames.append('WJets_HT-800to1200');			shortnames.append('WJets')
+filenames.append('WJets_HT-1200to2500');		shortnames.append('WJets')
+filenames.append('WJets_HT-2500toInf');			shortnames.append('WJets')
 #DYJets
 filenames.append('DYJets_M-50_HT-70to100');		shortnames.append('DYJets')
 filenames.append('DYJets_M-50_HT-100to200');	shortnames.append('DYJets')
@@ -41,13 +51,6 @@ filenames.append('DYJets_M-50_HT-600to800');	shortnames.append('DYJets')
 filenames.append('DYJets_M-50_HT-800to1200');	shortnames.append('DYJets')
 filenames.append('DYJets_M-50_HT-1200to2500');	shortnames.append('DYJets')
 filenames.append('DYJets_M-50_HT-2500toInf');	shortnames.append('DYJets')
-#WJets
-filenames.append('WJets_HT-200to400');			shortnames.append('WJets')
-filenames.append('WJets_HT-400to600');			shortnames.append('WJets')
-filenames.append('WJets_HT-600to800');			shortnames.append('WJets')
-filenames.append('WJets_HT-800to1200');			shortnames.append('WJets')
-filenames.append('WJets_HT-1200to2500');		shortnames.append('WJets')
-filenames.append('WJets_HT-2500toInf');			shortnames.append('WJets')
 ##QCD
 filenames.append('QCD_HT-100to200');			shortnames.append('QCD')
 filenames.append('QCD_HT-200to300');			shortnames.append('QCD')
@@ -117,59 +120,59 @@ for ele_data_filename in ele_data_filenames :
 cutnames = []; cutstrings = []; prior_cutstrings = []
 metfilters = 'metfilters==1'
 trigger = 'trigger==1'
+isolepton = 'isolepton==1 && ((eventTopology<3 && ((lepflavor==1 && (lep_relPt>30. || lep_dR>0.4)) || (lepflavor==2 && lep_relPt>30. && lep_dR>0.4)))'
+isolepton+=' || (eventTopology==3 && ((lepflavor==1 && (lep_relPt>30. || lep_dR>0.4)) || (lepflavor==2 && lep_relPt>20. && lep_dR>0.4))))'
 onelepton = 'onelepton==1'
-isolepton = 'isolepton==1'
-jetcuts = 'jetcuts==1'
+btags = 'btags==1'
+nak4jets = 'nak4jets'
+jetcuts = 'ak4jetcuts==1'
+othercuts = 'othercuts==1'
+validminimization = 'validminimization==1'
 fullselection = 'fullselection==1'
-preselection = metfilters+' && '+trigger
-lepside = onelepton+' && '+isolepton
 
 cutnames.append('t1 skim'); 				  cutstrings.append('weight!=0.'); 		prior_cutstrings.append('weight!=0.')
 cutnames.append('t1 MET filters'); 			  cutstrings.append(metfilters); 		prior_cutstrings.append('weight!=0.')
 cutnames.append('t1 trigger'); 				  cutstrings.append(trigger); 			prior_cutstrings.append('weight!=0.')
-cutnames.append('t1 additional lepton veto'); cutstrings.append(onelepton); 		prior_cutstrings.append('weight!=0.')
 cutnames.append('t1 lepton 2D isolation'); 	  cutstrings.append(isolepton); 		prior_cutstrings.append('weight!=0.')
+cutnames.append('t1 additional lepton veto'); cutstrings.append(onelepton); 		prior_cutstrings.append('weight!=0.')
+cutnames.append('t1 nbtags'); 				  cutstrings.append(btags); 			prior_cutstrings.append('weight!=0.')
+cutnames.append('t1 n AK4 jets'); 			  cutstrings.append(nak4jets); 			prior_cutstrings.append('weight!=0.')
 cutnames.append('t1 jet cuts'); 			  cutstrings.append(jetcuts); 			prior_cutstrings.append('weight!=0.')
-cutnames.append('t1 preselection'); 		  cutstrings.append(preselection); 		prior_cutstrings.append('weight!=0.')
-cutnames.append('t1 lepcuts given precuts');  cutstrings.append(preselection+' && '+lepside); 			prior_cutstrings.append(preselection)
-cutnames.append('t1 hadcuts given precuts');  cutstrings.append(preselection+' && '+jetcuts); 			prior_cutstrings.append(preselection)
-cutnames.append('t1 hadcuts given lepcuts');  cutstrings.append(preselection+' && '+lepside+' && '+jetcuts); 			prior_cutstrings.append(preselection+' && '+lepside)
 cutnames.append('t1 full selection'); 		  cutstrings.append(fullselection); 	prior_cutstrings.append('weight!=0.')
 
 cutnames.append('t2 skim'); 				  cutstrings.append('weight!=0.'); 		prior_cutstrings.append('weight!=0.')
 cutnames.append('t2 MET filters'); 			  cutstrings.append(metfilters); 		prior_cutstrings.append('weight!=0.')
 cutnames.append('t2 trigger'); 				  cutstrings.append(trigger); 			prior_cutstrings.append('weight!=0.')
-cutnames.append('t2 additional lepton veto'); cutstrings.append(onelepton); 		prior_cutstrings.append('weight!=0.')
 cutnames.append('t2 lepton 2D isolation'); 	  cutstrings.append(isolepton); 		prior_cutstrings.append('weight!=0.')
+cutnames.append('t2 additional lepton veto'); cutstrings.append(onelepton); 		prior_cutstrings.append('weight!=0.')
+cutnames.append('t2 nbtags'); 				  cutstrings.append(btags); 			prior_cutstrings.append('weight!=0.')
+cutnames.append('t2 n AK4 jets'); 			  cutstrings.append(nak4jets); 			prior_cutstrings.append('weight!=0.')
 cutnames.append('t2 jet cuts'); 			  cutstrings.append(jetcuts); 			prior_cutstrings.append('weight!=0.')
-cutnames.append('t2 preselection'); 		  cutstrings.append(preselection); 		prior_cutstrings.append('weight!=0.')
-cutnames.append('t2 lepcuts given precuts');  cutstrings.append(preselection+' && '+lepside); 			prior_cutstrings.append(preselection)
-cutnames.append('t2 hadcuts given precuts');  cutstrings.append(preselection+' && '+jetcuts); 			prior_cutstrings.append(preselection)
-cutnames.append('t2 hadcuts given lepcuts');  cutstrings.append(preselection+' && '+lepside+' && '+jetcuts); 			prior_cutstrings.append(preselection+' && '+lepside)
 cutnames.append('t2 full selection'); 		  cutstrings.append(fullselection); 	prior_cutstrings.append('weight!=0.')
 
 cutnames.append('t3 skim'); 				  cutstrings.append('weight!=0.'); 		prior_cutstrings.append('weight!=0.')
 cutnames.append('t3 MET filters'); 			  cutstrings.append(metfilters); 		prior_cutstrings.append('weight!=0.')
 cutnames.append('t3 trigger'); 				  cutstrings.append(trigger); 			prior_cutstrings.append('weight!=0.')
-cutnames.append('t3 additional lepton veto'); cutstrings.append(onelepton); 		prior_cutstrings.append('weight!=0.')
 cutnames.append('t3 lepton 2D isolation'); 	  cutstrings.append(isolepton); 		prior_cutstrings.append('weight!=0.')
-cutnames.append('t3 jet cuts'); 			  cutstrings.append(jetcuts); 			prior_cutstrings.append('weight!=0.')
-cutnames.append('t3 preselection'); 		  cutstrings.append(preselection); 		prior_cutstrings.append('weight!=0.')
-cutnames.append('t3 lepcuts given precuts');  cutstrings.append(preselection+' && '+lepside); 			prior_cutstrings.append(preselection)
-cutnames.append('t3 hadcuts given precuts');  cutstrings.append(preselection+' && '+jetcuts); 			prior_cutstrings.append(preselection)
-cutnames.append('t3 hadcuts given lepcuts');  cutstrings.append(preselection+' && '+lepside+' && '+jetcuts); 			prior_cutstrings.append(preselection+' && '+lepside)
+cutnames.append('t3 additional lepton veto'); cutstrings.append(onelepton); 		prior_cutstrings.append('weight!=0.')
+cutnames.append('t3 nbtags'); 				  cutstrings.append(btags); 			prior_cutstrings.append('weight!=0.')
+cutnames.append('t3 n AK4 jets'); 			  cutstrings.append(nak4jets); 			prior_cutstrings.append('weight!=0.')
 cutnames.append('t3 full selection'); 		  cutstrings.append(fullselection); 	prior_cutstrings.append('weight!=0.')
 
 #weight string
-weightstring = '35867.*weight*sf_pileup*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
+weightstring = '(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF*sf_lep_iso_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH*sf_lep_iso_GH))*weight*sf_pileup*sf_lep_trk*sf_btag_eff*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
 
 #print out the number of events in data and the efficiencies for the MC samples
 #first line is just table headings for each cutflow and each sample type
 first_line = 'Cut,Data Events,Data Eff, Data Eff Err,'
+first_tex_line = 'Cut & Data events '
 for shortname in shortnames_done :
 	first_line += shortname+' events,'+shortname+' eff,'+shortname+' eff err,'
+	first_tex_line+='& '+shortname+' eff '
 print first_line
+first_tex_line+=' \\\\'
 os.system('echo "'+first_line+'" > '+cutflow_filename+'')
+os.system('echo "'+first_tex_line+'" > '+tex_filename+'')
 
 #main loop
 data_events_at_cut = []; data_events_at_prior_cut = []
@@ -189,17 +192,17 @@ for i in range(len(cutnames)) :
 		print 'Getting numbers of data events for cut '+cutnames[i]+' ('+str(i+1)+' out of '+str(len(cutnames))+')'
 		if leptype=='muons' :
 			tmp = dist.Clone('tmp')
-			muon_data_chain.Draw('cstar>>tmp','(weight!=0.)*('+cutstrings[i]+')')
+			muon_data_chain.Draw('cstar>>tmp','(weight!=0.)*('+cutstrings[i]+' && lepflavor==1)')
 			data_events_at_cut.append(tmp.Integral())
 			tmp = dist.Clone('tmp')
-			muon_data_chain.Draw('cstar>>tmp','(weight!=0.)*('+prior_cutstrings[i]+')')
+			muon_data_chain.Draw('cstar>>tmp','(weight!=0.)*('+prior_cutstrings[i]+' && lepflavor==1)')
 			data_events_at_prior_cut.append(tmp.Integral())
 		elif leptype=='electrons' :
 			tmp = dist.Clone('tmp')
-			ele_data_chain.Draw('cstar>>tmp','(weight!=0.)*('+cutstrings[i]+')')
+			ele_data_chain.Draw('cstar>>tmp','(weight!=0.)*('+cutstrings[i]+' && lepflavor==2)')
 			data_events_at_cut.append(tmp.Integral())
 			tmp = dist.Clone('tmp')
-			ele_data_chain.Draw('cstar>>tmp','(weight!=0.)*('+prior_cutstrings[i]+')')
+			ele_data_chain.Draw('cstar>>tmp','(weight!=0.)*('+prior_cutstrings[i]+' && lepflavor==2)')
 			data_events_at_prior_cut.append(tmp.Integral())
 	events_at_cut.append([]); events_at_prior_cut.append([])
 	print 'Getting numbers of MC events for cut '+cutnames[i]+' ('+str(i+1)+' out of '+str(len(cutnames))+')'
@@ -232,7 +235,7 @@ for i in range(len(cutnames)) :
 		else :
 			MC_chains[j].Draw('cstar>>tmp','('+weightstring+')*('+priorcut+')')
 		events_at_prior_cut[i].append(tmp.Integral())
-	#Each line after that is the cutflow number, then the number of events in data, then the eff. with uncertainty for each sample type
+	#Each line is the cutflow number, then the number of events in data, then the eff. with uncertainty for each sample type
 	#Begin with the cutflow number and the number of events in data
 	data_eff=900.; data_eff_err=900.
 	if data_events_at_prior_cut[i]!=0. :
@@ -240,6 +243,7 @@ for i in range(len(cutnames)) :
 		if data_events_at_cut[i]!=0. :
 			data_eff_err = data_eff*sqrt(1./data_events_at_cut[i]+1./data_events_at_prior_cut[i])
 	next_line = '%s,%d,%.4f,%.4f'%(cutnames[i],data_events_at_cut[i],data_eff,data_eff_err)
+	next_tex_line = '%s & %d'%(cutnames[i],data_events_at_cut[i])
 	for j in range(len(MC_chains)) :
 		#calculate the efficiency for this sample type
 		eff=900.; eff_err=900.
@@ -247,7 +251,41 @@ for i in range(len(cutnames)) :
 			eff = events_at_cut[i][j]/events_at_prior_cut[i][j]
 			if events_at_cut[i][j]!=0. :
 				eff_err = eff*sqrt(1./events_at_cut[i][j]+1./events_at_prior_cut[i][j])
+		#adjust the values for sig figs
+		eff_err_str='('
+		eff_err_digit1 = str(eff_err).replace('.','').strip('0')[0]
+		eff_err_digit2 = str(eff_err).replace('.','').strip('0')[1]
+		eff_err_digit3 = str(eff_err).replace('.','').strip('0')[2]
+		if int(eff_err_digit1)<3 :
+			eff_err_str+=eff_err_digit1
+			if int(eff_err_digit3)<5 or int(eff_err_digit2)==9 :
+				eff_err_str+=eff_err_digit2
+			else :
+				eff_err_str+=str(int(eff_err_digit2)+1)
+		else :
+			if int(eff_err_digit2)<5 or int(eff_err_digit1)==9 :
+				eff_err_str+=eff_err_digit1
+			else :
+				eff_err_str+=str(int(eff_err_digit1)+1)
+		eff_err_str+=')'
+		eff_str_plus_one = str(eff)[:str(eff_err).find(eff_err_digit1)+len(eff_err_str)-1]
+		eff_str = ''
+		if eff_str_plus_one.endswith('.') :
+			if int(str(eff)[:str(eff_err).find(eff_err_digit1)+len(eff_err_str)][-1])<5 or int(eff_str_plus_one[-2])==9 :
+				eff_str+=eff_str_plus_one[:-1]+eff_err_str
+			else :
+				eff_str+=eff_str_plus_one[:-2]+str(int(eff_str_plus_one[-2])+1)+eff_err_str
+		else :
+			if int(eff_str_plus_one[-1])<5 or int(eff_str_plus_one[-2])==9 :
+				eff_str+=eff_str_plus_one[:len(eff_str_plus_one)-1]+eff_err_str
+			else :
+				eff_str+=eff_str_plus_one[:len(eff_str_plus_one)-2]+str(int(eff_str_plus_one[-2])+1)+eff_err_str
+		print 'eff_err = %s, d1 = %s, d2 = %s, d3 = %s, eff = %s, eff_str = %s'%(str(eff_err),eff_err_digit1,eff_err_digit2,eff_err_digit3,str(eff),eff_str) #DEBUG
 		#add to the line
 		next_line+=',%.1f,%.4f,%.4f'%(events_at_cut[i][j],eff,eff_err)
+		next_tex_line+=' & %s'%eff_str
+	next_tex_line+=' \\\\'
 	print next_line
+	print next_tex_line
 	os.system('echo "'+next_line+'" >> '+cutflow_filename+'')
+	os.system('echo "'+next_tex_line+'" >> '+tex_filename+'')
