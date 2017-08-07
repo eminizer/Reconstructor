@@ -1,8 +1,11 @@
 from ROOT import *
+import CMS_lumi, tdrstyle
 from glob import glob
 from datetime import date
 import os
 from optparse import OptionParser
+
+tdrstyle.setTDRStyle()
 
 # COMMAND LINE OPTIONS
 parser = OptionParser()
@@ -41,7 +44,7 @@ outname+='.root'
 outfile = TFile(outname,'recreate')
 
 #skim the chain
-com_cuts = '(fullselection==1 && eventType<2)'
+com_cuts = '(fullselection==1 && eventType<2 && ((eventTopology<3 && ((lepflavor==1 && (lep_relPt>30. || lep_dR>0.4)) || (lepflavor==2 && lep_relPt>30. && lep_dR>0.4))) || (eventTopology==3 && ((lepflavor==1 && (lep_relPt>30. || lep_dR>0.4)) || (lepflavor==2 && lep_relPt>20. && lep_dR>0.4)))))'
 chain = fullchain.CopyTree(com_cuts)
 
 #Define cuts and draw into the histograms
@@ -151,6 +154,9 @@ cstar_comp_canv_3 = TCanvas('cstar_comp_canv_3','cstar_comp_canv_3',1100,900); a
 x_F_comp_canv_3 = TCanvas('x_F_comp_canv_3','x_F_comp_canv_3',1100,900); all_canvs.append(x_F_comp_canv_3)
 M_comp_canv_3 = TCanvas('M_comp_canv_3','M_comp_canv_3',1100,900); all_canvs.append(M_comp_canv_3)
 res_canv_3 = TCanvas('res_canv_3','res_canv_3',1100,900); all_canvs.append(res_canv_3)
+for canv in all_canvs :
+	canv.SetLeftMargin(0.14); canv.SetRightMargin(0.05) 
+	canv.SetTopMargin(0.10); canv.SetBottomMargin(0.12)
 
 #make the legend
 leg = TLegend(0.1,0.7,0.48,0.9)
@@ -158,40 +164,60 @@ leg.AddEntry(cstar_res_1,'c*','PE')
 leg.AddEntry(x_F_res_1,'|x_F|','PE')
 leg.AddEntry(M_res_1,'M','PE')
 
+#set up the CMS Lumi objects
+iPeriod = 0 #free form since it's only simulation
+iPos = 0 #out of frame by default (iPos = 10*(alignment) + position (1/2/3 = left/center/right))
+CMS_lumi.writeExtraText = 1
+CMS_lumi.extraText = "Simulation Preliminary"
+
 #plot the plots
 cstar_comp_canv_1.cd()
 cstar_comp_1.Draw("COLZ")
+CMS_lumi.CMS_lumi(cstar_comp_canv_1, iPeriod, iPos)
 x_F_comp_canv_1.cd()
 x_F_comp_1.Draw("COLZ")
+CMS_lumi.CMS_lumi(x_F_comp_canv_1, iPeriod, iPos)
 M_comp_canv_1.cd()
 M_comp_1.Draw("COLZ")
+CMS_lumi.CMS_lumi(M_comp_canv_1, iPeriod, iPos)
 res_canv_1.cd()
 cstar_res_1.Draw("PE")
 x_F_res_1.Draw("PE SAME")
 M_res_1.Draw("PE SAME")
 leg.Draw("SAME")
+CMS_lumi.CMS_lumi(res_canv_1, iPeriod, 11)
+
 cstar_comp_canv_2.cd()
 cstar_comp_2.Draw("COLZ")
+CMS_lumi.CMS_lumi(cstar_comp_canv_2, iPeriod, iPos)
 x_F_comp_canv_2.cd()
 x_F_comp_2.Draw("COLZ")
+CMS_lumi.CMS_lumi(x_F_comp_canv_2, iPeriod, iPos)
 M_comp_canv_2.cd()
 M_comp_2.Draw("COLZ")
+CMS_lumi.CMS_lumi(M_comp_canv_2, iPeriod, iPos)
 res_canv_2.cd()
 cstar_res_2.Draw("PE")
 x_F_res_2.Draw("PE SAME")
 M_res_2.Draw("PE SAME")
 leg.Draw("SAME")
+CMS_lumi.CMS_lumi(res_canv_2, iPeriod, 11)
+
 cstar_comp_canv_3.cd()
 cstar_comp_3.Draw("COLZ")
+CMS_lumi.CMS_lumi(cstar_comp_canv_3, iPeriod, iPos)
 x_F_comp_canv_3.cd()
 x_F_comp_3.Draw("COLZ")
+CMS_lumi.CMS_lumi(x_F_comp_canv_3, iPeriod, iPos)
 M_comp_canv_3.cd()
 M_comp_3.Draw("COLZ")
+CMS_lumi.CMS_lumi(M_comp_canv_3, iPeriod, iPos)
 res_canv_3.cd()
 cstar_res_3.Draw("PE")
 x_F_res_3.Draw("PE SAME")
 M_res_3.Draw("PE SAME")
 leg.Draw("SAME")
+CMS_lumi.CMS_lumi(res_canv_3, iPeriod, 11)
 
 #write the canvas
 outfile.cd()

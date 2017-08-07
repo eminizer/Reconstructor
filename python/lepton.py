@@ -73,6 +73,11 @@ class Muon(Lepton) :
 		return self.__iso<0.15 #tight WP, already divided by pt https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
 	def isMiniIso(self) :
 		return (self.__miniIso/self.getPt())<0.2
+	def is2DIso(self,eventtopology) :
+		if eventtopology<3 :
+			return self.getDR()>0.4 or self.getRelPt()>30.
+		elif eventtopology==3 :
+			return self.getDR()>0.4 or self.getRelPt()>30.
 
 class Electron(Lepton) :
 
@@ -107,6 +112,11 @@ class Electron(Lepton) :
 		return self.__iso<0.0695 #what was removed from the Medium ID https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
 	def isMiniIso(self) :
 		return (self.__miniIso/self.getPt())<0.2
+	def is2DIso(self,eventtopology) :
+		if eventtopology<3 :
+			return self.getDR()>0.4 or self.getRelPt()>30.
+		elif eventtopology==3 :
+			return self.getDR()>0.4 or self.getRelPt()>20.
 
 def findNearestJet(lepvec,jets) :
 	closestJet = jets[0]

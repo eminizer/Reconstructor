@@ -379,16 +379,16 @@ class Reconstructor(object) :
 	eltrig_themuon_eta = AddBranch(writename='eltrig_themuon_eta',dictlist=[allBranches])
 	eltrig_theelectron_pt = AddBranch(writename='eltrig_theelectron_pt',dictlist=[allBranches])
 	eltrig_theelectron_eta = AddBranch(writename='eltrig_theelectron_eta',dictlist=[allBranches])
-	#cut variables etc. for electron ID efficiency measurement
-	elID_cut_branches = {}
-	thisdictlist = [allBranches,elID_cut_branches]
-	cutnames = ['probeID','isoprobe','muveto','oppelecharge','btags','ak4jetcuts','lepWpT','dieleMveto','fullselection']
-	for cutname in cutnames :
-		AddBranch(writename='elID_'+cutname,ttreetype='i',inival=2,dictlist=thisdictlist)
-	elID_tag_pt = AddBranch(writename='elID_tag_pt',dictlist=[allBranches])
-	elID_tag_eta = AddBranch(writename='elID_tag_eta',dictlist=[allBranches])
-	elID_probe_pt = AddBranch(writename='elID_probe_pt',dictlist=[allBranches])
-	elID_probe_eta = AddBranch(writename='elID_probe_eta',dictlist=[allBranches])
+	##cut variables etc. for electron ID efficiency measurement
+	#elID_cut_branches = {}
+	#thisdictlist = [allBranches,elID_cut_branches]
+	#cutnames = ['probeID','isoprobe','muveto','oppelecharge','btags','ak4jetcuts','lepWpT','dieleMveto','fullselection']
+	#for cutname in cutnames :
+	#	AddBranch(writename='elID_'+cutname,ttreetype='i',inival=2,dictlist=thisdictlist)
+	#elID_tag_pt = AddBranch(writename='elID_tag_pt',dictlist=[allBranches])
+	#elID_tag_eta = AddBranch(writename='elID_tag_eta',dictlist=[allBranches])
+	#elID_probe_pt = AddBranch(writename='elID_probe_pt',dictlist=[allBranches])
+	#elID_probe_eta = AddBranch(writename='elID_probe_eta',dictlist=[allBranches])
 	#kinfit variables
 	kinfit_branches = {}
 	thisdictlist=[kinfit_branches,allBranches]
@@ -569,10 +569,10 @@ class Reconstructor(object) :
 		allleps = muons+electrons
 		allleps.sort(key=lambda x: x.getPt(), reverse=True)
 		lep = allleps[0]
-		lepisiso = (topology<3 and (lep.getRelPt()>20. or lep.getDR()>0.4)) or (topology==3 and ((lep.getType=='mu' and lep.isTightIso()) or (lep.getType=='el' and lep.isIso())))
+		lepisiso = lep.is2DIso(topology) and (topology<3 or topology==3 and ((lep.getType=='mu' and lep.isTightIso()) or (lep.getType=='el' and lep.isIso())))
 		if not lepisiso :
 			for lepcand in allleps[1:] :
-				lepcandisiso = (topology<3 and (lepcand.getRelPt()>20. or lepcand.getDR()>0.4)) or (topology==3 and ((lepcand.getType=='mu' and lepcand.isTightIso()) or (lepcand.getType=='el' and lepcand.isIso())))
+				lepcandisiso = lepcand.is2DIso(topology) and (topology<3 or topology==3 and ((lepcand.getType=='mu' and lepcand.isTightIso()) or (lepcand.getType=='el' and lepcand.isIso())))
 				if lepcandisiso :
 					lep = lepcand
 					break
@@ -726,7 +726,7 @@ class Reconstructor(object) :
 
 		#FULL SELECTION CRITERIA
 		#number of AK4 jets
-		self.cut_branches['nak4jets'].setWriteValue(1) if canreconstruct else self.cut_branches['nak4jets'].setWriteValue(0)
+		self.cut_branches['ak4jetmult'].setWriteValue(1) if canreconstruct else self.cut_branches['ak4jetmult'].setWriteValue(0)
 		#met filtering
 		metfiltercuts = []
 		for branch in self.filterBranches.values() :
@@ -748,15 +748,15 @@ class Reconstructor(object) :
 				self.cut_branches['trigger'].setWriteValue(0)
 			#isolated lepton
 			if topology<3 :
-				self.cut_branches['isolepton'].setWriteValue(1) if (lep.getRelPt()>20. or lep.getDR()>0.4) else self.cut_branches['isolepton'].setWriteValue(0)
+				self.cut_branches['isolepton'].setWriteValue(1) if lep.is2DIso(topology) else self.cut_branches['isolepton'].setWriteValue(0)
 			elif topology==3 :
-				self.cut_branches['isolepton'].setWriteValue(1) if lep.isTightIso() else self.cut_branches['isolepton'].setWriteValue(0)
+				self.cut_branches['isolepton'].setWriteValue(1) if (lep.is2DIso(topology) and lep.isTightIso()) else self.cut_branches['isolepton'].setWriteValue(0)
 			#exactly one isolated lepton
 			other_leps+=electrons
 			other_leps+=muons[1:]
 			noOtherLeps = True
 			for lep in other_leps :
-				if (topology<3 and (lep.getRelPt()>20. or lep.getDR()>0.4)) or (topology==3 and lep.isLooseIso()) :
+				if (topology<3 and lep.is2DIso(topology)) or (topology==3 and lep.is2DIso(topology) and lep.isLooseIso()) :
 					noOtherLeps = False
 					break
 			self.cut_branches['onelepton'].setWriteValue(1) if noOtherLeps else self.cut_branches['onelepton'].setWriteValue(0)
@@ -773,15 +773,15 @@ class Reconstructor(object) :
 				self.cut_branches['trigger'].setWriteValue(0)
 			#isolated lepton
 			if topology<3 :
-				self.cut_branches['isolepton'].setWriteValue(1) if (lep.getRelPt()>20. or lep.getDR()>0.4) else self.cut_branches['isolepton'].setWriteValue(0)
+				self.cut_branches['isolepton'].setWriteValue(1) if lep.is2DIso(topology) else self.cut_branches['isolepton'].setWriteValue(0)
 			elif topology==3 :
-				self.cut_branches['isolepton'].setWriteValue(1) if lep.isIso() else self.cut_branches['isolepton'].setWriteValue(0)
+				self.cut_branches['isolepton'].setWriteValue(1) if (lep.is2DIso(topology) and lep.isIso()) else self.cut_branches['isolepton'].setWriteValue(0)
 			#exactly one isolated lepton
 			other_leps+=muons
 			other_leps+=electrons[1:]
 			noOtherLeps = True
 			for lep in other_leps :
-				if (topology<3 and (lep.getRelPt()>20. or lep.getDR()>0.4)) or (topology==3 and lep.isLooseIso()) :
+				if (topology<3 and lep.is2DIso(topology)) or (topology==3 and lep.is2DIso(topology) and lep.isLooseIso()) :
 					noOtherLeps = False
 					break
 			self.cut_branches['onelepton'].setWriteValue(1) if noOtherLeps else self.cut_branches['onelepton'].setWriteValue(0)
@@ -813,7 +813,7 @@ class Reconstructor(object) :
 		themuon = None; theelectron = None
 		if len(muons)>0 :
 			for m in muons :
-				if (topology<3 and (m.getRelPt()>20. or m.getDR()>0.4)) or (topology==3 and m.isLooseIso()) :
+				if (topology<3 and m.is2DIso(topology)) or (topology==3 and m.is2DIso(topology) and m.isLooseIso()) :
 					allisoleps.append(m)
 					if themuon==None :
 						themuon = m
@@ -821,7 +821,7 @@ class Reconstructor(object) :
 				themuon = muons[0]
 		if len(electrons)>0 :
 			for e in electrons :
-				if (topology<3 and (e.getRelPt()>20. or e.getDR()>0.4)) or (topology==3 and e.isIso()) :
+				if (topology<3 and e.is2DIso(topology)) or (topology==3 and e.is2DIso(topology) and e.isIso()) :
 					allisoleps.append(e)
 					if theelectron==None :
 						theelectron = e
@@ -840,12 +840,12 @@ class Reconstructor(object) :
 		#tightly ID'd electron
 		self.eltrig_cut_branches['eltrig_tightel'].setWriteValue(1) if theelectron!=None and theelectron.getTightID()==1 else self.eltrig_cut_branches['eltrig_tightel'].setWriteValue(0)
 		#isolated muon
-		if themuon!=None and ((topology<3 and (themuon.getRelPt()>20. or themuon.getDR()>0.4)) or (topology==3 and themuon.isTightIso())) :
+		if themuon!=None and ((topology<3 and themuon.is2DIso(topology)) or (topology==3 and themuon.is2DIso(topology) and themuon.isTightIso())) :
 			self.eltrig_cut_branches['eltrig_isomu'].setWriteValue(1)
 		else :
 			self.eltrig_cut_branches['eltrig_isomu'].setWriteValue(0)
 		#isolated electron
-		if theelectron!=None and ((topology<3 and (theelectron.getRelPt()>20. or theelectron.getDR()>0.4)) or (topology==3 and theelectron.isIso())) :
+		if theelectron!=None and ((topology<3 and theelectron.is2DIso(topology)) or (topology==3 and theelectron.is2DIso(topology) and theelectron.isIso())) :
 			self.eltrig_cut_branches['eltrig_isoel'].setWriteValue(1)
 		else :
 			self.eltrig_cut_branches['eltrig_isoel'].setWriteValue(0)
@@ -875,48 +875,48 @@ class Reconstructor(object) :
 				if cutkey!='eltrig_eltrigger' :
 					self.eltrig_cut_branches['eltrig_fullselection'].setWriteValue(0)
 
-		#ELECTRON ID SAMPLE SELECTIONS
-		#first find the tag (event's lepton) and the probe (hardest other electron)
-		tag = lep
-		self.elID_tag_pt.setWriteValue(tag.getPt()); self.elID_tag_eta.setWriteValue(tag.getEta())
-		probe = None
-		for pc in probecandidates :
-			if pc!=tag :
-				probe = pc
-				break
-		if probe!=None :
-			self.elID_probe_pt.setWriteValue(probe.getPt()); self.elID_probe_eta.setWriteValue(probe.getEta())
-		#does the probe also pass ID?
-		self.elID_cut_branches['elID_probeID'].setWriteValue(1) if (probe!=None and probe.getID()==1) else self.elID_cut_branches['elID_probeID'].setWriteValue(0)
-		#is the probe isolated?
-		self.elID_cut_branches['elID_isoprobe'].setWriteValue(1) if (probe!=None and ((topology<3 and (probe.getRelPt()>20. or tag.getDR()>0.4)) or (topology==3 and probe.isIso()))) else self.elID_cut_branches['elID_isoprobe'].setWriteValue(0)
-		#veto any events that have valid muons
-		self.elID_cut_branches['elID_muveto'].setWriteValue(1) if len(muons)==0 else self.elID_cut_branches['elID_muveto'].setWriteValue(0)
-		#do the electrons have opposite charges?
-		self.elID_cut_branches['elID_oppelecharge'].setWriteValue(1) if (probe!=None and tag.getQ()*probe.getQ()<0) else self.elID_cut_branches['elID_oppelecharge'].setWriteValue(0)
-		#number of btags
-		self.elID_cut_branches['elID_btags'].setWriteValue(self.cut_branches['btags'].getWriteValue())
-		#ak4 jet cuts
-		self.elID_cut_branches['elID_ak4jetcuts'].setWriteValue(self.cut_branches['ak4jetcuts'].getWriteValue())
-		#do either of them make a hard enough leptonic W?
-		tagvec = tag.getFourVector(); probevec = None
-		if probe!=None : probevec = probe.getFourVector()
-		self.elID_cut_branches['elID_lepWpT'].setWriteValue(1) if ((tagvec+met1_vec).Pt()>50. or (tagvec+met2_vec).Pt()>50. or (probe!=None and ((probevec+met1_vec).Pt()>50. or (probevec+met2_vec).Pt()>50.))) else self.elID_cut_branches['elID_lepWpT'].setWriteValue(0)
-		#do the tag and probe together have a mass outside the Z window?
-		dieleM = None
-		if probe!=None :
-			dieleM = (tagvec+probevec).M()
-		self.elID_cut_branches['elID_dieleMveto'].setWriteValue(1) if (dieleM!=None and dieleM>12. and (dieleM<76. or dieleM>106.)) else self.elID_cut_branches['elID_dieleMveto'].setWriteValue(0)
-		#fullselection
-		self.elID_cut_branches['elID_fullselection'].setWriteValue(1)
-		#print '-----------------------'#DEBUG
-		for cutkey, cutbranch in self.elID_cut_branches.iteritems() :
-			if cutbranch.getWriteValue()==0 :
-				if cutkey!='elID_probeID' and cutkey!='elID_isoprobe' :
-		#			print 'ID cuts failed by cut %s'%(cutkey) #DEBUG
-					self.elID_cut_branches['elID_fullselection'].setWriteValue(0)
-		#if self.elID_cut_branches['elID_fullselection'].getWriteValue()==1 : #DEBUG
-		#	print 'passed!' #DEBUG
+		##ELECTRON ID SAMPLE SELECTIONS
+		##first find the tag (event's lepton) and the probe (hardest other electron)
+		#tag = lep
+		#self.elID_tag_pt.setWriteValue(tag.getPt()); self.elID_tag_eta.setWriteValue(tag.getEta())
+		#probe = None
+		#for pc in probecandidates :
+		#	if pc!=tag :
+		#		probe = pc
+		#		break
+		#if probe!=None :
+		#	self.elID_probe_pt.setWriteValue(probe.getPt()); self.elID_probe_eta.setWriteValue(probe.getEta())
+		##does the probe also pass ID?
+		#self.elID_cut_branches['elID_probeID'].setWriteValue(1) if (probe!=None and probe.getID()==1) else self.elID_cut_branches['elID_probeID'].setWriteValue(0)
+		##is the probe isolated?
+		#self.elID_cut_branches['elID_isoprobe'].setWriteValue(1) if (probe!=None and ((topology<3 and probe.is2DIso(topology)) or (topology==3 and probe.is2DIso(topology) and probe.isIso()))) else self.elID_cut_branches['elID_isoprobe'].setWriteValue(0)
+		##veto any events that have valid muons
+		#self.elID_cut_branches['elID_muveto'].setWriteValue(1) if len(muons)==0 else self.elID_cut_branches['elID_muveto'].setWriteValue(0)
+		##do the electrons have opposite charges?
+		#self.elID_cut_branches['elID_oppelecharge'].setWriteValue(1) if (probe!=None and tag.getQ()*probe.getQ()<0) else self.elID_cut_branches['elID_oppelecharge'].setWriteValue(0)
+		##number of btags
+		#self.elID_cut_branches['elID_btags'].setWriteValue(self.cut_branches['btags'].getWriteValue())
+		##ak4 jet cuts
+		#self.elID_cut_branches['elID_ak4jetcuts'].setWriteValue(self.cut_branches['ak4jetcuts'].getWriteValue())
+		##do either of them make a hard enough leptonic W?
+		#tagvec = tag.getFourVector(); probevec = None
+		#if probe!=None : probevec = probe.getFourVector()
+		#self.elID_cut_branches['elID_lepWpT'].setWriteValue(1) if ((tagvec+met1_vec).Pt()>50. or (tagvec+met2_vec).Pt()>50. or (probe!=None and ((probevec+met1_vec).Pt()>50. or (probevec+met2_vec).Pt()>50.))) else self.elID_cut_branches['elID_lepWpT'].setWriteValue(0)
+		##do the tag and probe together have a mass outside the Z window?
+		#dieleM = None
+		#if probe!=None :
+		#	dieleM = (tagvec+probevec).M()
+		#self.elID_cut_branches['elID_dieleMveto'].setWriteValue(1) if (dieleM!=None and dieleM>12. and (dieleM<76. or dieleM>106.)) else self.elID_cut_branches['elID_dieleMveto'].setWriteValue(0)
+		##fullselection
+		#self.elID_cut_branches['elID_fullselection'].setWriteValue(1)
+		##print '-----------------------'#DEBUG
+		#for cutkey, cutbranch in self.elID_cut_branches.iteritems() :
+		#	if cutbranch.getWriteValue()==0 :
+		#		if cutkey!='elID_probeID' and cutkey!='elID_isoprobe' :
+		##			print 'ID cuts failed by cut %s'%(cutkey) #DEBUG
+		#			self.elID_cut_branches['elID_fullselection'].setWriteValue(0)
+		##if self.elID_cut_branches['elID_fullselection'].getWriteValue()==1 : #DEBUG
+		##	print 'passed!' #DEBUG
 
 		#print '		Done. (fullselection=%d)'%(self.cut_branches['fullselection'].getWriteValue()) #DEBUG
  

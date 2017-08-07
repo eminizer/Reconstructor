@@ -62,7 +62,7 @@ for histo in allhistos :
 	histo.SetDirectory(0)
 
 #set up skimmed chain
-com_cuts = 'fullselection==1 && ismatchable==1'
+com_cuts = 'fullselection==1 && ismatchable==1 && ((eventTopology<3 && ((lepflavor==1 && (lep_relPt>30. || lep_dR>0.4)) || (lepflavor==2 && lep_relPt>30. && lep_dR>0.4))) || (eventTopology==3 && ((lepflavor==1 && (lep_relPt>30. || lep_dR>0.4)) || (lepflavor==2 && lep_relPt>20. && lep_dR>0.4))))'
 chain=fullchain.CopyTree(com_cuts)
 
 #plot plots
@@ -109,7 +109,7 @@ legEntries = ['type-1, leptonic','type-1, hadronic','type-2, leptonic','type-2, 
 
 #draw plots on canvases and fit with gaussians, print results
 lines = []
-total_leg = TLegend(0.62,0.67,0.75,0.8)
+total_leg = TLegend(0.65,0.33,0.9,0.83)
 for i in range(len(allhistos)) :
 	histo = allhistos[i]
 	print 'Doing '+str(allhistos[i].GetName())
