@@ -248,9 +248,9 @@ class Reconstructor(object) :
 	sf_lep_iso_GH 		 = AddBranch(writename='sf_lep_iso_GH',inival=1.,dictlist=thisdictlist)
 	sf_lep_iso_GH_low 	 = AddBranch(writename='sf_lep_iso_GH_low',inival=1.,dictlist=thisdictlist)
 	sf_lep_iso_GH_hi 	 = AddBranch(writename='sf_lep_iso_GH_hi',inival=1.,dictlist=thisdictlist)
-	sf_lep_trk 			 = AddBranch(writename='sf_lep_trk',inival=1.,dictlist=thisdictlist)
-	sf_lep_trk_low 		 = AddBranch(writename='sf_lep_trk_low',inival=1.,dictlist=thisdictlist)
-	sf_lep_trk_hi 		 = AddBranch(writename='sf_lep_trk_hi',inival=1.,dictlist=thisdictlist)
+	sf_lep_mini_iso 	 = AddBranch(writename='sf_lep_mini_iso',inival=1.,dictlist=thisdictlist)
+	sf_lep_mini_iso_low  = AddBranch(writename='sf_lep_mini_iso_low',inival=1.,dictlist=thisdictlist)
+	sf_lep_mini_iso_hi 	 = AddBranch(writename='sf_lep_mini_iso_hi',inival=1.,dictlist=thisdictlist)
 	sf_btag_eff 		 = AddBranch(writename='sf_btag_eff',inival=1.,dictlist=thisdictlist)
 	sf_btag_eff_low 	 = AddBranch(writename='sf_btag_eff_low',inival=1.,dictlist=thisdictlist)
 	sf_btag_eff_hi 		 = AddBranch(writename='sf_btag_eff_hi',inival=1.,dictlist=thisdictlist)
@@ -339,16 +339,16 @@ class Reconstructor(object) :
 	observableBranches = {}
 	thisdictlist = [allBranches,observableBranches]
 	#cosine(theta)
-	cstar 		 = AddBranch(writename='cstar',dictlist=thisdictlist)
-	cstar_prefit = AddBranch(writename='cstar_prefit',dictlist=thisdictlist)
+	cstar 			= AddBranch(writename='cstar',dictlist=thisdictlist)
+	cstar_prefit 	= AddBranch(writename='cstar_prefit',dictlist=thisdictlist)
 	cstar_corprefit = AddBranch(writename='cstar_corprefit',dictlist=thisdictlist)
 	#Feynman x
-	x_F 	   = AddBranch(writename='x_F',dictlist=thisdictlist)
-	x_F_prefit = AddBranch(writename='x_F_prefit',dictlist=thisdictlist)
+	x_F 		  = AddBranch(writename='x_F',dictlist=thisdictlist)
+	x_F_prefit 	  = AddBranch(writename='x_F_prefit',dictlist=thisdictlist)
 	x_F_corprefit = AddBranch(writename='x_F_corprefit',dictlist=thisdictlist)
 	#ttbar invariant mass
-	M 		 = AddBranch(writename='M',dictlist=thisdictlist)
-	M_prefit = AddBranch(writename='M_prefit',dictlist=thisdictlist)
+	M 			= AddBranch(writename='M',dictlist=thisdictlist)
+	M_prefit 	= AddBranch(writename='M_prefit',dictlist=thisdictlist)
 	M_corprefit = AddBranch(writename='M_corprefit',dictlist=thisdictlist)
 	#initial quark vector
 	mctruthBranches = {}
@@ -366,7 +366,13 @@ class Reconstructor(object) :
 	#cut variables for full selection
 	cut_branches = {}
 	thisdictlist = [allBranches,cut_branches]
-	cutnames = ['metfilters','trigger','onelepton','isolepton','btags','ak4jetmult','ak4jetcuts','othercuts','validminimization','fullselection']
+	cutnames = ['metfilters','trigger','onelepton','isolepton','btags','ak4jetmult','ak4jetcuts','METcuts','kinfitchi2','recoleptM','validminimization','fullselection']
+	for cutname in cutnames :
+		AddBranch(writename=cutname,ttreetype='i',inival=2,dictlist=thisdictlist)
+	#cut variables for various control regions and sideband selections
+	cr_sb_cut_branches = {}
+	thisdictlist = [allBranches,cr_sb_cut_branches]
+	cutnames = ['wjets_cr_selection','qcd_A_sb_selection','qcd_B_sb_selection','qcd_C_sb_selection']
 	for cutname in cutnames :
 		AddBranch(writename=cutname,ttreetype='i',inival=2,dictlist=thisdictlist)
 	#cut variables etc. for electron trigger efficiency measurement
@@ -379,16 +385,12 @@ class Reconstructor(object) :
 	eltrig_themuon_eta = AddBranch(writename='eltrig_themuon_eta',dictlist=[allBranches])
 	eltrig_theelectron_pt = AddBranch(writename='eltrig_theelectron_pt',dictlist=[allBranches])
 	eltrig_theelectron_eta = AddBranch(writename='eltrig_theelectron_eta',dictlist=[allBranches])
-	##cut variables etc. for electron ID efficiency measurement
-	#elID_cut_branches = {}
-	#thisdictlist = [allBranches,elID_cut_branches]
-	#cutnames = ['probeID','isoprobe','muveto','oppelecharge','btags','ak4jetcuts','lepWpT','dieleMveto','fullselection']
-	#for cutname in cutnames :
-	#	AddBranch(writename='elID_'+cutname,ttreetype='i',inival=2,dictlist=thisdictlist)
-	#elID_tag_pt = AddBranch(writename='elID_tag_pt',dictlist=[allBranches])
-	#elID_tag_eta = AddBranch(writename='elID_tag_eta',dictlist=[allBranches])
-	#elID_probe_pt = AddBranch(writename='elID_probe_pt',dictlist=[allBranches])
-	#elID_probe_eta = AddBranch(writename='elID_probe_eta',dictlist=[allBranches])
+	#cut variables for alternate lepton isolation algorithm selections
+	alt_lep_iso_cut_branches = {}
+	thisdictlist = [allBranches,alt_lep_iso_cut_branches]
+	cutnames = ['miniisolepton','oneminiisolepton','fullminiisoselection']
+	for cutname in cutnames :
+		AddBranch(writename=cutname,ttreetype='i',inival=2,dictlist=thisdictlist)
 	#kinfit variables
 	kinfit_branches = {}
 	thisdictlist=[kinfit_branches,allBranches]
@@ -737,6 +739,10 @@ class Reconstructor(object) :
 		self.cut_branches['metfilters'].setWriteValue(1) if metfiltercuts.count(False)==0 else self.cut_branches['metfilters'].setWriteValue(0)
 		#number of btags
 		self.cut_branches['btags'].setWriteValue(1) if ((topology<3 and nbtags>0) or (topology==3 and nbtags>1)) else self.cut_branches['btags'].setWriteValue(0) 
+		#kinematic fit chi2
+		self.cut_branches['kinfitchi2'].setWriteValue(1) if (canreconstruct and (topology==3 or fitchi2<-15)) else self.cut_branches['kinfitchi2'].setWriteValue(0) 
+		#reconstructed leptonic top mass for boosted events
+		self.cut_branches['recoleptM'].setWriteValue(1) if (canreconstruct and (topology==3 or (scaledlep+scaledmet+scaledlepb).M()<210.)) else self.cut_branches['recoleptM'].setWriteValue(0)
 		#other cuts are lepton flavor specific
 		other_leps = []; allcuts = []
 		if self.lepflavor.getWriteValue()==1 :
@@ -762,8 +768,11 @@ class Reconstructor(object) :
 			self.cut_branches['onelepton'].setWriteValue(1) if noOtherLeps else self.cut_branches['onelepton'].setWriteValue(0)
 			#leading ak4 jets
 			self.cut_branches['ak4jetcuts'].setWriteValue(1) if (topology==3 or (len(ak4jets)>1 and ak4jets[0].getPt()>150. and ak4jets[1].getPt()>50.)) else self.cut_branches['ak4jetcuts'].setWriteValue(0)
-			#add'l cuts
-			self.cut_branches['othercuts'].setWriteValue(1) if canreconstruct and (topology==3 or ((lep.getPt()+scaledmet.E())>150. and scaledmet.E()>50.)) else self.cut_branches['othercuts'].setWriteValue(0)
+			#MET cuts
+			if canreconstruct :
+				self.cut_branches['METcuts'].setWriteValue(1) if ((topology==3 and scaledmet.E()>40.) or scaledmet.E()>50.) else self.cut_branches['METcuts'].setWriteValue(0)
+			else :
+				self.cut_branches['METcuts'].setWriteValue(1) if ((topology==3 and met.E()>40.) or met.E()>50.) else self.cut_branches['METcuts'].setWriteValue(0)
 		elif self.lepflavor.getWriteValue()==2 :
 			#trigger
 			for trigName in EL_TRIG_PATHS :
@@ -787,13 +796,45 @@ class Reconstructor(object) :
 			self.cut_branches['onelepton'].setWriteValue(1) if noOtherLeps else self.cut_branches['onelepton'].setWriteValue(0)
 			#leading ak4 jets
 			self.cut_branches['ak4jetcuts'].setWriteValue(1) if (topology==3 or (len(ak4jets)>1 and ak4jets[0].getPt()>250. and ak4jets[1].getPt()>70.)) else self.cut_branches['ak4jetcuts'].setWriteValue(0)
-			#add'l cuts
-			self.cut_branches['othercuts'].setWriteValue(1) if canreconstruct and (topology==3 or scaledmet.E()>120.) else self.cut_branches['othercuts'].setWriteValue(0)
+			#MET cuts
+			if canreconstruct :
+				self.cut_branches['METcuts'].setWriteValue(1) if ((topology==3 and scaledmet.E()>40.) or scaledmet.E()>100.) else self.cut_branches['METcuts'].setWriteValue(0)
+			else :
+				self.cut_branches['METcuts'].setWriteValue(1) if ((topology==3 and met.E()>40.) or met.E()>100.) else self.cut_branches['METcuts'].setWriteValue(0)
 		#full selection
 		for cutbranch in self.cut_branches.values() :
 			if cutbranch.getWriteValue()==0 :
 				allcuts.append(False)
 		self.cut_branches['fullselection'].setWriteValue(1) if allcuts.count(False)==0 else self.cut_branches['fullselection'].setWriteValue(0)
+
+		#SIDEBAND AND CONTROL REGION SELECTIONS
+		#W+Jets control region (fails kinematic fit chi2 cuts OR reconstructed leptonic top mass cuts) for boosted events
+		wjets_cr_pass_cutlist = ['metfilters','trigger','onelepton','isolepton','btags','ak4jetmult','ak4jetcuts','METcuts','validminimization']
+		wjets_cr_fail_cutlist = ['kinfitchi2','recoleptM']
+		for cutname in wjets_cr_pass_cutlist :
+			if not self.cut_branches[cutname].getWriteValue()==1 :
+				self.cr_sb_cut_branches['wjets_cr_selection'].setWriteValue(0)
+				break
+		if self.cr_sb_cut_branches['wjets_cr_selection'].getWriteValue()!=0 :
+			for cutname in wjets_cr_fail_cutlist :
+				if self.cut_branches[cutname].getWriteValue()==0 :
+					self.cr_sb_cut_branches['wjets_cr_selection'].setWriteValue(1)
+					break
+		if self.cr_sb_cut_branches['wjets_cr_selection'].getWriteValue()==2 :
+			self.cr_sb_cut_branches['wjets_cr_selection'].setWriteValue(0)
+		#QCD sidebands for ABCD method background estimation (pass all cuts but MET and lepton isolation)
+		qcd_sb_pass_cutlist = ['metfilters','trigger','onelepton','btags','ak4jetmult','ak4jetcuts','kinfitchi2','recoleptM','validminimization']
+		for cutname in qcd_sb_pass_cutlist :
+			if not self.cut_branches[cutname].getWriteValue()==1 :
+				self.cr_sb_cut_branches['qcd_A_sb_selection'].setWriteValue(0)
+				self.cr_sb_cut_branches['qcd_B_sb_selection'].setWriteValue(0)
+				self.cr_sb_cut_branches['qcd_C_sb_selection'].setWriteValue(0)
+				break
+		#separate QCD sideband regions in 2D space
+		if self.cr_sb_cut_branches['qcd_A_sb_selection'].getWriteValue()!=0 :
+			self.cr_sb_cut_branches['qcd_A_sb_selection'].setWriteValue(1) if self.cut_branches['isolepton'].getWriteValue()==1 and self.cut_branches['METcuts'].getWriteValue()==0 else self.cr_sb_cut_branches['qcd_A_sb_selection'].setWriteValue(0)
+			self.cr_sb_cut_branches['qcd_B_sb_selection'].setWriteValue(1) if self.cut_branches['isolepton'].getWriteValue()==0 and self.cut_branches['METcuts'].getWriteValue()==0 else self.cr_sb_cut_branches['qcd_B_sb_selection'].setWriteValue(0)
+			self.cr_sb_cut_branches['qcd_C_sb_selection'].setWriteValue(1) if self.cut_branches['isolepton'].getWriteValue()==0 and self.cut_branches['METcuts'].getWriteValue()==1 else self.cr_sb_cut_branches['qcd_C_sb_selection'].setWriteValue(0)
 
 		#ELECTRON TRIGGER SAMPLE SELECTIONS
 		#muon trigger
@@ -875,48 +916,44 @@ class Reconstructor(object) :
 				if cutkey!='eltrig_eltrigger' :
 					self.eltrig_cut_branches['eltrig_fullselection'].setWriteValue(0)
 
-		##ELECTRON ID SAMPLE SELECTIONS
-		##first find the tag (event's lepton) and the probe (hardest other electron)
-		#tag = lep
-		#self.elID_tag_pt.setWriteValue(tag.getPt()); self.elID_tag_eta.setWriteValue(tag.getEta())
-		#probe = None
-		#for pc in probecandidates :
-		#	if pc!=tag :
-		#		probe = pc
-		#		break
-		#if probe!=None :
-		#	self.elID_probe_pt.setWriteValue(probe.getPt()); self.elID_probe_eta.setWriteValue(probe.getEta())
-		##does the probe also pass ID?
-		#self.elID_cut_branches['elID_probeID'].setWriteValue(1) if (probe!=None and probe.getID()==1) else self.elID_cut_branches['elID_probeID'].setWriteValue(0)
-		##is the probe isolated?
-		#self.elID_cut_branches['elID_isoprobe'].setWriteValue(1) if (probe!=None and ((topology<3 and probe.is2DIso(topology)) or (topology==3 and probe.is2DIso(topology) and probe.isIso()))) else self.elID_cut_branches['elID_isoprobe'].setWriteValue(0)
-		##veto any events that have valid muons
-		#self.elID_cut_branches['elID_muveto'].setWriteValue(1) if len(muons)==0 else self.elID_cut_branches['elID_muveto'].setWriteValue(0)
-		##do the electrons have opposite charges?
-		#self.elID_cut_branches['elID_oppelecharge'].setWriteValue(1) if (probe!=None and tag.getQ()*probe.getQ()<0) else self.elID_cut_branches['elID_oppelecharge'].setWriteValue(0)
-		##number of btags
-		#self.elID_cut_branches['elID_btags'].setWriteValue(self.cut_branches['btags'].getWriteValue())
-		##ak4 jet cuts
-		#self.elID_cut_branches['elID_ak4jetcuts'].setWriteValue(self.cut_branches['ak4jetcuts'].getWriteValue())
-		##do either of them make a hard enough leptonic W?
-		#tagvec = tag.getFourVector(); probevec = None
-		#if probe!=None : probevec = probe.getFourVector()
-		#self.elID_cut_branches['elID_lepWpT'].setWriteValue(1) if ((tagvec+met1_vec).Pt()>50. or (tagvec+met2_vec).Pt()>50. or (probe!=None and ((probevec+met1_vec).Pt()>50. or (probevec+met2_vec).Pt()>50.))) else self.elID_cut_branches['elID_lepWpT'].setWriteValue(0)
-		##do the tag and probe together have a mass outside the Z window?
-		#dieleM = None
-		#if probe!=None :
-		#	dieleM = (tagvec+probevec).M()
-		#self.elID_cut_branches['elID_dieleMveto'].setWriteValue(1) if (dieleM!=None and dieleM>12. and (dieleM<76. or dieleM>106.)) else self.elID_cut_branches['elID_dieleMveto'].setWriteValue(0)
-		##fullselection
-		#self.elID_cut_branches['elID_fullselection'].setWriteValue(1)
-		##print '-----------------------'#DEBUG
-		#for cutkey, cutbranch in self.elID_cut_branches.iteritems() :
-		#	if cutbranch.getWriteValue()==0 :
-		#		if cutkey!='elID_probeID' and cutkey!='elID_isoprobe' :
-		##			print 'ID cuts failed by cut %s'%(cutkey) #DEBUG
-		#			self.elID_cut_branches['elID_fullselection'].setWriteValue(0)
-		##if self.elID_cut_branches['elID_fullselection'].getWriteValue()==1 : #DEBUG
-		##	print 'passed!' #DEBUG
+		#ALTERNATE LEPTON ISOLATION (MiniIsolation) ALGORITHM SELECTIONS
+		otherpasscuts = ['metfilters','trigger','btags','ak4jetmult','ak4jetcuts','METcuts','kinfitchi2','recoleptM','validminimization','fullselection']
+		#start with lepton flavor-specific cuts
+		if self.lepflavor.getWriteValue()==1 :
+			#lepton miniisolation
+			self.alt_lep_iso_cut_branches['miniisolepton'].setWriteValue(1) if lep.isMedMiniIso() else self.alt_lep_iso_cut_branches['miniisolepton'].setWriteValue(0)
+			#other loose lepton veto
+			other_leps+=electrons
+			other_leps+=muons[1:]
+			noOtherLeps = True
+			for lep in other_leps :
+				if lep.isLooseMiniIso() :
+					noOtherLeps = False
+					break
+			self.alt_lep_iso_cut_branches['oneminiisolepton'].setWriteValue(1) if noOtherLeps else self.alt_lep_iso_cut_branches['oneminiisolepton'].setWriteValue(0)
+		elif self.lepflavor.getWriteValue()==1 :
+			#lepton miniisolation
+			self.alt_lep_iso_cut_branches['miniisolepton'].setWriteValue(1) if lep.isTightMiniIso() else self.alt_lep_iso_cut_branches['miniisolepton'].setWriteValue(0)
+			#other loose lepton veto
+			other_leps+=electrons
+			other_leps+=muons[1:]
+			noOtherLeps = True
+			for lep in other_leps :
+				if lep.isLooseMiniIso() :
+					noOtherLeps = False
+					break
+			self.alt_lep_iso_cut_branches['oneminiisolepton'].setWriteValue(1) if noOtherLeps else self.alt_lep_iso_cut_branches['oneminiisolepton'].setWriteValue(0)
+		#full selection just uses what we already have
+		for passcut in otherpasscuts :
+			if self.cut_branches[passcut].getWriteValue()!=1 :
+				self.alt_lep_iso_cut_branches['fullminiisoselection'].setWriteValue(0)
+				break
+		if self.alt_lep_iso_cut_branches['fullminiisoselection'].getWriteValue()!=0 and self.alt_lep_iso_cut_branches['miniisolepton'].getWriteValue()==1 and self.alt_lep_iso_cut_branches['oneminiisolepton'].getWriteValue()==1 :
+			self.alt_lep_iso_cut_branches['fullminiisoselection'].setWriteValue(1)
+		else :
+			self.alt_lep_iso_cut_branches['fullminiisoselection'].setWriteValue(0)
+
+
 
 		#print '		Done. (fullselection=%d)'%(self.cut_branches['fullselection'].getWriteValue()) #DEBUG
  
@@ -1040,9 +1077,9 @@ class Reconstructor(object) :
 					lep_iso_GH_sf, lep_iso_GH_sf_up, lep_iso_GH_sf_down ) = self.corrector.getIsoEff(self.allBranches['npv'].getReadValue(),topology,lep)
 				self.sf_lep_iso_BtoF.setWriteValue(lep_iso_BtoF_sf); self.sf_lep_iso_BtoF_hi.setWriteValue(lep_iso_BtoF_sf_up); self.sf_lep_iso_BtoF_low.setWriteValue(lep_iso_BtoF_sf_down)
 				self.sf_lep_iso_GH.setWriteValue(lep_iso_GH_sf); 	 self.sf_lep_iso_GH_hi.setWriteValue(lep_iso_GH_sf_up); 	self.sf_lep_iso_GH_low.setWriteValue(lep_iso_GH_sf_down)
-				#Lepton tracking efficiency reweighting
-				lep_trk_sf, lep_trk_sf_up, lep_trk_sf_down = self.corrector.getTrkEff(self.allBranches['npv'].getReadValue(),lep)
-				self.sf_lep_trk.setWriteValue(lep_trk_sf); self.sf_lep_trk_hi.setWriteValue(lep_trk_sf_up); self.sf_lep_trk_low.setWriteValue(lep_trk_sf_down)
+				#Lepton mini isolation efficiency reweighting
+				lep_mini_iso_sf, lep_mini_iso_sf_up, lep_mini_iso_sf_down = self.corrector.getMiniIsoEff(self.allBranches['npv'].getReadValue(),lep)
+				self.sf_lep_mini_iso.setWriteValue(lep_mini_iso_sf); self.sf_lep_mini_iso_hi.setWriteValue(lep_mini_iso_sf_up); self.sf_lep_mini_iso_low.setWriteValue(lep_mini_iso_sf_down)
 				#b-tagging efficiency reweighting
 				btag_eff_sf, btag_eff_sf_up, btag_eff_sf_down = self.corrector.getBTagEff(ak4jets)
 				self.sf_btag_eff.setWriteValue(btag_eff_sf); self.sf_btag_eff_hi.setWriteValue(btag_eff_sf_up); self.sf_btag_eff_low.setWriteValue(btag_eff_sf_down)

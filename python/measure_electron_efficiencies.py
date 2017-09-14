@@ -156,10 +156,10 @@ class filegroup :
 		themuon_eta   = array('f',[100.0]); self.chain.SetBranchAddress('eltrig_themuon_eta',themuon_eta); 	  self.phyobjbs['themuon_eta'] = (themuon_eta,100.0)
 		theele_pt 	  = array('f',[-1.0]);  self.chain.SetBranchAddress('eltrig_theelectron_pt',theele_pt);   self.phyobjbs['theele_pt'] = (theele_pt,-1.0)
 		theele_eta 	  = array('f',[100.0]); self.chain.SetBranchAddress('eltrig_theelectron_eta',theele_eta); self.phyobjbs['theele_eta'] = (theele_eta,100.0)
-		tag_pt 		  = array('f',[-1.0]);  self.chain.SetBranchAddress('elID_tag_pt',tag_pt); 				  self.phyobjbs['tag_pt'] = (tag_pt,-1.0)
-		tag_eta 	  = array('f',[100.0]); self.chain.SetBranchAddress('elID_tag_eta',tag_eta); 			  self.phyobjbs['tag_eta'] = (tag_eta,100.0)
-		probe_pt 	  = array('f',[-1.0]);  self.chain.SetBranchAddress('elID_probe_pt',probe_pt); 			  self.phyobjbs['probe_pt'] = (probe_pt,-1.0)
-		probe_eta 	  = array('f',[100.0]); self.chain.SetBranchAddress('elID_probe_eta',probe_eta); 		  self.phyobjbs['probe_eta'] = (probe_eta,100.0)
+		#tag_pt 		  = array('f',[-1.0]);  self.chain.SetBranchAddress('elID_tag_pt',tag_pt); 				  self.phyobjbs['tag_pt'] = (tag_pt,-1.0)
+		#tag_eta 	  = array('f',[100.0]); self.chain.SetBranchAddress('elID_tag_eta',tag_eta); 			  self.phyobjbs['tag_eta'] = (tag_eta,100.0)
+		#probe_pt 	  = array('f',[-1.0]);  self.chain.SetBranchAddress('elID_probe_pt',probe_pt); 			  self.phyobjbs['probe_pt'] = (probe_pt,-1.0)
+		#probe_eta 	  = array('f',[100.0]); self.chain.SetBranchAddress('elID_probe_eta',probe_eta); 		  self.phyobjbs['probe_eta'] = (probe_eta,100.0)
 		evt_pu 		  = array('i',[-1]); 	self.chain.SetBranchAddress('ngoodvtx',evt_pu); 				  self.phyobjbs['evt_pu'] = (evt_pu,-1)
 		evt_top 	  = array('i',[0]); 	self.chain.SetBranchAddress('eventTopology',evt_top); 			  self.phyobjbs['evt_top'] = (evt_top,0)
 		nbTags 		  = array('i',[0]); 	self.chain.SetBranchAddress('nbTags',nbTags); 					  self.phyobjbs['nbTags'] = (nbTags,0)
@@ -168,10 +168,10 @@ class filegroup :
 		self.selecpassbs = {}
 		selectiontrig = array('I',[2]); self.chain.SetBranchAddress('eltrig_fullselection',selectiontrig); self.selecpassbs['selectiontrig'] = (selectiontrig,2)
 		passtrig 	  = array('I',[2]); self.chain.SetBranchAddress('eltrig_eltrigger',passtrig); 		   self.selecpassbs['passtrig'] = (passtrig,2)
-		selectionID   = array('I',[2]); self.chain.SetBranchAddress('elID_fullselection',selectionID); 	   self.selecpassbs['selectionID'] = (selectionID,2)
-		passID 		  = array('I',[2]); self.chain.SetBranchAddress('elID_probeID',passID); 			   self.selecpassbs['passID'] = (passID,2)
-		selectioniso  = array('I',[2]); self.chain.SetBranchAddress('elID_fullselection',selectioniso);    self.selecpassbs['selectioniso'] = (selectioniso,2)
-		passiso 	  = array('I',[2]); self.chain.SetBranchAddress('elID_isoprobe',passiso); 			   self.selecpassbs['passiso'] = (passiso,2)
+		#selectionID   = array('I',[2]); self.chain.SetBranchAddress('elID_fullselection',selectionID); 	   self.selecpassbs['selectionID'] = (selectionID,2)
+		#passID 		  = array('I',[2]); self.chain.SetBranchAddress('elID_probeID',passID); 			   self.selecpassbs['passID'] = (passID,2)
+		#selectioniso  = array('I',[2]); self.chain.SetBranchAddress('elID_fullselection',selectioniso);    self.selecpassbs['selectioniso'] = (selectioniso,2)
+		#passiso 	  = array('I',[2]); self.chain.SetBranchAddress('elID_isoprobe',passiso); 			   self.selecpassbs['passiso'] = (passiso,2)
 		jets_cut 	  = array('I',[2]); self.chain.SetBranchAddress('ak4jetcuts',jets_cut); 			   self.selecpassbs['jets_cut'] = (jets_cut,2)
 		#reweighting factors we can read from the files without recalculating
 		self.rwbs = {}
@@ -263,12 +263,13 @@ class filegroup :
 				cuts.append(lepflavor[0]==2)
 			#cuts for ID analysis
 			elif mode=='id' :
-				#print 'selection = %d'%(selectionID[0]) #DEBUG
-				cuts.append(selectionID[0]==1)
+				##print 'selection = %d'%(selectionID[0]) #DEBUG
+				#cuts.append(selectionID[0]==1)
 				cuts.append(lepflavor[0]==2)
 			#cuts for isolation analysis
 			elif mode=='iso' :
-				cuts.append(selectioniso[0]==1)
+				print 'hey, this is trying to measure isolation efficiency, which is no longer a thing, thanks, yikes!'
+				#cuts.append(selectioniso[0]==1)
 			#miscellaneous
 			cuts.append(jets_cut[0]==1)
 			#check all cuts
@@ -281,8 +282,8 @@ class filegroup :
 			pu[0] = evt_pu[0]
 			topology[0] = evt_top[0]
 			pass_trig[0] = passtrig[0]
-			pass_ID[0] 	 = passID[0]
-			pass_iso[0]  = passiso[0]
+			#pass_ID[0] 	 = passID[0]
+			#pass_iso[0]  = passiso[0]
 			evt_weight[0] = self.__getEvtWeight__()
 			self.tree.Fill()
 			
@@ -398,7 +399,7 @@ class filegroup :
 		#Have to use the correctors to get other stuff though because they may use different objects than in the reconstructor
 		if self.mode=='t' :
 			#muon trigger efficiency
-			mutrigeffbtof, scrap1, scrap2, mutrigeffgh, scrap3, scrap4 = self.corrector.getTrigEff(self.phyobjbs['evt_top'][0][0],mu',self.phyobjbs['themuon_pt'][0][0],self.phyobjbs['themuon_eta'][0][0])
+			mutrigeffbtof, scrap1, scrap2, mutrigeffgh, scrap3, scrap4 = self.corrector.getTrigEff(self.phyobjbs['evt_top'][0][0],'mu',self.phyobjbs['themuon_pt'][0][0],self.phyobjbs['themuon_eta'][0][0])
 		#	print 'trigeffbtof=%.4f, trigeffgh=%.4f'%(mutrigeffbtof,mutrigeffgh) #DEBUG
 			#muon ID efficiency
 			muideffbtof, scrap1, scrap2, muideffgh, scrap3, scrap4 = self.corrector.getIDEff(self.phyobjbs['evt_pu'][0][0],'mu',self.phyobjbs['themuon_pt'][0][0],self.phyobjbs['themuon_eta'][0][0])
@@ -406,21 +407,18 @@ class filegroup :
 			#muon isolation efficiency
 			muisoeffbtof, scrap1, scrap2, muisoeffgh, scrap3, scrap4 = self.corrector.getIsoEff(self.phyobjbs['evt_pu'][0][0],self.phyobjbs['evt_top'][0][0],'mu',self.phyobjbs['themuon_pt'][0][0],self.phyobjbs['themuon_eta'][0][0])
 		#	print 'isoeffbtof=%.4f, isoeffgh=%.4f'%(muisoeffbtof,muisoeffgh) #DEBUG
-			#muon tracking efficiency
-			mutrkeff, scrap1, scrap2 = self.corrector.getTrkEff(self.phyobjbs['evt_pu'][0][0],'mu',self.phyobjbs['themuon_pt'][0][0],self.phyobjbs['themuon_eta'][0][0])
-		#	print 'trkeff=%.4f'%(mutrkeff) #DEBUG
 			#get the lepton flavor
 			ismu = self.phyobjbs['lepflavor'][0][0]==1; isel = self.phyobjbs['lepflavor'][0][0]==2
 			#combine and return
-			finalweight = initialweight*mutrkeff*(((LUMINOSITYBTOFMU*ismu+LUMINOSITYBTOFELE*isel)*mutrigeffbtof*muideffbtof*muisoeffbtof)+((LUMINOSITYGHMU*ismu+LUMINOSITYGHELE*isel)*mutrigeffgh*muideffgh*muisoeffgh))
+			finalweight = initialweight*(((LUMINOSITYBTOFMU*ismu+LUMINOSITYBTOFELE*isel)*mutrigeffbtof*muideffbtof*muisoeffbtof)+((LUMINOSITYGHMU*ismu+LUMINOSITYGHELE*isel)*mutrigeffgh*muideffgh*muisoeffgh))
 		#	if self.rwbs['sf_pileup'][0][0]<0.5 : #DEBUG
 		#		print 'finalweight=%.4f'%(finalweight) #DEBUG
 			return finalweight
 		elif self.mode=='id' :
 			#tag ID efficiency
-			tagideffbtof, scrap1, scrap2, tagideffgh, scrap3, scrap4 = self.corrector.getIDEff(self.phyobjbs['evt_pu'][0][0],'el',self.phyobjbs['tag_pt'][0][0],self.phyobjbs['tag_eta'][0][0])
+			#tagideffbtof, scrap1, scrap2, tagideffgh, scrap3, scrap4 = self.corrector.getIDEff(self.phyobjbs['evt_pu'][0][0],'el',self.phyobjbs['tag_pt'][0][0],self.phyobjbs['tag_eta'][0][0])
 			#tag isolation efficiency
-			tagisoeffbtof, scrap1, scrap2, tagisoeffgh, scrap3, scrap4 = self.corrector.getIsoEff(self.phyobjbs['evt_pu'][0][0],self.phyobjbs['evt_top'][0][0],'el',self.phyobjbs['tag_pt'][0][0],self.phyobjbs['tag_eta'][0][0])
+			#tagisoeffbtof, scrap1, scrap2, tagisoeffgh, scrap3, scrap4 = self.corrector.getIsoEff(self.phyobjbs['evt_pu'][0][0],self.phyobjbs['evt_top'][0][0],'el',self.phyobjbs['tag_pt'][0][0],self.phyobjbs['tag_eta'][0][0])
 			#combine and return
 			return initialweight*((LUMINOSITYBTOFELE*tagideffbtof*tagisoeffbtof)+(LUMINOSITYGHELE*tagideffgh*tagisoeffgh))
 		elif self.mode=='iso' : #fix this later

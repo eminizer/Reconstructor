@@ -12,6 +12,7 @@ class Lepton(object) :
 		self.__Q = branches[pp+'_Charge'].getReadValue(index)
 		self.__Key = branches[pp+'_Key'].getReadValue(index)
 		self.__type = pp
+		self.__miniIso = None
 		self.__dR = None; self.__relPt = None; self.__nearestJetPt = None
 
 	def calculateIsolation(self,jets) :
@@ -22,6 +23,13 @@ class Lepton(object) :
 		self.__nearestJetPt = nearestJetVec.Pt()
 		cleanedleplist = nearestJet.getListOfCleanedLeptons()
 		self.__wasCleanedFromNearestJet = 1 if cleanedleplist!=None and self in cleanedleplist else 0
+
+	def isTightMiniIso(self) :
+		return self.__miniIso<0.1
+	def isMedMiniIso(self) :
+		return self.__miniIso<0.2
+	def isLooseMiniIso(self) :
+		return self.__miniIso<0.4
 
 	def getPt(self) :
 		return self.__pt
@@ -43,6 +51,10 @@ class Lepton(object) :
 		return self.__type
 	def wasCleanedFromNearestJet(self) :
 		return self.__wasCleanedFromNearestJet
+	def setMiniIso(self,miniiso) :
+		self.__miniIso = miniiso
+	def getMiniIso(self) :
+		return self.__miniIso
 
 class Muon(Lepton) :
 
@@ -53,7 +65,7 @@ class Muon(Lepton) :
 		else :
 			self.__ID = branches['mu_IsMediumMuon'].getReadValue(index)
 		self.__iso = branches['mu_Iso04'].getReadValue(index)
-		self.__miniIso = branches['mu_MiniIso'].getReadValue(index)
+		self.setMiniIso(branches['mu_MiniIso'].getReadValue(index))
 		self.__isValid = self.getPt()>55. and abs(self.getEta())<2.5 and self.__ID==1 #my selection
 		#self.__isValid = self.getPt()>50. and abs(self.getEta())<2.1 and self.__ID==1 #Susan's selection
 
@@ -63,16 +75,12 @@ class Muon(Lepton) :
 		return self.__ID
 	def getIso(self) :
 		return self.__iso
-	def getMiniIso(self) :
-		return self.__miniIso
 	def isLooseIso(self) :
 		return self.__iso<0.25 #loose WP https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
 	def isTightIso(self) :
 		return self.__iso<0.15 #tight WP, already divided by pt https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
 	def isIso(self) : #really just to match with electron functions
 		return self.__iso<0.15 #tight WP, already divided by pt https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
-	def isMiniIso(self) :
-		return (self.__miniIso/self.getPt())<0.2
 	def is2DIso(self,eventtopology) :
 		if eventtopology<3 :
 			return self.getDR()>0.4 or self.getRelPt()>30.
@@ -87,7 +95,7 @@ class Electron(Lepton) :
 		self.__tightID = branches['el_IDTight_NoIso'].getReadValue(index)
 		self.__scEta = branches['el_SCEta'].getReadValue(index)
 		self.__iso = branches['el_Iso03'].getReadValue(index)
-		self.__miniIso = branches['el_MiniIso'].getReadValue(index)
+		self.setMiniIso(branches['el_MiniIso'].getReadValue(index))
 		self.__isValid = self.getPt()>55. and abs(self.__scEta)<2.5 and self.__ID==1 #my selection
 		#self.__isValid = self.getPt()>50. and abs(self.getEta())<2.5 and self.__ID==1 #Susan's selection
 		self.__isValidProbe = self.getPt()>55. and abs(self.__scEta)<2.5 
@@ -104,8 +112,6 @@ class Electron(Lepton) :
 		return self.__scEta
 	def getIso(self) :
 		return self.__iso
-	def getMiniIso(self) :
-		return self.__miniIso
 	def isLooseIso(self) :
 		return self.__iso<0.0695 #what was removed from the Medium ID https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
 	def isIso(self) :

@@ -11,19 +11,19 @@ class TTBarReconstructor(object) :
 	#Class variables
 	MW = 80.4 #W mass
 	MT = 172.5 #top mass
-	MT_l1 = 172.2 #leptonic top mass for type 1 tops
-	MT_h1 = 182.7 #hadronic top mass for type 1 tops
-	MT_l2 = 173.0 #leptonic top mass for type 2 tops
-	MT_h2 = 173.4 #hadronic top mass for type 2 tops
-	MT_l3 = 172.0 #leptonic top mass for type 3 tops
-	MT_h3 = 168.3 #hadronic top mass for type 3 tops
+	MT_l1 = 172.8 #leptonic top mass for type 1 tops
+	MT_h1 = 182.3 #hadronic top mass for type 1 tops
+	MT_l2 = 172.8 #leptonic top mass for type 2 tops
+	MT_h2 = 173.3 #hadronic top mass for type 2 tops
+	MT_l3 = 172.5 #leptonic top mass for type 3 tops
+	MT_h3 = 168.6 #hadronic top mass for type 3 tops
 	WW = 2.0 #W width
 	WT = 1.4 #top width
-	WT_l1 = 15.4 #leptonic top width for type 1 tops
-	WT_h1 = 17.3 #hadronic top width for type 1 tops
-	WT_l2 = 16.1 #leptonic top width for type 2 tops
+	WT_l1 = 15.6 #leptonic top width for type 1 tops
+	WT_h1 = 17.6 #hadronic top width for type 1 tops
+	WT_l2 = 15.7 #leptonic top width for type 2 tops
 	WT_h2 = 16.2 #hadronic top width for type 2 tops
-	WT_l3 = 15.0 #leptonic top width for type 3 tops
+	WT_l3 = 15.1 #leptonic top width for type 3 tops
 	WT_h3 = 18.2 #hadronic top width for type 3 tops
 	#global fourvectors for the fit
 	lep_global_vec = TLorentzVector()

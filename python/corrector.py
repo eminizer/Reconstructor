@@ -12,6 +12,10 @@ MUON_TRIG_EFF_ETA_HISTONAME 	 = 'Mu50_OR_TkMu50_EtaBins/eta_ratio'
 ELE_TRIG_EFF_BOOSTED_ROOT_FILENAME = 'electron_trigger_efficiency_boosted_powheg.root'
 ELE_TRIG_EFF_RESOLVED_ROOT_FILENAME = 'electron_trigger_efficiency_resolved_powheg.root'
 ELE_TRIG_EFF_HISTONAME = 'sf_plot'
+#Muon tracking efficiency
+MUON_TRK_EFF_ROOT_FILENAME = 'Tracking_EfficienciesAndSF_BCDEFGH_muon_tracking.root'
+MUON_TRK_EFF_ETA_GRAPHNAME = 'ratio_eff_eta3_dr030e030_corr'
+MUON_TRK_EFF_PU_GRAPHNAME  = 'ratio_eff_vtx_dr030e030_corr'
 #Muon ID Efficiency
 MUON_ID_EFF_BTOF_ROOT_FILENAME = 'EfficienciesAndSF_BCDEF_muon_ID.root'
 MUON_ID_EFF_BTOF_PT_HISTONAME  = 'MC_NUM_MediumID2016_DEN_genTracks_PAR_pt/pt_ratio'
@@ -22,7 +26,7 @@ MUON_ID_EFF_GH_PT_HISTONAME    = 'MC_NUM_MediumID_DEN_genTracks_PAR_pt/pt_ratio'
 MUON_ID_EFF_GH_ETA_HISTONAME   = 'MC_NUM_MediumID_DEN_genTracks_PAR_eta/eta_ratio'
 MUON_ID_EFF_GH_PU_HISTONAME    = 'MC_NUM_MediumID_DEN_genTracks_PAR_vtx/tag_nVertices_ratio'
 #Electron ID Efficiency
-ELE_ID_EFF_ROOT_FILENAME   = 'egamma_ID_eff_SFs.root'
+ELE_ID_EFF_ROOT_FILENAME   = 'egamma_ID_ISO_eff_SFs.root'
 ELE_ID_EFF_2D_HISTONAME    = 'GsfElectronToCutBasedSpring15M'
 ELE_RECO_EFF_ROOT_FILENAME = 'egamma_reco_eff_SFs.root'
 ELE_RECO_EFF_2D_HISTONAME  = 'EGamma_SF2D'
@@ -32,10 +36,9 @@ MUON_ISO_EFF_GH_ROOT_FILENAME   = 'EfficienciesAndSF_GH_muon_iso.root'
 MUON_ISO_EFF_PT_HISTONAME  = 'TightISO_MediumID_pt/pt_ratio'
 MUON_ISO_EFF_ETA_HISTONAME = 'TightISO_MediumID_eta/eta_ratio'
 MUON_ISO_EFF_PU_HISTONAME  = 'TightISO_MediumID_vtx/tag_nVertices_ratio'
-#Muon tracking efficiency
-MUON_TRK_EFF_ROOT_FILENAME = 'Tracking_EfficienciesAndSF_BCDEFGH_muon_tracking.root'
-MUON_TRK_EFF_ETA_GRAPHNAME = 'ratio_eff_eta3_dr030e030_corr'
-MUON_TRK_EFF_PU_GRAPHNAME  = 'ratio_eff_vtx_dr030e030_corr'
+#Electron MiniIsolation Efficiency
+ELE_MINIISO_EFF_ROOT_FILENAME   = 'egamma_ID_ISO_eff_SFs.root'
+ELE_MINIISO_EFF_2D_HISTONAME    = 'MVAVLooseElectronToMini'
 #b-Tagging efficiency
 BTAGGING_MC_ROOT_FILENAME 		 = 'MC_btagging_efficiency.root'
 BTAGGING_MC_B_RATIO_HISTONAME 	 = 'bjet_ratio'
@@ -70,25 +73,6 @@ class Corrector(object) :
 		etxa = self.__ele_trig_eff_b.GetXaxis(); etya = self.__ele_trig_eff_b.GetYaxis()
 		self.__ele_trig_eff_pt_low  = etxa.GetBinCenter(1); self.__ele_trig_eff_pt_hi  = etxa.GetBinCenter(etxa.GetNbins())
 		self.__ele_trig_eff_eta_low = etya.GetBinCenter(1); self.__ele_trig_eff_eta_hi = etya.GetBinCenter(etya.GetNbins())
-		#ID efficiency
-		( self.__muon_id_eff_BtoF_vs_pt, self.__muon_id_eff_BtoF_vs_eta, self.__muon_id_eff_BtoF_vs_pu, 
-			self.__muon_id_eff_GH_vs_pt, self.__muon_id_eff_GH_vs_eta, self.__muon_id_eff_GH_vs_pu ) = setupMuonIDHistos(onGrid)
-		self.__muon_id_eff_pt_low  = self.__muon_id_eff_BtoF_vs_pt.GetBinCenter(1);  self.__muon_id_eff_pt_hi  = self.__muon_id_eff_BtoF_vs_pt.GetBinCenter(self.__muon_id_eff_BtoF_vs_pt.GetNbinsX())
-		self.__muon_id_eff_eta_low = self.__muon_id_eff_BtoF_vs_eta.GetBinCenter(1); self.__muon_id_eff_eta_hi = self.__muon_id_eff_BtoF_vs_eta.GetBinCenter(self.__muon_id_eff_BtoF_vs_eta.GetNbinsX())
-		self.__muon_id_eff_pu_low  = self.__muon_id_eff_BtoF_vs_pu.GetBinCenter(1);  self.__muon_id_eff_pu_hi  = self.__muon_id_eff_BtoF_vs_pu.GetBinCenter(self.__muon_id_eff_BtoF_vs_pu.GetNbinsX())
-		self.__ele_id_eff_eta_vs_pt, self.__ele_reco_eff_pt_vs_eta = setupEleIDHistos(onGrid)
-		idxa = self.__ele_id_eff_eta_vs_pt.GetXaxis(); idya = self.__ele_id_eff_eta_vs_pt.GetYaxis()
-		self.__ele_id_eff_pt_low  = idxa.GetBinCenter(1); self.__ele_id_eff_pt_hi  = idxa.GetBinCenter(idxa.GetNbins())
-		self.__ele_id_eff_eta_low = idya.GetBinCenter(1); self.__ele_id_eff_eta_hi = idya.GetBinCenter(idya.GetNbins())
-		recoxa = self.__ele_reco_eff_pt_vs_eta.GetXaxis(); recoya = self.__ele_reco_eff_pt_vs_eta.GetYaxis()
-		self.__ele_reco_eff_eta_low = recoxa.GetBinCenter(1); self.__ele_reco_eff_eta_hi = recoxa.GetBinCenter(recoxa.GetNbins())
-		self.__ele_reco_eff_pt_low  = recoya.GetBinCenter(1); self.__ele_reco_eff_pt_hi  = recoya.GetBinCenter(recoya.GetNbins())
-		#Isolation efficiency
-		( self.__muon_iso_eff_BtoF_vs_pt, self.__muon_iso_eff_BtoF_vs_eta, self.__muon_iso_eff_BtoF_vs_pu, 
-			self.__muon_iso_eff_GH_vs_pt, self.__muon_iso_eff_GH_vs_eta, self.__muon_iso_eff_GH_vs_pu ) = setupMuonIsoHistos(onGrid)
-		self.__muon_iso_eff_pt_low  = self.__muon_iso_eff_BtoF_vs_pt.GetBinCenter(1);  self.__muon_iso_eff_pt_hi  = self.__muon_iso_eff_BtoF_vs_pt.GetBinCenter(self.__muon_iso_eff_BtoF_vs_pt.GetNbinsX())
-		self.__muon_iso_eff_eta_low = self.__muon_iso_eff_BtoF_vs_eta.GetBinCenter(1); self.__muon_iso_eff_eta_hi = self.__muon_iso_eff_BtoF_vs_eta.GetBinCenter(self.__muon_iso_eff_BtoF_vs_eta.GetNbinsX())
-		self.__muon_iso_eff_pu_low  = self.__muon_iso_eff_BtoF_vs_pu.GetBinCenter(1);  self.__muon_iso_eff_pu_hi  = self.__muon_iso_eff_BtoF_vs_pu.GetBinCenter(self.__muon_iso_eff_BtoF_vs_pu.GetNbinsX())
 		#Tracking efficiency
 		self.__muon_trk_eff_vs_eta, self.__muon_trk_eff_vs_pu = setupMuonTrackingGraphs(onGrid)
 		tempx = Double(0.); tempy = Double(0.)
@@ -112,6 +96,30 @@ class Corrector(object) :
 			self.__muon_trk_eff_vs_pu_ys.append(float(tempy))
 			self.__muon_trk_eff_vs_pu_yerrups.append(float(self.__muon_trk_eff_vs_pu.GetErrorYhigh(i)))
 			self.__muon_trk_eff_vs_pu_yerrdowns.append(float(self.__muon_trk_eff_vs_pu.GetErrorYlow(i)))
+		#ID efficiency
+		( self.__muon_id_eff_BtoF_vs_pt, self.__muon_id_eff_BtoF_vs_eta, self.__muon_id_eff_BtoF_vs_pu, 
+			self.__muon_id_eff_GH_vs_pt, self.__muon_id_eff_GH_vs_eta, self.__muon_id_eff_GH_vs_pu ) = setupMuonIDHistos(onGrid)
+		self.__muon_id_eff_pt_low  = self.__muon_id_eff_BtoF_vs_pt.GetBinCenter(1);  self.__muon_id_eff_pt_hi  = self.__muon_id_eff_BtoF_vs_pt.GetBinCenter(self.__muon_id_eff_BtoF_vs_pt.GetNbinsX())
+		self.__muon_id_eff_eta_low = self.__muon_id_eff_BtoF_vs_eta.GetBinCenter(1); self.__muon_id_eff_eta_hi = self.__muon_id_eff_BtoF_vs_eta.GetBinCenter(self.__muon_id_eff_BtoF_vs_eta.GetNbinsX())
+		self.__muon_id_eff_pu_low  = self.__muon_id_eff_BtoF_vs_pu.GetBinCenter(1);  self.__muon_id_eff_pu_hi  = self.__muon_id_eff_BtoF_vs_pu.GetBinCenter(self.__muon_id_eff_BtoF_vs_pu.GetNbinsX())
+		self.__ele_id_eff_eta_vs_pt, self.__ele_reco_eff_pt_vs_eta = setupEleIDHistos(onGrid)
+		idxa = self.__ele_id_eff_eta_vs_pt.GetXaxis(); idya = self.__ele_id_eff_eta_vs_pt.GetYaxis()
+		self.__ele_id_eff_pt_low  = idxa.GetBinCenter(1); self.__ele_id_eff_pt_hi  = idxa.GetBinCenter(idxa.GetNbins())
+		self.__ele_id_eff_eta_low = idya.GetBinCenter(1); self.__ele_id_eff_eta_hi = idya.GetBinCenter(idya.GetNbins())
+		recoxa = self.__ele_reco_eff_pt_vs_eta.GetXaxis(); recoya = self.__ele_reco_eff_pt_vs_eta.GetYaxis()
+		self.__ele_reco_eff_eta_low = recoxa.GetBinCenter(1); self.__ele_reco_eff_eta_hi = recoxa.GetBinCenter(recoxa.GetNbins())
+		self.__ele_reco_eff_pt_low  = recoya.GetBinCenter(1); self.__ele_reco_eff_pt_hi  = recoya.GetBinCenter(recoya.GetNbins())
+		#Isolation efficiency
+		( self.__muon_iso_eff_BtoF_vs_pt, self.__muon_iso_eff_BtoF_vs_eta, self.__muon_iso_eff_BtoF_vs_pu, 
+			self.__muon_iso_eff_GH_vs_pt, self.__muon_iso_eff_GH_vs_eta, self.__muon_iso_eff_GH_vs_pu ) = setupMuonIsoHistos(onGrid)
+		self.__muon_iso_eff_pt_low  = self.__muon_iso_eff_BtoF_vs_pt.GetBinCenter(1);  self.__muon_iso_eff_pt_hi  = self.__muon_iso_eff_BtoF_vs_pt.GetBinCenter(self.__muon_iso_eff_BtoF_vs_pt.GetNbinsX())
+		self.__muon_iso_eff_eta_low = self.__muon_iso_eff_BtoF_vs_eta.GetBinCenter(1); self.__muon_iso_eff_eta_hi = self.__muon_iso_eff_BtoF_vs_eta.GetBinCenter(self.__muon_iso_eff_BtoF_vs_eta.GetNbinsX())
+		self.__muon_iso_eff_pu_low  = self.__muon_iso_eff_BtoF_vs_pu.GetBinCenter(1);  self.__muon_iso_eff_pu_hi  = self.__muon_iso_eff_BtoF_vs_pu.GetBinCenter(self.__muon_iso_eff_BtoF_vs_pu.GetNbinsX())
+		#MiniIsolation efficiency
+		self.__ele_miniiso_eff_abseta_vs_pt = setupEleMiniIsoHistos(onGrid)
+		miniisoxa = self.__ele_miniiso_eff_abseta_vs_pt.GetXaxis(); miniisoya = self.__ele_miniiso_eff_abseta_vs_pt.GetYaxis()
+		self.__ele_miniiso_eff_pt_low  = miniisoxa.GetBinCenter(1); self.__ele_miniiso_eff_pt_hi  = miniisoxa.GetBinCenter(miniisoxa.GetNbins())
+		self.__ele_miniiso_eff_eta_low = miniisoya.GetBinCenter(1); self.__ele_miniiso_eff_eta_hi = miniisoya.GetBinCenter(miniisoya.GetNbins())
 		#b-tagging efficiency
 		self.__setupBTaggingEff__(onGrid)
 		#PDF/alpha_s stuff
@@ -155,6 +163,56 @@ class Corrector(object) :
 						   "comb") # measurement type
 		self.__reader.load(calib,1,"comb")
 		self.__reader.load(calib,2,"incl")
+
+	def __getTrkEff__(self,pileup,lepflav_or_lep,pt=-111.,eta=-111.) :
+		nomfac = 1.; uperr = 1.; downerr = 1.
+		doubleetaerr = False; doublepuerr = False
+		lepflav = lepflav_or_lep
+		if pt==-111. :
+			lepflav = lepflav_or_lep.getType()
+			pt = lepflav_or_lep.getPt()
+			eta = lepflav_or_lep.getEta()
+		if lepflav=='mu' : #muons
+			#first bring the parameters back into range
+			if eta<self.__muon_trk_eff_vs_eta_lowxs[0] : 
+				eta = self.__muon_trk_eff_vs_eta_lowxs[0] 
+				doubleetaerr=True
+			elif eta>self.__muon_trk_eff_vs_eta_hixs[self.__muon_trk_eff_vs_eta_nbins-1] : 
+				eta = self.__muon_trk_eff_vs_eta_hixs[self.__muon_trk_eff_vs_eta_nbins-1]
+				doubleetaerr=True
+			pu = pileup
+			if pu<self.__muon_trk_eff_vs_pu_lowxs[0] : 
+				pu = self.__muon_trk_eff_vs_pu_lowxs[0] 
+				doublepuerr=True
+			elif pu>self.__muon_trk_eff_vs_pu_hixs[self.__muon_trk_eff_vs_pu_nbins-1] : 
+				pu = self.__muon_trk_eff_vs_pu_hixs[self.__muon_trk_eff_vs_pu_nbins-1]
+				doublepuerr=True
+			#get factors
+			for i in range(self.__muon_trk_eff_vs_eta_nbins) :
+				if eta>=self.__muon_trk_eff_vs_eta_lowxs[i] and eta<=self.__muon_trk_eff_vs_eta_hixs[i] :
+					etafac 		= self.__muon_trk_eff_vs_eta_ys[i]
+					etaerr_up 	= self.__muon_trk_eff_vs_eta_yerrups[i]
+					etaerr_down = self.__muon_trk_eff_vs_eta_yerrdowns[i]
+					if doubleetaerr :
+						etaerr_up*=2; etaerr_down*=2
+					break
+			for i in range(self.__muon_trk_eff_vs_pu_nbins) :
+				if pu>=self.__muon_trk_eff_vs_pu_lowxs[i] and pu<=self.__muon_trk_eff_vs_pu_hixs[i] :
+					pufac 		= self.__muon_trk_eff_vs_pu_ys[i]
+					puerr_up 	= self.__muon_trk_eff_vs_pu_yerrups[i]
+					puerr_down = self.__muon_trk_eff_vs_pu_yerrdowns[i]
+					if doublepuerr :
+						puerr_up*=2; puerr_down*=2
+					break
+			#calculate total factors
+			nomfac 	= etafac*pufac
+			uperr 	= nomfac*sqrt((etaerr_up/etafac)**2+(puerr_up/pufac)**2)
+			downerr = nomfac*sqrt((etaerr_down/etafac)**2+(puerr_down/pufac)**2)
+		elif lepflav=='el' : #electrons
+			#NOT IMPLEMENTED YET!!
+			nomfac = 1.; uperr = 0.; downerr = 0.
+		#return reweighting factors
+		return nomfac,uperr,downerr
 
 	def getJECforJet(self,jetvec,area,rho,npv,pp) :
 		corrector=None
@@ -227,6 +285,7 @@ class Corrector(object) :
 	def getTrigEff(self,topology,lepflav_or_lep,pt=-111.,eta=-111.) :
 		nomfac_BtoF = 1.; upfac_BtoF = 1.; downfac_BtoF = 1.
 		nomfac_GH = 1.;   upfac_GH = 1.;   downfac_GH = 1.
+		doubleetaerr=False; doublepterr=False; doubleerr = False
 		lepflav = lepflav_or_lep
 		if pt==-111. :
 			lepflav=lepflav_or_lep.getType()
@@ -234,10 +293,18 @@ class Corrector(object) :
 			eta = lepflav_or_lep.getEta()
 		if lepflav=='mu' : #muons
 			#first bring the parameters back into range
-			if eta<self.__muon_trig_eta_low : eta = self.__muon_trig_eta_low
-			elif eta>self.__muon_trig_eta_hi : eta = self.__muon_trig_eta_hi
-			if pt<self.__muon_trig_pt_low : pt = self.__muon_trig_pt_low 
-			elif pt>self.__muon_trig_pt_hi : pt = self.__muon_trig_pt_hi 
+			if eta<self.__muon_trig_eta_low : 
+				eta = self.__muon_trig_eta_low
+				doubleetaerr=True
+			elif eta>self.__muon_trig_eta_hi : 
+				eta = self.__muon_trig_eta_hi
+				doubleetaerr=True
+			if pt<self.__muon_trig_pt_low : 
+				pt = self.__muon_trig_pt_low 
+				doublepterr=True
+			elif pt>self.__muon_trig_pt_hi : 
+				pt = self.__muon_trig_pt_hi 
+				doublepterr=True
 			#get factors
 			ptbin_BtoF 		 = self.__muon_trig_eff_BtoF_vs_pt.FindFixBin(pt)
 			ptfac_BtoF 		 = self.__muon_trig_eff_BtoF_vs_pt.GetBinContent(ptbin_BtoF)
@@ -255,6 +322,10 @@ class Corrector(object) :
 			etafac_GH 		 = self.__muon_trig_eff_GH_vs_eta.GetBinContent(etabin_GH)
 			etaerr_up_GH 	 = self.__muon_trig_eff_GH_vs_eta.GetBinErrorUp(etabin_GH)
 			etaerr_down_GH 	 = self.__muon_trig_eff_GH_vs_eta.GetBinErrorLow(etabin_GH)
+			if doublepterr :
+				pterr_up_BtoF*=2; pterr_down_BtoF*=2; pterr_up_GH*=2; pterr_down_GH*=2
+			if doubleetaerr :
+				etaerr_up_BtoF*=2; etaerr_down_BtoF*=2; etaerr_up_GH*=2; etaerr_down_GH*=2
 			#calculate total factors
 			nomfac_BtoF  = ptfac_BtoF*etafac_BtoF
 			upfac_BtoF 	 = nomfac_BtoF*(1.+sqrt((pterr_up_BtoF/ptfac_BtoF)**2+(etaerr_up_BtoF/etafac_BtoF)**2))
@@ -265,10 +336,18 @@ class Corrector(object) :
 		elif lepflav=='el' : #electrons
 			thiseta=abs(eta); thispt=pt
 			#first bring the parameters back into range
-			if eta<self.__ele_trig_eff_eta_low : thiseta = self.__ele_trig_eff_eta_low 
-			elif eta>self.__ele_trig_eff_eta_hi : thiseta = self.__ele_trig_eff_eta_hi 
-			if pt<self.__ele_trig_eff_pt_low : thispt = self.__ele_trig_eff_pt_low 
-			elif pt>self.__ele_trig_eff_pt_hi : thispt = self.__ele_trig_eff_pt_hi 
+			if eta<self.__ele_trig_eff_eta_low : 
+				thiseta = self.__ele_trig_eff_eta_low 
+				doubleerr=True
+			elif eta>self.__ele_trig_eff_eta_hi : 
+				thiseta = self.__ele_trig_eff_eta_hi 
+				doubleerr=True
+			if pt<self.__ele_trig_eff_pt_low : 
+				thispt = self.__ele_trig_eff_pt_low 
+				doubleerr=True
+			elif pt>self.__ele_trig_eff_pt_hi : 
+				thispt = self.__ele_trig_eff_pt_hi 
+				doubleerr=True
 			#find which histogram to use
 			thishisto = self.__ele_trig_eff_b if topology<3 else self.__ele_trig_eff_r
 			#get factors
@@ -277,6 +356,8 @@ class Corrector(object) :
 			fac = thishisto.GetBinContent(thishisto.GetBin(binx,biny))
 			err_up = thishisto.GetBinErrorUp(binx,biny)
 			err_dn = thishisto.GetBinErrorLow(binx,biny)
+			if doubleerr :
+				err_up*=2; err_dn*=2
 			#calculate total factors
 			nomfac_BtoF  = fac; nomfac_GH = fac
 			upfac_BtoF 	 = fac+err_up; upfac_GH   = fac+err_up
@@ -286,6 +367,7 @@ class Corrector(object) :
 	def getIDEff(self,pileup,lepflav_or_lep,pt=-111.,eta=-111.) :
 		nomfac_BtoF = 1.; upfac_BtoF = 1.; downfac_BtoF = 1.
 		nomfac_GH = 1.; upfac_GH = 1.; downfac_GH = 1.
+		doubleetaerr=False; doublepterr=False; doublepuerr=False; doubleerr=False
 		lepflav = lepflav_or_lep
 		if pt==-111. :
 			lepflav=lepflav_or_lep.getType()
@@ -293,13 +375,25 @@ class Corrector(object) :
 			eta = lepflav_or_lep.getEtaSC() if lepflav=='el' else lepflav_or_lep.getEta()
 		if lepflav=='mu' : #muons
 			#first bring the parameters back into range
-			if eta<self.__muon_id_eff_eta_low : eta = self.__muon_id_eff_eta_low 
-			elif eta>self.__muon_id_eff_eta_hi : eta = self.__muon_id_eff_eta_hi 
-			if pt<self.__muon_id_eff_pt_low : pt = self.__muon_id_eff_pt_low 
-			elif pt>self.__muon_id_eff_pt_hi : pt = self.__muon_id_eff_pt_hi 
+			if eta<self.__muon_id_eff_eta_low : 
+				eta = self.__muon_id_eff_eta_low 
+				doubleetaerr=True
+			elif eta>self.__muon_id_eff_eta_hi : 
+				eta = self.__muon_id_eff_eta_hi 
+				doubleetaerr=True
+			if pt<self.__muon_id_eff_pt_low : 
+				pt = self.__muon_id_eff_pt_low 
+				doublepterr=True
+			elif pt>self.__muon_id_eff_pt_hi : 
+				pt = self.__muon_id_eff_pt_hi 
+				doublepterr=True
 			pu = pileup
-			if pu<self.__muon_id_eff_pu_low : pu = self.__muon_id_eff_pu_low 
-			elif pu>self.__muon_id_eff_pu_hi : pu = self.__muon_id_eff_pu_hi 
+			if pu<self.__muon_id_eff_pu_low : 
+				pu = self.__muon_id_eff_pu_low 
+				doublepuerr=True
+			elif pu>self.__muon_id_eff_pu_hi : 
+				pu = self.__muon_id_eff_pu_hi 
+				doublepuerr=True
 			#get factors
 			ptbin_BtoF 		 = self.__muon_id_eff_BtoF_vs_pt.FindFixBin(pt)
 			ptfac_BtoF 		 = self.__muon_id_eff_BtoF_vs_pt.GetBinContent(ptbin_BtoF)
@@ -325,42 +419,73 @@ class Corrector(object) :
 			pufac_GH 		 = self.__muon_id_eff_GH_vs_pu.GetBinContent(pubin_GH)
 			puerr_up_GH 	 = self.__muon_id_eff_GH_vs_pu.GetBinErrorUp(pubin_GH)
 			puerr_down_GH 	 = self.__muon_id_eff_GH_vs_pu.GetBinErrorLow(pubin_GH)
+			if doublepterr :
+				pterr_up_BtoF*=2; pterr_down_BtoF*=2; pterr_up_GH*=2; pterr_down_GH*=2
+			if doubleetaerr :
+				etaerr_up_BtoF*=2; etaerr_down_BtoF*=2; etaerr_up_GH*=2; etaerr_down_GH*=2
+			if doublepuerr :
+				puerr_up_BtoF*=2; puerr_down_BtoF*=2; puerr_up_GH*=2; puerr_down_GH*=2
+			#get the tracking efficiency and errors
+			trkfac, trkerrup, trkerrdown = self.__getTrkEff__(pileup,lepflav_or_lep,pt,eta)
 			#calculate total factors
-			nomfac_BtoF  = ptfac_BtoF*etafac_BtoF*pufac_BtoF
-			upfac_BtoF 	 = nomfac_BtoF*(1.+sqrt((pterr_up_BtoF/ptfac_BtoF)**2+(etaerr_up_BtoF/etafac_BtoF)**2+(puerr_up_BtoF/pufac_BtoF)**2))
-			downfac_BtoF = nomfac_BtoF*(1.-sqrt((pterr_down_BtoF/ptfac_BtoF)**2+(etaerr_down_BtoF/etafac_BtoF)**2+(puerr_down_BtoF/pufac_BtoF)**2))
-			nomfac_GH 	 = ptfac_GH*etafac_GH*pufac_GH
-			upfac_GH 	 = nomfac_GH*(1.+sqrt((pterr_up_GH/ptfac_GH)**2+(etaerr_up_GH/etafac_GH)**2+(puerr_up_GH/pufac_GH)**2))
-			downfac_GH 	 = nomfac_GH*(1.-sqrt((pterr_down_GH/ptfac_GH)**2+(etaerr_down_GH/etafac_GH)**2+(puerr_down_GH/pufac_GH)**2))
+			nomfac_BtoF  = ptfac_BtoF*etafac_BtoF*pufac_BtoF*trkfac
+			upfac_BtoF 	 = nomfac_BtoF*(1.+sqrt((pterr_up_BtoF/ptfac_BtoF)**2+(etaerr_up_BtoF/etafac_BtoF)**2+(puerr_up_BtoF/pufac_BtoF)**2+(trkerrup/trkfac)**2))
+			downfac_BtoF = nomfac_BtoF*(1.-sqrt((pterr_down_BtoF/ptfac_BtoF)**2+(etaerr_down_BtoF/etafac_BtoF)**2+(puerr_down_BtoF/pufac_BtoF)**2+(trkerrdown/trkfac)**2))
+			nomfac_GH 	 = ptfac_GH*etafac_GH*pufac_GH*trkfac
+			upfac_GH 	 = nomfac_GH*(1.+sqrt((pterr_up_GH/ptfac_GH)**2+(etaerr_up_GH/etafac_GH)**2+(puerr_up_GH/pufac_GH)**2+(trkerrup/trkfac)**2))
+			downfac_GH 	 = nomfac_GH*(1.-sqrt((pterr_down_GH/ptfac_GH)**2+(etaerr_down_GH/etafac_GH)**2+(puerr_down_GH/pufac_GH)**2+(trkerrdown/trkfac)**2))
 		elif lepflav=='el' : #electrons
 			thiseta=abs(eta); thispt=pt
 			#just need to get two numbers with errors for id and reco efficiency
 			#ID:
 			#first bring the parameters back into range
-			if eta<self.__ele_id_eff_eta_low : thiseta = self.__ele_id_eff_eta_low 
-			elif eta>self.__ele_id_eff_eta_hi : thiseta = self.__ele_id_eff_eta_hi 
-			if pt<self.__ele_id_eff_pt_low : thispt = self.__ele_id_eff_pt_low 
-			elif pt>self.__ele_id_eff_pt_hi : thispt = self.__ele_id_eff_pt_hi 
+			if thiseta<self.__ele_id_eff_eta_low : 
+				thiseta = self.__ele_id_eff_eta_low 
+				doubleerr=True
+			elif thiseta>self.__ele_id_eff_eta_hi : 
+				thiseta = self.__ele_id_eff_eta_hi 
+				doubleerr=True
+			if pt<self.__ele_id_eff_pt_low : 
+				thispt = self.__ele_id_eff_pt_low 
+				doubleerr=True
+			elif pt>self.__ele_id_eff_pt_hi : 
+				thispt = self.__ele_id_eff_pt_hi 
+				doubleerr=True
 			#get factors
 			binx = self.__ele_id_eff_eta_vs_pt.GetXaxis().FindFixBin(thispt)
 			biny = self.__ele_id_eff_eta_vs_pt.GetYaxis().FindFixBin(thiseta)
 			idfac = self.__ele_id_eff_eta_vs_pt.GetBinContent(self.__ele_id_eff_eta_vs_pt.GetBin(binx,biny))
 			iderr_up = self.__ele_id_eff_eta_vs_pt.GetBinErrorUp(binx,biny)
 			iderr_dn = self.__ele_id_eff_eta_vs_pt.GetBinErrorLow(binx,biny)
+			if doubleerr :
+				iderr_up*=2; iderr_dn*=2
+			doubleerr=False
 			#Reco:
 			#first bring the parameters back into range
 			thiseta=eta; thispt=pt
 			#print 'pt=%.1f, eta=%.2f, %.1f<pT<%.1f, %.2f<eta<%.2f, thispt=%.1f, thiseta=%.2f'%(pt,eta,self.__ele_reco_eff_pt_low,self.__ele_reco_eff_pt_hi,self.__ele_reco_eff_eta_low,self.__ele_reco_eff_eta_hi,thispt,thiseta) #DEBUG
-			if eta<self.__ele_reco_eff_eta_low : thiseta = self.__ele_reco_eff_eta_low 
-			elif eta>self.__ele_reco_eff_eta_hi : thiseta = self.__ele_reco_eff_eta_hi 
-			if pt<self.__ele_reco_eff_pt_low : thispt = self.__ele_reco_eff_pt_low 
-			elif pt>self.__ele_reco_eff_pt_hi : thispt = self.__ele_reco_eff_pt_hi 
+			if eta<self.__ele_reco_eff_eta_low : 
+				thiseta = self.__ele_reco_eff_eta_low 
+				doubleerr=True
+			elif eta>self.__ele_reco_eff_eta_hi : 
+				thiseta = self.__ele_reco_eff_eta_hi 
+				doubleerr=True
+			if pt<self.__ele_reco_eff_pt_low : 
+				thispt = self.__ele_reco_eff_pt_low 
+				doubleerr=True
+			elif pt>self.__ele_reco_eff_pt_hi : 
+				thispt = self.__ele_reco_eff_pt_hi 
+				doubleerr=True
 			#get factors
 			binx = self.__ele_reco_eff_pt_vs_eta.GetXaxis().FindFixBin(thiseta)
 			biny = self.__ele_reco_eff_pt_vs_eta.GetYaxis().FindFixBin(thispt)
 			recofac = self.__ele_reco_eff_pt_vs_eta.GetBinContent(self.__ele_reco_eff_pt_vs_eta.GetBin(binx,biny))
 			recoerr_up = self.__ele_reco_eff_pt_vs_eta.GetBinErrorUp(binx,biny)
 			recoerr_dn = self.__ele_reco_eff_pt_vs_eta.GetBinErrorLow(binx,biny)
+			if recofac==0. :
+				recofac=1.; recoerr_up=0.; recoerr_dn=0.
+			if doubleerr :
+				recoerr_up*=2; recoerr_dn*=2
 			#print 'recofac=%.3f, errup=%.3f, errdown=%.3f, pt=%f, eta = %f (bin=%d, binx=%d, biny=%d)'%(recofac,recoerr_up,recoerr_dn,thispt,thiseta,self.__ele_reco_eff_pt_vs_eta.GetBin(binx,biny),binx,biny) #DEBUG
 			if recofac==0. : recofac=1.
 			#calculate total factors
@@ -376,6 +501,7 @@ class Corrector(object) :
 	def getIsoEff(self,pileup,topology,lepflav_or_lep,pt=-111.,eta=-111.) :
 		nomfac_BtoF = 1.; upfac_BtoF = 1.; downfac_BtoF = 1.
 		nomfac_GH = 1.; upfac_GH = 1.; downfac_GH = 1.
+		doubleetaerr=False; doublepterr=False; doublepuerr=False
 		lepflav = lepflav_or_lep
 		if pt==-111. :
 			lepflav=lepflav_or_lep.getType()
@@ -383,13 +509,25 @@ class Corrector(object) :
 			eta = lepflav_or_lep.getEta()
 		if topology==3 and lepflav=='mu' : #muons in the resolved channel
 			#first bring the parameters back into range
-			if eta<self.__muon_iso_eff_eta_low : eta = self.__muon_iso_eff_eta_low 
-			elif eta>self.__muon_iso_eff_eta_hi : eta = self.__muon_iso_eff_eta_hi 
-			if pt<self.__muon_iso_eff_pt_low : pt = self.__muon_iso_eff_pt_low 
-			elif pt>self.__muon_iso_eff_pt_hi : pt = self.__muon_iso_eff_pt_hi 
+			if eta<self.__muon_iso_eff_eta_low : 
+				eta = self.__muon_iso_eff_eta_low 
+				doubleetaerr=True
+			elif eta>self.__muon_iso_eff_eta_hi : 
+				eta = self.__muon_iso_eff_eta_hi 
+				doubleetaerr=True
+			if pt<self.__muon_iso_eff_pt_low : 
+				pt = self.__muon_iso_eff_pt_low 
+				doublepterr=True
+			elif pt>self.__muon_iso_eff_pt_hi : 
+				pt = self.__muon_iso_eff_pt_hi 
+				doublepterr=True
 			pu = pileup
-			if pu<self.__muon_iso_eff_pu_low : pu = self.__muon_iso_eff_pu_low 
-			elif pu>self.__muon_iso_eff_pu_hi : pu = self.__muon_iso_eff_pu_hi 
+			if pu<self.__muon_iso_eff_pu_low : 
+				pu = self.__muon_iso_eff_pu_low 
+				doublepuerr=True
+			elif pu>self.__muon_iso_eff_pu_hi : 
+				pu = self.__muon_iso_eff_pu_hi 
+				doublepuerr=True
 			#get factors
 			ptbin_BtoF 		 = self.__muon_iso_eff_BtoF_vs_pt.FindFixBin(pt)
 			ptfac_BtoF 		 = self.__muon_iso_eff_BtoF_vs_pt.GetBinContent(ptbin_BtoF)
@@ -415,13 +553,21 @@ class Corrector(object) :
 			pufac_GH 		 = self.__muon_iso_eff_GH_vs_pu.GetBinContent(pubin_GH)
 			puerr_up_GH 	 = self.__muon_iso_eff_GH_vs_pu.GetBinErrorUp(pubin_GH)
 			puerr_down_GH 	 = self.__muon_iso_eff_GH_vs_pu.GetBinErrorLow(pubin_GH)
+			if doublepterr :
+				pterr_up_BtoF*=2; pterr_down_BtoF*=2; pterr_up_GH*=2; pterr_down_GH*=2
+			if doubleetaerr :
+				etaerr_up_BtoF*=2; etaerr_down_BtoF*=2; etaerr_up_GH*=2; etaerr_down_GH*=2
+			if doublepuerr :
+				puerr_up_BtoF*=2; puerr_down_BtoF*=2; puerr_up_GH*=2; puerr_down_GH*=2
+			#get the tracking efficiency and errors
+			trkfac, trkerrup, trkerrdown = self.__getTrkEff__(pileup,lepflav_or_lep,pt,eta)
 			#calculate total factors
-			nomfac_BtoF = ptfac_BtoF*etafac_BtoF*pufac_BtoF
-			upfac_BtoF 	 = nomfac_BtoF*(1.+sqrt((pterr_up_BtoF/ptfac_BtoF)**2+(etaerr_up_BtoF/etafac_BtoF)**2+(puerr_up_BtoF/pufac_BtoF)**2))
-			downfac_BtoF = nomfac_BtoF*(1.-sqrt((pterr_down_BtoF/ptfac_BtoF)**2+(etaerr_down_BtoF/etafac_BtoF)**2+(puerr_down_BtoF/pufac_BtoF)**2))
-			nomfac_GH = ptfac_GH*etafac_GH*pufac_GH
-			upfac_GH 	 = nomfac_GH*(1.+sqrt((pterr_up_GH/ptfac_GH)**2+(etaerr_up_GH/etafac_GH)**2+(puerr_up_GH/pufac_GH)**2))
-			downfac_GH = nomfac_GH*(1.-sqrt((pterr_down_GH/ptfac_GH)**2+(etaerr_down_GH/etafac_GH)**2+(puerr_down_GH/pufac_GH)**2))
+			nomfac_BtoF = ptfac_BtoF*etafac_BtoF*pufac_BtoF*trkfac
+			upfac_BtoF 	 = nomfac_BtoF*(1.+sqrt((pterr_up_BtoF/ptfac_BtoF)**2+(etaerr_up_BtoF/etafac_BtoF)**2+(puerr_up_BtoF/pufac_BtoF)**2+(trkerrup/trkfac)**2))
+			downfac_BtoF = nomfac_BtoF*(1.-sqrt((pterr_down_BtoF/ptfac_BtoF)**2+(etaerr_down_BtoF/etafac_BtoF)**2+(puerr_down_BtoF/pufac_BtoF)**2+(trkerrdown/trkfac)**2))
+			nomfac_GH = ptfac_GH*etafac_GH*pufac_GH*trkfac
+			upfac_GH 	 = nomfac_GH*(1.+sqrt((pterr_up_GH/ptfac_GH)**2+(etaerr_up_GH/etafac_GH)**2+(puerr_up_GH/pufac_GH)**2+(trkerrup/trkfac)**2))
+			downfac_GH = nomfac_GH*(1.-sqrt((pterr_down_GH/ptfac_GH)**2+(etaerr_down_GH/etafac_GH)**2+(puerr_down_GH/pufac_GH)**2+(trkerrdown/trkfac)**2))
 		elif topology==3 and lepflav=='el' : #electrons
 			#NOT IMPLEMENTED YET!!
 			nomfac_BtoF = 1.; upfac_BtoF = 1.; downfac_BtoF = 1.
@@ -429,40 +575,44 @@ class Corrector(object) :
 		#return reweighting factors
 		return nomfac_BtoF,upfac_BtoF,downfac_BtoF,nomfac_GH,upfac_GH,downfac_GH
 
-	def getTrkEff(self,pileup,lepflav_or_lep,pt=-111.,eta=-111.) :
+	def getMiniIsoEff(self,pileup,lepflav_or_lep,pt=-111.,eta=-111.) :
 		nomfac = 1.; upfac = 1.; downfac = 1.
+		doubleerr=False
 		lepflav = lepflav_or_lep
 		if pt==-111. :
-			lepflav = lepflav_or_lep.getType()
+			lepflav=lepflav_or_lep.getType()
 			pt = lepflav_or_lep.getPt()
-			eta = lepflav_or_lep.getEta()
+			eta = lepflav_or_lep.getEtaSC() if lepflav=='el' else lepflav_or_lep.getEta()
 		if lepflav=='mu' : #muons
-			#first bring the parameters back into range
-			if eta<self.__muon_trk_eff_vs_eta_lowxs[0] : eta = self.__muon_trk_eff_vs_eta_lowxs[0] 
-			elif eta>self.__muon_trk_eff_vs_eta_hixs[self.__muon_trk_eff_vs_eta_nbins-1] : eta = self.__muon_trk_eff_vs_eta_hixs[self.__muon_trk_eff_vs_eta_nbins-1]
-			pu = pileup
-			if pu<self.__muon_trk_eff_vs_pu_lowxs[0] : pu = self.__muon_trk_eff_vs_pu_lowxs[0] 
-			elif pu>self.__muon_trk_eff_vs_pu_hixs[self.__muon_trk_eff_vs_pu_nbins-1] : pu = self.__muon_trk_eff_vs_pu_hixs[self.__muon_trk_eff_vs_pu_nbins-1]
-			#get factors
-			for i in range(self.__muon_trk_eff_vs_eta_nbins) :
-				if eta>=self.__muon_trk_eff_vs_eta_lowxs[i] and eta<=self.__muon_trk_eff_vs_eta_hixs[i] :
-					etafac 		= self.__muon_trk_eff_vs_eta_ys[i]
-					etaerr_up 	= self.__muon_trk_eff_vs_eta_yerrups[i]
-					etaerr_down = self.__muon_trk_eff_vs_eta_yerrdowns[i]
-					break
-			for i in range(self.__muon_trk_eff_vs_pu_nbins) :
-				if pu>=self.__muon_trk_eff_vs_pu_lowxs[i] and pu<=self.__muon_trk_eff_vs_pu_hixs[i] :
-					pufac 		= self.__muon_trk_eff_vs_pu_ys[i]
-					puerr_up 	= self.__muon_trk_eff_vs_pu_yerrups[i]
-					puerr_down = self.__muon_trk_eff_vs_pu_yerrdowns[i]
-					break
-			#calculate total factors
-			nomfac 	= etafac*pufac
-			upfac 	= nomfac*(1.+sqrt((etaerr_up/etafac)**2+(puerr_up/pufac)**2))
-			downfac = nomfac*(1.-sqrt((etaerr_down/etafac)**2+(puerr_down/pufac)**2))
-		elif lepflav=='el' : #electrons
 			#NOT IMPLEMENTED YET!!
 			nomfac = 1.; upfac = 1.; downfac = 1.
+		elif lepflav=='el' : #electrons
+			thiseta=abs(eta); thispt=pt
+			#just need to get two numbers with errors for id and reco efficiency
+			if thiseta<self.__ele_miniiso_eff_eta_low : 
+				thiseta = self.__ele_miniiso_eff_eta_low 
+				doubleerr=True
+			elif thiseta>self.__ele_miniiso_eff_eta_hi : 
+				thiseta = self.__ele_miniiso_eff_eta_hi 
+				doubleerr=True
+			if pt<self.__ele_miniiso_eff_pt_low : 
+				thispt = self.__ele_miniiso_eff_pt_low 
+				doubleerr=True
+			elif pt>self.__ele_miniiso_eff_pt_hi : 
+				thispt = self.__ele_miniiso_eff_pt_hi 
+				doubleerr=True
+			#get factors
+			binx = self.__ele_miniiso_eff_abseta_vs_pt.GetXaxis().FindFixBin(thispt)
+			biny = self.__ele_miniiso_eff_abseta_vs_pt.GetYaxis().FindFixBin(thiseta)
+			fac = self.__ele_miniiso_eff_abseta_vs_pt.GetBinContent(self.__ele_miniiso_eff_abseta_vs_pt.GetBin(binx,biny))
+			err_up = self.__ele_miniiso_eff_abseta_vs_pt.GetBinErrorUp(binx,biny)
+			err_dn = self.__ele_miniiso_eff_abseta_vs_pt.GetBinErrorLow(binx,biny)
+			if doubleerr :
+				err_up*=2; err_dn*=2
+			#calculate total factors
+			nomfac  = fac
+			upfac 	 = nomfac*(1.+err_up)
+			downfac = nomfac*(1.-err_dn)
 		#return reweighting factors
 		return nomfac,upfac,downfac
 
@@ -723,6 +873,14 @@ def setupMuonIsoHistos(onGrid) :
 	muon_iso_BtoF_file.Close()
 	muon_iso_GH_file.Close()
 	return BtoF_vs_pt_histo, BtoF_vs_eta_histo, BtoF_vs_pu_histo, GH_vs_pt_histo, GH_vs_eta_histo, GH_vs_pu_histo
+
+def setupEleMiniIsoHistos(onGrid) :
+	pp = './tardir/' if onGrid == 'yes' else '../other_input_files/'
+	ele_miniiso_file = TFile.Open(pp+ELE_MINIISO_EFF_ROOT_FILENAME)
+	ele_miniiso_histo = ele_miniiso_file.Get(ELE_MINIISO_EFF_2D_HISTONAME)
+	ele_miniiso_histo.SetDirectory(0)
+	ele_miniiso_file.Close()
+	return ele_miniiso_histo
 
 def setupMuonTrackingGraphs(onGrid) :
 	pp = './tardir/' if onGrid == 'yes' else '../other_input_files/'

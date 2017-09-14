@@ -208,7 +208,7 @@ def getfourvec(branches,index,jes,jer,leps,corrector,isdata,pp) :
 	else :
 		#otherwise get the new jec uncertainty
 		newJECuncDown, newJECuncUp = jecunc, jecunc
-		if subtracted :
+		if len(subtractedleps)>0 :
 			newJECuncDown, newJECuncUp = corrector.getJECuncForJet(cleanjet,pp)
 		#And scale the fourvector up or down if we're looking for JES corrections
 		if jes=='up' :
