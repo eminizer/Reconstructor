@@ -263,13 +263,9 @@ nanalysisevents = abs(int(ntotalevents/options.n_jobs))
 if options.max_events!=-1 :
 	nanalysisevents = min(options.max_events, nanalysisevents)
 if options.n_jobs>1 :
-	#adjust so they don't all pile up in the last job
-	while ntotalevents-options.n_jobs*nanalysisevents > nanalysisevents :
+	#adjust so they don't all pile up too badly in the last job but every job runs on some events
+	while ntotalevents-options.n_jobs*nanalysisevents > nanalysisevents and (options.n_jobs-1)*(nanalysisevents+1)<ntotalevents :
 		nanalysisevents+=1
-#if this job isn't needed based on the splitting just return
-if options.i_job*nanalysisevents>ntotalevents :
-	print 'This job is unnecessary because of the grid splitting.'
-	quit()
 #copy the subset tree to be analyzed 
 garbageFile.cd()
 analysisTree = chain.CopyTree('','',nanalysisevents,options.i_job*nanalysisevents); analysisTree.SetDirectory(garbageFile) 

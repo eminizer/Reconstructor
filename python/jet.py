@@ -6,9 +6,9 @@ from math import *
 
 class Jet(object) :
 
-	def __init__(self,branches,index,jes,jer,leps,corrector,isdata,pp) :
+	def __init__(self,branches,index,jes,jer,leps,corrector,isdata,pp,lock) :
 		#print '----------------------- New Jet --------------------------' #DEBUG
-		self.__fourvec, self.__cleanedLeptons, self.__metCorrVec = getfourvec(branches,index,jes,jer,leps,corrector,isdata,pp)
+		self.__fourvec, self.__cleanedLeptons, self.__metCorrVec = getfourvec(branches,index,jes,jer,leps,corrector,isdata,pp,lock)
 		self.__pt = self.__fourvec.Pt() if self.__fourvec!=None else -900
 		self.__eta = self.__fourvec.Eta() if self.__fourvec!=None else -900
 		self.__isIDed = self.__checkID__(branches,index,pp)
@@ -52,6 +52,10 @@ class Jet(object) :
 		return self.__eta
 	def isIDed(self) :
 		return self.__isIDed
+	def setIsValid(self,iv) :
+		self.__isValid = iv
+	def isValid(self) :
+		return self.__isValid
 	def getCSVv2(self) :
 		return self.__csvv2
 	def isbTagged(self) :
@@ -61,11 +65,11 @@ class Jet(object) :
 
 class AK4Jet(Jet) :
 
-	def __init__(self,branches,index,jes,jer,leps,corrector,isdata) :
-		Jet.__init__(self,branches,index,jes,jer,leps,corrector,isdata,'jetAK4CHS')
+	def __init__(self,branches,index,jes,jer,leps,corrector,isdata,lock) :
+		Jet.__init__(self,branches,index,jes,jer,leps,corrector,isdata,'jetAK4CHS',lock)
 		self.__flavor = branches['jetAK4CHS_HadronFlavour'].getReadValue(index)
+		self.setIsValid(self.getPt()>30. and abs(self.getEta())<2.4 and self.isIDed()==1)
 		self.__isValidForIsoCalc = self.getPt()>15. and abs(self.getEta())<3.0 and self.isIDed()==1
-		self.__isValid = self.getPt()>30. and abs(self.getEta())<2.4 and self.isIDed()==1
 		#print '	isvalid = %s, for iso calc = %s'%(self.__isValid,self.__isValidForIsoCalc) #DEBUG
 
 	def getFlavor(self) :
@@ -77,18 +81,18 @@ class AK4Jet(Jet) :
 
 class AK8Jet(Jet) :
 
-	def __init__(self,branches,index,jes,jer,leps,corrector,isdata) :
-		Jet.__init__(self,branches,index,jes,jer,leps,corrector,isdata,'jetAK8CHS')
+	def __init__(self,branches,index,jes,jer,leps,corrector,isdata,lock) :
+		Jet.__init__(self,branches,index,jes,jer,leps,corrector,isdata,'jetAK8CHS',lock)
+		#print 'Adding AK8 jet with soft drop mass %.4f'%(self.__sdm) #DEBUG
+		self.__subjets = self.__getsubjets__(branches,index,jes,jer,leps,corrector,isdata)
+		self.__n_subjets = len(self.__subjets)
+		self.setIsValid(self.getPt()>200. and abs(self.getEta())<2.4 and self.isIDed()==1 and self.__n_subjets>1)
 		self.__tau3 = branches['jetAK8CHS_tau3CHS'].getReadValue(index)
 		self.__tau2 = branches['jetAK8CHS_tau2CHS'].getReadValue(index)
 		self.__tau1 = branches['jetAK8CHS_tau1CHS'].getReadValue(index)
 		self.__sdm  = branches['jetAK8CHS_softDropMassCHS'].getReadValue(index)
-		#print 'Adding AK8 jet with soft drop mass %.4f'%(self.__sdm) #DEBUG
-		self.__subjets = self.__getsubjets__(branches,index,jes,jer,leps,corrector,isdata)
-		self.__n_subjets = len(self.__subjets)
 		self.__isttagged = self.getPt()>400. and self.__sdm>105. and self.__sdm<220. and self.__tau3!=0. and self.__tau2!=0. and (self.__tau3/self.__tau2)<0.80
 		self.__isWtagged = self.getPt()>200. and self.__sdm>65. and self.__sdm<105. and self.__tau2!=0. and self.__tau1!=0. and (self.__tau2/self.__tau1)<0.55
-		self.__isValid = self.getPt()>200. and abs(self.getEta())<2.4 and self.isIDed()==1 and self.__n_subjets>1
 
 	def __getsubjets__(self,branches,index,jes,jer,leps,corrector,isdata) :
 		#start by making a list of all the subjets for this jet
@@ -110,8 +114,6 @@ class AK8Jet(Jet) :
 		#print '----------------------DONE ADDING SUBJETS----------------------' #DEBUG
 		return allsubjets
 
-	def isValid(self) :
-		return self.__isValid
 	def getTau32(self) :
 		if self.__tau2!=0 :
 			return self.__tau3/self.__tau2
@@ -133,7 +135,7 @@ class AK8Jet(Jet) :
 	def isWTagged(self) :
 		return self.__isWtagged
 
-def getfourvec(branches,index,jes,jer,leps,corrector,isdata,pp) :
+def getfourvec(branches,index,jes,jer,leps,corrector,isdata,pp,lock) :
 	#get all the jet fourvectors, etc.
 	pt  = branches[pp+'_Pt'].getReadValue(index)
 	eta = branches[pp+'_Eta'].getReadValue(index)
@@ -180,7 +182,9 @@ def getfourvec(branches,index,jes,jer,leps,corrector,isdata,pp) :
 		jetArea = branches[pp+'_jetArea'].getReadValue(index)
 		rho = branches['rho'].getReadValue()
 		npv = branches['npv'].getReadValue()
+		lock.acquire()
 		newJEC = corrector.getJECforJet(cleanjet,jetArea,rho,npv,pp)
+		lock.release()
 	nominalJet = cleanjet*newJEC
 	#print '	readjusted pT = %.2f'%(nominalJet.Pt()) #DEBUG
 	#If this is data, don't apply any smearing or systematics, just return the corrected, cleaned jet
@@ -209,7 +213,9 @@ def getfourvec(branches,index,jes,jer,leps,corrector,isdata,pp) :
 		#otherwise get the new jec uncertainty
 		newJECuncDown, newJECuncUp = jecunc, jecunc
 		if len(subtractedleps)>0 :
+			lock.acquire()
 			newJECuncDown, newJECuncUp = corrector.getJECuncForJet(cleanjet,pp)
+			lock.release()
 		#And scale the fourvector up or down if we're looking for JES corrections
 		if jes=='up' :
 			jecUpJet = cleanjet*(newJEC+newJECuncUp)
