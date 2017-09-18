@@ -20,7 +20,7 @@ from eventTypeHelper import getEventType, findInitialPartons, findMCParticles
 from jet import AK4Jet, AK8Jet
 from lepton import Muon, Electron
 from metHelper import setupMET
-from ttbarReconstructor import TTBarReconstructor
+from KinFit import reconstruct
 from angleReconstructor import getObservables, getMCRWs
 from corrector import Corrector
 
