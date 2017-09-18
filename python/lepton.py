@@ -78,7 +78,7 @@ class Muon(Lepton) :
 			self.setID(branches['mu_IsMediumMuon'].getReadValue(index))
 		self.setIso(branches['mu_Iso04'].getReadValue(index))
 		self.setMiniIso(branches['mu_MiniIso'].getReadValue(index))
-		self.setIsValid(self.getPt()>55. and abs(self.getEta())<2.5 and self.__ID==1)
+		self.setIsValid(self.getPt()>55. and abs(self.getEta())<2.5 and self.getID()==1)
 
 	def isLooseIso(self) :
 		return self.__iso<0.25 #loose WP https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
@@ -96,11 +96,11 @@ class Electron(Lepton) :
 
 	def __init__(self,branches,index) :
 		Lepton.__init__(self,branches,index,'el')
-		self.setId(branches['el_IDMedium_NoIso'].getReadValue(index))
+		self.setID(branches['el_IDMedium_NoIso'].getReadValue(index))
 		self.__scEta = branches['el_SCEta'].getReadValue(index)
 		self.setIso(branches['el_Iso03'].getReadValue(index))
 		self.setMiniIso(branches['el_MiniIso'].getReadValue(index))
-		self.setIsValid(self.getPt()>55. and abs(self.__scEta)<2.5 and self.__ID==1)
+		self.setIsValid(self.getPt()>55. and abs(self.__scEta)<2.5 and self.getID()==1)
 
 	def getEtaSC(self) :
 		return self.__scEta

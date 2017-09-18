@@ -76,15 +76,13 @@ class AK4Jet(Jet) :
 		return self.__flavor
 	def isValidForIsoCalc(self) :
 		return self.__isValidForIsoCalc
-	def isValid(self) :
-		return self.__isValid
 
 class AK8Jet(Jet) :
 
 	def __init__(self,branches,index,jes,jer,leps,corrector,isdata,lock) :
 		Jet.__init__(self,branches,index,jes,jer,leps,corrector,isdata,'jetAK8CHS',lock)
 		#print 'Adding AK8 jet with soft drop mass %.4f'%(self.__sdm) #DEBUG
-		self.__subjets = self.__getsubjets__(branches,index,jes,jer,leps,corrector,isdata)
+		self.__subjets = self.__getsubjets__(branches,index,jes,jer,leps,corrector,isdata,lock)
 		self.__n_subjets = len(self.__subjets)
 		self.setIsValid(self.getPt()>200. and abs(self.getEta())<2.4 and self.isIDed()==1 and self.__n_subjets>1)
 		self.__tau3 = branches['jetAK8CHS_tau3CHS'].getReadValue(index)
@@ -94,7 +92,7 @@ class AK8Jet(Jet) :
 		self.__isttagged = self.getPt()>400. and self.__sdm>105. and self.__sdm<220. and self.__tau3!=0. and self.__tau2!=0. and (self.__tau3/self.__tau2)<0.80
 		self.__isWtagged = self.getPt()>200. and self.__sdm>65. and self.__sdm<105. and self.__tau2!=0. and self.__tau1!=0. and (self.__tau2/self.__tau1)<0.55
 
-	def __getsubjets__(self,branches,index,jes,jer,leps,corrector,isdata) :
+	def __getsubjets__(self,branches,index,jes,jer,leps,corrector,isdata,lock) :
 		#start by making a list of all the subjets for this jet
 		allsubjets = []
 		#get the subjet indices
@@ -102,11 +100,11 @@ class AK8Jet(Jet) :
 		subjet1index = branches['jetAK8CHS_vSubjetIndex1'].getReadValue(index)
 		#add the subjets
 		if subjet0index>-1 :
-			newSubjet = Jet(branches,int(subjet0index),jes,jer,leps,corrector,isdata,'subjetAK8CHS')
+			newSubjet = Jet(branches,int(subjet0index),jes,jer,leps,corrector,isdata,'subjetAK8CHS',lock)
 			if newSubjet.getFourVector()!=None :
 				allsubjets.append(newSubjet)
 		if subjet1index>-1 :
-			newSubjet = Jet(branches,int(subjet1index),jes,jer,leps,corrector,isdata,'subjetAK8CHS')
+			newSubjet = Jet(branches,int(subjet1index),jes,jer,leps,corrector,isdata,'subjetAK8CHS',lock)
 			if newSubjet.getFourVector()!=None :
 				allsubjets.append(newSubjet)
 		#order the list of subjets by pt
