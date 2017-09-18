@@ -13,6 +13,7 @@ EL_TRIG_PATHS = ['HLT_Ele45_WPLoose_Gsf']
 ##########								   Imports  								##########
 
 from math import pi, log
+import multiprocessing
 from ROOT import TFile, TTree, TLorentzVector
 from branch import Branch
 from eventTypeHelper import getEventType, findInitialPartons, findMCParticles
@@ -446,42 +447,42 @@ class Reconstructor(object) :
 		#print '	Calculating lepton isolation values...' #DEBUG
 		for lep in (allleps) :
 			lep.calculateIsolation(ak4jetsforisocalc)
-#		#print '		Done.'#DEBUG
-#		#Set the event toplogy
-#		#print '	Setting event topology...' #DEBUG
-#		topology, ttags = self.__setEventTopology__(ak8jets)
-#		#print '		There are %d top-tagged jets; the event topology is type %d'%(len(ttags),topology) #DEBUG
-#		#is it possibble to reconstruct this event using a lepton+jets topology?
-#		canreconstruct = topology==1 or len(ak4jets)>=4
-#		#figure out whether the event is muonic or electronic, assign lepton
-#		lep = self.__assignLepton__(allleps)
-#		#Set physics object fourvectors
-#		self.__writePhysObjFourvecs__(muons,electrons,ak4jets,ttags,ak8jets,topology)
-#		#neutrino handling and setup for fit
-#		met1_vec, met2_vec = setupMET(lep.getFourVector(),met)
-#		self.nMETs.setWriteValue(2) if met1_vec.Pz() != met2_vec.Pz() else self.nMETs.setWriteValue(1)
-#		self.metE.setWriteValue(met1_vec.E())
-#		#-----------------------------------------------------------------Below here is event reconstruction-----------------------------------------------------------------#
-#		if canreconstruct :
-#			#print '	Reconstructing event...' #DEBUG
-#			#build the list of jet assignment hypotheses
-#			hypotheses = getHypothesisList(topology,lep,met1_vec,met2_vec,self.nMETs.getWriteValue(),ak4jets,ttags,nbtags)
-#			#if there's no valid type-1 hypotheses, try again as type-2
-#			if topology==1 and len(hypotheses)==0 :
-#				if len(ak4jets)>3 :
-#					topology=2
-#					self.event_topology.setWriteValue(topology)
-#					hypotheses = getHypothesisList(topology,lep,met1_vec,met2_vec,self.nMETs.getWriteValue(),ak4jets,ttags,nbtags)
-#				else :
-#					#print 'event %d invalid; no separated top tagged jets and not enough AK4 jets'%(eventnumber) #DEBUG
-#					self.cut_branches['fullselection'].setWriteValue(0)
-#					return
-#			#print '		Will try %d jet assignment hypotheses...'%(len(hypotheses)) #DEBUG
-#			self.nhypotheses.setWriteValue(len(hypotheses))
-#			#do the monte carlo matching
-#			corrhypindex=-1
-#			if self.event_type.getWriteValue()<2 and not self.is_data :
-#				corrhypindex = self.__matchJetAssignmentHypotheses__(topology,hypotheses,mctruthfourvecs)
+		#print '		Done.'#DEBUG
+		#Set the event toplogy
+		#print '	Setting event topology...' #DEBUG
+		topology, ttags = self.__setEventTopology__(ak8jets)
+		#print '		There are %d top-tagged jets; the event topology is type %d'%(len(ttags),topology) #DEBUG
+		#is it possibble to reconstruct this event using a lepton+jets topology?
+		canreconstruct = topology==1 or len(ak4jets)>=4
+		#figure out whether the event is muonic or electronic, assign lepton
+		lep = self.__assignLepton__(allleps,topology)
+		#Set physics object fourvectors
+		self.__writePhysObjFourvecs__(muons,electrons,ak4jets,ttags,ak8jets,topology)
+		#neutrino handling and setup for fit
+		met1_vec, met2_vec = setupMET(lep.getFourVector(),met)
+		self.nMETs.setWriteValue(2) if met1_vec.Pz() != met2_vec.Pz() else self.nMETs.setWriteValue(1)
+		self.metE.setWriteValue(met1_vec.E())
+		#-----------------------------------------------------------------Below here is event reconstruction-----------------------------------------------------------------#
+		if canreconstruct :
+			#print '	Reconstructing event...' #DEBUG
+			#build the list of jet assignment hypotheses
+			hypotheses = getHypothesisList(topology,lep,met1_vec,met2_vec,self.nMETs.getWriteValue(),ak4jets,ttags,nbtags)
+			#if there's no valid type-1 hypotheses, try again as type-2
+			if topology==1 and len(hypotheses)==0 :
+				if len(ak4jets)>3 :
+					topology=2
+					self.event_topology.setWriteValue(topology)
+					hypotheses = getHypothesisList(topology,lep,met1_vec,met2_vec,self.nMETs.getWriteValue(),ak4jets,ttags,nbtags)
+				else :
+					#print 'event %d invalid; no separated top tagged jets and not enough AK4 jets'%(eventnumber) #DEBUG
+					self.cut_branches['fullselection'].setWriteValue(0)
+					return
+			#print '		Will try %d jet assignment hypotheses...'%(len(hypotheses)) #DEBUG
+			self.nhypotheses.setWriteValue(len(hypotheses))
+			#do the monte carlo matching
+			corrhypindex=-1
+			if self.event_type.getWriteValue()<2 and not self.is_data :
+				corrhypindex = self.__matchJetAssignmentHypotheses__(topology,hypotheses,mctruthfourvecs)
 #			#send the hypotheses to the kinematic fit 
 #			hypindex, scaledlep, scaledmet, scaledlepb, scaledhadt, scaledhad1, scaledhad2, scaledhad3, fitchi2, finalpars = self.__writeKinfitResults__(hypotheses,topology)
 #			#print '		Done.' #DEBUG 
@@ -635,7 +636,7 @@ class Reconstructor(object) :
 		self.event_topology.setWriteValue(topology)
 		return topology, ttags
 
-	def __assignLepton__(allleps) :
+	def __assignLepton__(self,allleps,topology) :
 		lep = allleps[0]
 		lepisiso = lep.is2DIso(topology) and (topology<3 or topology==3 and ((lep.getType=='mu' and lep.isTightIso()) or (lep.getType=='el' and lep.isIso())))
 		if not lepisiso :
@@ -707,16 +708,17 @@ class Reconstructor(object) :
 			proc.join()
 		#find the best-matched hypothesis
 		mindRdM = 1000000.
-		for index, sumdRdM in hypdict.iteritems() :
+		for index in hypdict.keys() :
+			sumdRdM = hypdict[index]
 			if sumdRdM<mindRdM :
 				mindRdM = sumdRdM
 				matchedhypindex = index
 		#print '------------------------------------------------------------------------' #DEBUG
 		if matchedhypindex==-1 :
-			#print 'EVENT NUMBER %d IS NOT MATCHABLE'%(eventnumber) #DEBUG
+			print 'EVENT IS NOT MATCHABLE' #DEBUG
 			self.ismatchable.setWriteValue(0)
-		#else : #DEBUG
-			#print 'Event number %d has a correct assignment hypothesis at index %d'%(eventnumber,corrhypindex) #DEBUG
+		else : #DEBUG
+			print 'Event has a correct assignment hypothesis at index %d'%(matchedhypindex) #DEBUG
 		#return the index of the best-matched hypothesis
 		return matchedhypindex
 	def __checkHypothesisMatchingParallel__(self,topology,hypothesis,mcvecs,i,hypdict) :
