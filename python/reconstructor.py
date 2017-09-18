@@ -13,7 +13,6 @@ EL_TRIG_PATHS = ['HLT_Ele45_WPLoose_Gsf']
 ##########								   Imports  								##########
 
 from math import pi, log
-import multiprocessing
 from ROOT import TFile, TTree, TLorentzVector
 from branch import Branch
 from eventTypeHelper import getEventType, findInitialPartons, findMCParticles
@@ -579,26 +578,19 @@ class Reconstructor(object) :
 		return muons,electrons
 
 	def __makeJetLists__(self,met,leplist) :
-		manager = multiprocessing.Manager()
-		lock = multiprocessing.Lock()
-		ak4jets_p = manager.list(); ak4jetsforisocalc_p = manager.list(); ak8jets_p = manager.list(); metcorrvecs_p = manager.list()
-		procs = []
-		#print 'met before = (%.1f,%.1f,%.1f,%.1f)'%(met.Pt(),met.Eta(),met.Phi(),met.M()) #DEBUG
-		#print '	Adding AK4 Jets...' #DEBUG
-		for i in range(self.ak4_size.getReadValue()) :
-			p = multiprocessing.Process(target=self.__addAK4JetParallel__,args=(i,leplist,ak4jets_p,ak4jetsforisocalc_p,metcorrvecs_p,lock))
-			p.start(); procs.append(p)
-		#print '	Adding AK8 Jets...' #DEBUG
-		for i in range(self.ak8_size.getReadValue()) :
-			p = multiprocessing.Process(target=self.__addAK8JetParallel__,args=(i,leplist,ak8jets_p,metcorrvecs_p,lock))
-			p.start(); procs.append(p)
-		for proc in procs :
-			proc.join()
 		ak4jets = []; ak4jetsforisocalc = []; ak8jets = []; metcorrvecs = []
-		reassignments = [(ak4jets_p,ak4jets),(ak4jetsforisocalc_p,ak4jetsforisocalc),(ak8jets_p,ak8jets),(metcorrvecs_p,metcorrvecs)]
-		for group in reassignments :
-			for element in group[0] : 
-				group[1].append(element)
+		for i in range(self.ak4_size.getReadValue()) :
+			newJet = AK4Jet(self.ak4JetBranches,i,self.JES,self.JER,leplist,self.corrector,self.is_data)
+			metcorrvecs.append(newJet.getMETCorrectionVec())
+			if newJet.isValidForIsoCalc() :
+				ak4jetsforisocalc.append(newJet)
+			if newJet.isValid() :
+				ak4jets.append(newJet)
+		for i in range(self.ak8_size.getReadValue()) :
+			newJet = AK8Jet(self.ak8JetBranches,i,self.JES,self.JER,leplist,self.corrector,self.is_data)
+			metcorrvecs.append(newJet.getMETCorrectionVec())
+			if newJet.isValid() :
+				ak8jets.append(newJet)
 		#sort the lists of jets by pT
 		ak4jets.sort(key=lambda x: x.getPt(), reverse=True)
 		ak4jetsforisocalc.sort(key=lambda x: x.getPt(), reverse=True)
@@ -623,18 +615,6 @@ class Reconstructor(object) :
 		self.metE.setWriteValue(met.E())
 		#return the stuff I'll need later
 		return ak4jets,ak4jetsforisocalc,ak8jets,met,nbtags
-	def __addAK4JetParallel__(self,i,leplist,ak4jets,ak4jetsforisocalc,metcorrvecs,lock) :
-		newJet = AK4Jet(self.ak4JetBranches,i,self.JES,self.JER,leplist,self.corrector,self.is_data,lock)
-		metcorrvecs.append(newJet.getMETCorrectionVec())
-		if newJet.isValidForIsoCalc() :
-			ak4jetsforisocalc.append(newJet)
-		if newJet.isValid() :
-			ak4jets.append(newJet)
-	def __addAK8JetParallel__(self,i,leplist,ak8jets,metcorrvecs,lock) :
-		newJet = AK8Jet(self.ak8JetBranches,i,self.JES,self.JER,leplist,self.corrector,self.is_data,lock)
-		metcorrvecs.append(newJet.getMETCorrectionVec())
-		if newJet.isValid() :
-			ak8jets.append(newJet)
 
 	def __setEventTopology__(self,ak8jets) :
 		#find top- and W-tags
