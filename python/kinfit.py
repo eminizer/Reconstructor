@@ -7,66 +7,93 @@ import multiprocessing
 #Global variables
 SIGMAJ  = 0.10 #jet momentum resolution
 SIGMAL  = 0.02 #lepton momentum resolution
+MW = 80.4 #W mass
+MT = 172.5 #top mass
+MT_l1 = 172.8 #leptonic top mass for type 1 tops
+MT_h1 = 182.3 #hadronic top mass for type 1 tops
+MT_l2 = 172.8 #leptonic top mass for type 2 tops
+MT_h2 = 173.3 #hadronic top mass for type 2 tops
+MT_l3 = 172.5 #leptonic top mass for type 3 tops
+MT_h3 = 168.6 #hadronic top mass for type 3 tops
+WW = 2.0 #W width
+WT = 1.4 #top width
+WT_l1 = 15.6 #leptonic top width for type 1 tops
+WT_h1 = 17.6 #hadronic top width for type 1 tops
+WT_l2 = 15.7 #leptonic top width for type 2 tops
+WT_h2 = 16.2 #hadronic top width for type 2 tops
+WT_l3 = 15.1 #leptonic top width for type 3 tops
+WT_h3 = 18.2 #hadronic top width for type 3 tops
+#manager = multiprocessing.Manager()
+#lep_gvs=manager.list()
+#met_gvs=manager.list()
+#blep_gvs=manager.list()
+#hadt_gvs=manager.list()
+#had1_gvs=manager.list()
+#had2_gvs=manager.list()
+#had3_gvs=manager.list()
+lep_gvs=[]
+met_gvs=[]
+blep_gvs=[]
+hadt_gvs=[]
+had1_gvs=[]
+had2_gvs=[]
+had3_gvs=[]
+allveclists = [lep_gvs,met_gvs,blep_gvs,hadt_gvs,had1_gvs,had2_gvs,had3_gvs]
 
 class KinFit(object) :
 
-	lep_global_vecs = []
-	met_global_vecs = []
-	blep_global_vecs = []
-	hadt_global_vecs = []
-	had1_global_vecs = []
-	had2_global_vecs = []
-	had3_global_vecs = []
-
 	def __init__(self,topology,fitindex,hypothesis) :
+		self.topology = topology
 		self.fitindex = fitindex
-		#Set up Minuit
-		self.parNames = ['fitindex','pZv','scalelep','scaleblep','scalehad1','scalehad2','scalehad3']
-		self.parinivals = [fitindex,0.,1.,1.,1.,1.,1.]
-		self.parerrs = [0.0,0.0,0.0,0.0,0.0,0.0,0.0]
-		#fit setup
-		self.nPars = 6 if topology==1 else 7
-		self.minuit = TMinuit(self.nPars)
-		self.ierflag = Long(1)
-		self.arglist = array( 'd', [-1.0] )
-		self.minuit.mnexcm('SET PRINT', self.arglist, 1,self.ierflag)
-		self.minuit.mnexcm('SET NOWARNINGS',self.arglist,1,self.ierflag)
-		self.arglist[0] = 100000.
-		#add parameters to the fitter
-		for i in range(self.nPars) :
-			self.minuit.mnparm(i,self.parNames[i],self.parinivals[i],1.0,0.,0.,self.ierflag)
-		#fix the first 'fit index' parameter
-		self.minuit.mnfixp(0,self.ierflag)
-		#set the minimization function to use
-		if topology==1 : self.minuit.SetFCN(KinFit.fcnt1)
-		elif topology==2 : self.minuit.SetFCN(KinFit.fcnt2)
-		elif topology==3 : self.minuit.SetFCN(KinFit.fcnt3)
 		#list of final best fit parameters
 		self.bestParValues = []
-		for i in range(1,self.nPars) :
-			self.bestParValues.append(self.parinivals[i])
 		#fit error flag
 		self.errflag = -1
 		#fit final chi2
 		self.chi2value = 1000000.
 		#load this fit's fourvectors to the shared fourvector lists
-		KinFit.__addHypothesisVectors__(topology,hypothesis)
+		KinFit.__addHypothesisVectors__(topology,hypothesis,self.fitindex==0)
+		#print 'just initialized fit with index %d, length of list of global lepton vectors = %d'%(self.fitindex,len(KinFit.lep_gvs))#DEBUG
 
 	def dofit(self) :
+		#print 'starting fit for hypothesis index %d'%(self.fitindex)#DEBUG
+		#set up the minuit object, etc.
+		parNames = ['fitindex','pZv','scalelep','scaleblep','scalehad1','scalehad2','scalehad3']
+		parinivals = [self.fitindex,0.,1.,1.,1.,1.,1.]
+		parerrs = [0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+		nPars = 6 if self.topology==1 else 7
+		for i in range(1,nPars) :
+			self.bestParValues.append(parinivals[i])
+		ierflag = Long(1)
+		arglist = array( 'd', [-1.0] )
+		minuit = TMinuit(nPars)
+		minuit.mnexcm('SET PRINT', arglist, 1,ierflag)
+		minuit.mnexcm('SET NOWARNINGS',arglist,1,ierflag)
+		arglist[0] = 100000.
+		#add parameters to the fitter
+		for i in range(nPars) :
+			minuit.mnparm(i,parNames[i],parinivals[i],1.0,0.,0.,ierflag)
+		#fix the first 'fit index' parameter
+		minuit.mnfixp(0,ierflag)
+		#set the minimization function to use
+		if self.topology==1 : minuit.SetFCN(fcnt1)
+		elif self.topology==2 : minuit.SetFCN(fcnt2)
+		elif self.topology==3 : minuit.SetFCN(fcnt3)
 		#minimize and get the error flag
-		self.minuit.mnexcm('MIGRAD', self.arglist, 1, self.ierflag)
-		#print 'errflag = '+str(self.ierflag) #DEBUG
-		self.errflag = self.ierflag
+		minuit.mnexcm('MIGRAD', arglist, 1, ierflag)
+		#print 'errflag = '+str(ierflag) #DEBUG
+		self.errflag = ierflag
 		#Check fit Chi2 
 		tmp1 = Double(1.0); tmp2 = Double(1.0); tmp3 = Double(1.0)
-		self.minuit.mnstat(tmp1,tmp2,tmp3,Long(1),Long(1),Long(1))
+		minuit.mnstat(tmp1,tmp2,tmp3,Long(1),Long(1),Long(1))
 		#print 'chi2 = %.4f'%(tmp1) #DEBUG
 		self.chi2value = tmp1
 		#Get the bestfit parameters back from minuit
-		for j in range(1,self.nPars) :
+		for j in range(1,nPars) :
 			tmp = Double(1.0)
-			self.minuit.GetParameter(j,tmp,Double(self.parerrs[j]))
-			self.bestParValues[j] = tmp
+			minuit.GetParameter(j,tmp,Double(parerrs[j]))
+			self.bestParValues[j-1] = tmp
+		#print '	done fit for hypothesis index %d, pZv = %.3f, had1scale = %.3f, chi2 = %.2f'%(self.fitindex,self.bestParValues[0],self.bestParValues[3],self.chi2value)#DEBUG
 
 	def getErrFlag(self) :
 		return self.errflag
@@ -78,95 +105,93 @@ class KinFit(object) :
 		return self.bestParValues
 
 	@staticmethod
-	def __addHypothesisVectors__(t,h) :
-		KinFit.lep_global_vecs.append(h[0].getFourVector())
-		KinFit.met_global_vecs.append(h[1])
-		KinFit.blep_global_vecs.append(h[2].getFourVector())
+	def __addHypothesisVectors__(t,h,clearvecs) :
+		if clearvecs :
+			for veclist in allveclists :
+				while len(veclist)>0 :
+					veclist.pop()
+		lep_gvs.append(h[0].getFourVector())
+		met_gvs.append(h[1])
+		blep_gvs.append(h[2].getFourVector())
 		if t==1 :
-			KinFit.hadt_global_vecs.append(h[3][0].getFourVector())
-			KinFit.had1_global_vecs.append(h[3][0].getSubjet(0).getFourVector())
-			KinFit.had2_global_vecs.append(h[3][0].getSubjet(1).getFourVector())
+			hadt_gvs.append(h[3][0].getFourVector())
+			had1_gvs.append(h[3][0].getSubjet(0).getFourVector())
+			had2_gvs.append(h[3][0].getSubjet(1).getFourVector())
 		else :
-			KinFit.had1_global_vecs.append(h[3][0].getFourVector())
-			KinFit.had2_global_vecs.append(h[3][1].getFourVector())
-			KinFit.had3_global_vecs.append(h[3][2].getFourVector())
+			had1_gvs.append(h[3][0].getFourVector())
+			had2_gvs.append(h[3][1].getFourVector())
+			had3_gvs.append(h[3][2].getFourVector())
 
 	##################################  Static minuit functions  ##################################
 
-	#type 1 (fully merged) top minimization function
-	@staticmethod
-	def fcnt1(npar, deriv, f, par, flag) :
-		ind = int(par[0])
-		#Build rescaled versions of the vectors involved
-		l = rescale(KinFit.lep_global_vecs[ind],par[2])
-		bl = rescale(KinFit.blep_global_vecs[ind],par[3])
-		hs1 = rescale(KinFit.had1_global_vecs[ind],par[4])
-		hs2 = rescale(KinFit.had2_global_vecs[ind],par[5])
-		#rebuild the neutrino from the met post-rescaling
-		newmetx = ( KinFit.met_global_vecs[ind].Px()+(1.0-par[2])*KinFit.lep_global_vecs[ind].Px()+(1.0-par[3])*KinFit.blep_global_vecs[ind].Px()
-						+(1.0-par[4])*KinFit.had1_global_vecs[ind].Px()+(1.0-par[5])*KinFit.had2_global_vecs[ind].Px() )
-		newmety = ( KinFit.met_global_vecs[ind].Py()+(1.0-par[2])*KinFit.lep_global_vecs[ind].Py()+(1.0-par[3])*KinFit.blep_global_vecs[ind].Py()
-						+(1.0-par[4])*KinFit.had1_global_vecs[ind].Py()+(1.0-par[5])*KinFit.had2_global_vecs[ind].Py() )
-		v = rescale(KinFit.met_global_vecs[ind],1.0)
-		v.SetPx(newmetx); v.SetPy(newmety); v.SetPz(par[1])
-		v.SetE(v.Vect().Mag())
-		wl = v + l; tl = wl + bl; th = KinFit.hadt_global_vecs[ind]-KinFit.had1_global_vecs[ind]-KinFit.had2_global_vecs[ind]+hs1+hs2
-		pdf = getPDF(tl.M(),KinFit.MT_l1,KinFit.WT_l1,th.M(),KinFit.MT_h1,
-					 KinFit.WT_h1,KinFit.MT,wl.M2(),KinFit.MW,KinFit.WW)
-		f[0] = ( pdf+(par[2]-1.)*(par[2]-1.)/(SIGMAL*SIGMAL)+(par[3]-1.)*(par[3]-1.)/(SIGMAJ*SIGMAJ)
-					+(par[4]-1.)*(par[4]-1.)/(SIGMAJ*SIGMAJ)+(par[5]-1.)*(par[5]-1.)/(SIGMAJ*SIGMAJ) )
+#type 1 (fully merged) top minimization function
+def fcnt1(npar, deriv, f, par, flag) :
+	ind = int(par[0])
+	#Build rescaled versions of the vectors involved
+	l = rescale(lep_gvs[ind],par[2])
+	bl = rescale(blep_gvs[ind],par[3])
+	hs1 = rescale(had1_gvs[ind],par[4])
+	hs2 = rescale(had2_gvs[ind],par[5])
+	#rebuild the neutrino from the met post-rescaling
+	newmetx = ( met_gvs[ind].Px()+(1.0-par[2])*lep_gvs[ind].Px()+(1.0-par[3])*blep_gvs[ind].Px()
+					+(1.0-par[4])*had1_gvs[ind].Px()+(1.0-par[5])*had2_gvs[ind].Px() )
+	newmety = ( met_gvs[ind].Py()+(1.0-par[2])*lep_gvs[ind].Py()+(1.0-par[3])*blep_gvs[ind].Py()
+					+(1.0-par[4])*had1_gvs[ind].Py()+(1.0-par[5])*had2_gvs[ind].Py() )
+	v = rescale(met_gvs[ind],1.0)
+	v.SetPx(newmetx); v.SetPy(newmety); v.SetPz(par[1])
+	v.SetE(v.Vect().Mag())
+	wl = v + l; tl = wl + bl; th = hadt_gvs[ind]-had1_gvs[ind]-had2_gvs[ind]+hs1+hs2
+	pdf = getPDF(tl.M(),MT_l1,WT_l1,th.M(),MT_h1,WT_h1,MT,wl.M2(),MW,WW)
+	f[0] = ( pdf+(par[2]-1.)*(par[2]-1.)/(SIGMAL*SIGMAL)+(par[3]-1.)*(par[3]-1.)/(SIGMAJ*SIGMAJ)
+				+(par[4]-1.)*(par[4]-1.)/(SIGMAJ*SIGMAJ)+(par[5]-1.)*(par[5]-1.)/(SIGMAJ*SIGMAJ) )
 
-	#type 2 (boosted untagged) top minimization function
-	@staticmethod
-	def fcnt2(npar, deriv, f, par, flag) :
-		ind = int(par[0])
-		#Build rescaled versions of the vectors involved
-		l = rescale(KinFit.lep_global_vecs[ind],par[2])
-		bl = rescale(KinFit.blep_global_vecs[ind],par[3])
-		h1 = rescale(KinFit.had1_global_vecs[ind],par[4])
-		h2 = rescale(KinFit.had2_global_vecs[ind],par[5])
-		h3 = rescale(KinFit.had3_global_vecs[ind],par[6])
-		#rebuild the neutrino from the met post-rescaling
-		newmetx = ( KinFit.met_global_vecs[ind].Px()+(1.0-par[2])*KinFit.lep_global_vecs[ind].Px()+(1.0-par[3])*KinFit.blep_global_vecs[ind].Px()
-						+(1.0-par[4])*KinFit.had1_global_vecs[ind].Px()+(1.0-par[5])*KinFit.had2_global_vecs[ind].Px()+(1.0-par[6])*KinFit.had3_global_vecs[ind].Px() )
-		newmety = ( KinFit.met_global_vecs[ind].Py()+(1.0-par[2])*KinFit.lep_global_vecs[ind].Py()+(1.0-par[3])*KinFit.blep_global_vecs[ind].Py()
-						+(1.0-par[4])*KinFit.had1_global_vecs[ind].Py()+(1.0-par[5])*KinFit.had2_global_vecs[ind].Py()+(1.0-par[6])*KinFit.had3_global_vecs[ind].Py() )
-		v = rescale(KinFit.met_global_vecs[ind],1.0)
-		v.SetPx(newmetx); v.SetPy(newmety); v.SetPz(par[1])
-		v.SetE(v.Vect().Mag())
-		wl = v + l; tl = wl + bl; 
-		th = h1+h2+h3
-		pdf = getPDF(tl.M(),KinFit.MT_l2,KinFit.WT_l2,th.M(),KinFit.MT_h2,
-					 KinFit.WT_h2,KinFit.MT,wl.M2(),KinFit.MW,KinFit.WW)
-		f[0] = ( pdf+(par[2]-1.)*(par[2]-1.)/(SIGMAL*SIGMAL)+(par[3]-1.)*(par[3]-1.)/(SIGMAJ*SIGMAJ)
-					+(par[4]-1.)*(par[4]-1.)/(SIGMAJ*SIGMAJ)+(par[5]-1.)*(par[5]-1.)/(SIGMAJ*SIGMAJ) 
-					+(par[6]-1.)*(par[6]-1.)/(SIGMAJ*SIGMAJ) )
-
-	#type 3 (resolved) kinematic fitting function
-	@staticmethod
-	def fcnt3(npar, deriv, f, par, flag) :
-		ind = int(par[0])
-		#Build rescaled versions of the vectors involved
-		l = rescale(KinFit.lep_global_vecs[ind],par[2])
-		bl = rescale(KinFit.blep_global_vecs[ind],par[3])
-		h1 = rescale(KinFit.had1_global_vecs[ind],par[4])
-		h2 = rescale(KinFit.had2_global_vecs[ind],par[5])
-		h3 = rescale(KinFit.had3_global_vecs[ind],par[6])
-		#rebuild the neutrino from the met post-rescaling
-		newmetx = ( KinFit.met_global_vecs[ind].Px()+(1.0-par[2])*KinFit.lep_global_vecs[ind].Px()+(1.0-par[3])*KinFit.blep_global_vecs[ind].Px()
-						+(1.0-par[4])*KinFit.had1_global_vecs[ind].Px()+(1.0-par[5])*KinFit.had2_global_vecs[ind].Px()+(1.0-par[6])*KinFit.had3_global_vecs[ind].Px() )
-		newmety = ( KinFit.met_global_vecs[ind].Py()+(1.0-par[2])*KinFit.lep_global_vecs[ind].Py()+(1.0-par[3])*KinFit.blep_global_vecs[ind].Py()
-						+(1.0-par[4])*KinFit.had1_global_vecs[ind].Py()+(1.0-par[5])*KinFit.had2_global_vecs[ind].Py()+(1.0-par[6])*KinFit.had3_global_vecs[ind].Py() )
-		v = rescale(KinFit.met_global_vecs[ind],1.0)
-		v.SetPx(newmetx); v.SetPy(newmety); v.SetPz(par[1])
-		v.SetE(v.Vect().Mag())
-		wl = v + l; tl = wl + bl; 
-		th = h1+h2+h3
-		pdf = getPDF(tl.M(),KinFit.MT_l3,KinFit.WT_l3,th.M(),KinFit.MT_h3,
-					 KinFit.WT_h3,KinFit.MT,wl.M2(),KinFit.MW,KinFit.WW)
-		f[0] = ( pdf+(par[2]-1.)*(par[2]-1.)/(SIGMAL*SIGMAL)+(par[3]-1.)*(par[3]-1.)/(SIGMAJ*SIGMAJ)
-					+(par[4]-1.)*(par[4]-1.)/(SIGMAJ*SIGMAJ)+(par[5]-1.)*(par[5]-1.)/(SIGMAJ*SIGMAJ) 
+#type 2 (boosted untagged) top minimization function
+def fcnt2(npar, deriv, f, par, flag) :
+	ind = int(par[0])
+	#Build rescaled versions of the vectors involved
+	l = rescale(lep_gvs[ind],par[2])
+	bl = rescale(blep_gvs[ind],par[3])
+	h1 = rescale(had1_gvs[ind],par[4])
+	h2 = rescale(had2_gvs[ind],par[5])
+	h3 = rescale(had3_gvs[ind],par[6])
+	#rebuild the neutrino from the met post-rescaling
+	newmetx = ( met_gvs[ind].Px()+(1.0-par[2])*lep_gvs[ind].Px()+(1.0-par[3])*blep_gvs[ind].Px()
+					+(1.0-par[4])*had1_gvs[ind].Px()+(1.0-par[5])*had2_gvs[ind].Px()+(1.0-par[6])*had3_gvs[ind].Px() )
+	newmety = ( met_gvs[ind].Py()+(1.0-par[2])*lep_gvs[ind].Py()+(1.0-par[3])*blep_gvs[ind].Py()
+					+(1.0-par[4])*had1_gvs[ind].Py()+(1.0-par[5])*had2_gvs[ind].Py()+(1.0-par[6])*had3_gvs[ind].Py() )
+	v = rescale(met_gvs[ind],1.0)
+	v.SetPx(newmetx); v.SetPy(newmety); v.SetPz(par[1])
+	v.SetE(v.Vect().Mag())
+	wl = v + l; tl = wl + bl; 
+	th = h1+h2+h3
+	pdf = getPDF(tl.M(),MT_l2,WT_l2,th.M(),MT_h2,WT_h2,MT,wl.M2(),MW,WW)
+	f[0] = ( pdf+(par[2]-1.)*(par[2]-1.)/(SIGMAL*SIGMAL)+(par[3]-1.)*(par[3]-1.)/(SIGMAJ*SIGMAJ)
+				+(par[4]-1.)*(par[4]-1.)/(SIGMAJ*SIGMAJ)+(par[5]-1.)*(par[5]-1.)/(SIGMAJ*SIGMAJ) 
 				+(par[6]-1.)*(par[6]-1.)/(SIGMAJ*SIGMAJ) )
+
+#type 3 (resolved) kinematic fitting function
+def fcnt3(npar, deriv, f, par, flag) :
+	ind = int(par[0])
+	#Build rescaled versions of the vectors involved
+	l = rescale(lep_gvs[ind],par[2])
+	bl = rescale(blep_gvs[ind],par[3])
+	h1 = rescale(had1_gvs[ind],par[4])
+	h2 = rescale(had2_gvs[ind],par[5])
+	h3 = rescale(had3_gvs[ind],par[6])
+	#rebuild the neutrino from the met post-rescaling
+	newmetx = ( met_gvs[ind].Px()+(1.0-par[2])*lep_gvs[ind].Px()+(1.0-par[3])*blep_gvs[ind].Px()
+					+(1.0-par[4])*had1_gvs[ind].Px()+(1.0-par[5])*had2_gvs[ind].Px()+(1.0-par[6])*had3_gvs[ind].Px() )
+	newmety = ( met_gvs[ind].Py()+(1.0-par[2])*lep_gvs[ind].Py()+(1.0-par[3])*blep_gvs[ind].Py()
+					+(1.0-par[4])*had1_gvs[ind].Py()+(1.0-par[5])*had2_gvs[ind].Py()+(1.0-par[6])*had3_gvs[ind].Py() )
+	v = rescale(met_gvs[ind],1.0)
+	v.SetPx(newmetx); v.SetPy(newmety); v.SetPz(par[1])
+	v.SetE(v.Vect().Mag())
+	wl = v + l; tl = wl + bl; 
+	th = h1+h2+h3
+	pdf = getPDF(tl.M(),MT_l3,WT_l3,th.M(),MT_h3,WT_h3,MT,wl.M2(),MW,WW)
+	f[0] = ( pdf+(par[2]-1.)*(par[2]-1.)/(SIGMAL*SIGMAL)+(par[3]-1.)*(par[3]-1.)/(SIGMAJ*SIGMAJ)
+				+(par[4]-1.)*(par[4]-1.)/(SIGMAJ*SIGMAJ)+(par[5]-1.)*(par[5]-1.)/(SIGMAJ*SIGMAJ) 
+			+(par[6]-1.)*(par[6]-1.)/(SIGMAJ*SIGMAJ) )
 
 #PDF calculator function
 def getPDF(mtl,MT_l,WT_l,mth,MT_h,WT_h,MT,mwl2,MW,WW) :
@@ -195,18 +220,27 @@ def reconstructParallel(kfo) :
 
 #reconstruct takes in the list of hypotheses and returns a tuple of best fit information invluded the corrected fourvectors and chi2 value
 def reconstruct(hypotheses,topology) :
-	#First declare and set up the kinematic fit objects
-	allkinfitobjs = []
+	#print '-----------------------------'#DEBUG
+	#First declare and set up the kinematic fit objects (they'll be done in parallel in batches of ten)
+	allkinfitobjlists = []; allkinfitobjs = []
+	j=-1
 	for i in range(len(hypotheses)) :
-		allkinfitobjs.append(KinFit(topology,i,hypotheses[i]))
+		if i%10==0 :
+			j+=1
+			allkinfitobjlists.append([])
+		newfit = KinFit(topology,i,hypotheses[i])
+		allkinfitobjlists[j].append(newfit)
+		allkinfitobjs.append(newfit)
 	#Now do all the fits in parallel
-	procs = []
-	for kfo in allkinfitobjs :
-		p = multiprocessing.Process(target=reconstructParallel,args=(kfo,))
-		p.start()
-		procs.append(p)
-	for p in procs :
-		p.join()
+	for kinfitobjlist in allkinfitobjlists :
+		procs = []
+		for kfo in kinfitobjlist :
+			#kfo.dofit()
+			p = multiprocessing.Process(target=reconstructParallel,args=(kfo,))
+			p.start()
+			procs.append(p)
+		for p in procs :
+			p.join()
 	#find the index of the best fit hypothesis
 	bestfitchi2 = 1000000.; bestfitindex = -1; bestParValues = None
 	for kfo in allkinfitobjs :

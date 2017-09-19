@@ -483,46 +483,49 @@ class Reconstructor(object) :
 			corrhypindex=-1
 			if self.event_type.getWriteValue()<2 and not self.is_data :
 				corrhypindex = self.__matchJetAssignmentHypotheses__(topology,hypotheses,mctruthfourvecs)
-#			#send the hypotheses to the kinematic fit 
-#			hypindex, scaledlep, scaledmet, scaledlepb, scaledhadt, scaledhad1, scaledhad2, scaledhad3, fitchi2, finalpars = self.__writeKinfitResults__(hypotheses,topology)
-#			#print '		Done.' #DEBUG 
-#		#--------------------------------------------------------------------Below here is event selection--------------------------------------------------------------------#
-#		#print '	Calculating cut variables...' #DEBUG
-#		#FULL SELECTION CRITERIA
-#		self.__assignFullSelectionCutVars__(canreconstruct,topology,nbtags,fitchi2,scaledlep,scaledmet,scaledlepb,lep,electrons,muons,ak4jets,met)
-#		#W+Jets Control Region Selections
-#		self.__assignWJetsCRSelectionCutVars__()
-#		#QCD sidebands for ABCD method background estimation (pass all cuts but MET and lepton isolation)
-#		self.__assignQCDSBSelectionCutVars__()
-#		#ELECTRON TRIGGER SAMPLE SELECTIONS
-#		self.__assignElectronTriggerCRSelectionCutVars__(muons,electrons,topology)
-#		#ALTERNATE LEPTON ISOLATION (MiniIsolation) ALGORITHM SELECTIONS
-#		self.__assignMiniIsolationFullSelectionCutVars__(lep,muons,electrons)
-#		#print '		Done. (fullselection=%d)'%(self.cut_branches['fullselection'].getWriteValue()) #DEBUG
-#		#-----------------------------------------------------Below here is a bunch of variable and weight calculation-----------------------------------------------------# 
-# 		if canreconstruct :
-# 			#see if the kinematic fit returned the matched hypothesis
-# 			self.__checkForCorrectJetAssignment__(hypindex,corrhypindex,hypotheses)
-#			#try the MC matching again with the postfit quantities 
-#			if self.event_type.getWriteValue()<2 and not self.is_data : 
-#				hypothesis=hypotheses[hypindex] 
-#				MClep_vec = mctruthfourvecs['MClep']; MCv_vec = mctruthfourvecs['MCv']; MClepb_vec = mctruthfourvecs['MClepb']
-#				MChadt_vec = mctruthfourvecs['MCtbar'] if mctruthfourvecs['MClep_charge']>0 else mctruthfourvecs['MCt']
-#				self.ismatchedpostfit.setWriteValue(1) if (scaledlep.DeltaR(MClep_vec)<0.1 and scaledmet.DeltaPhi(MCv_vec)<0.3 and scaledlepb.DeltaR(MClepb_vec)<0.4 and scaledhadt.DeltaR(MChadt_vec)<0.8) else self.ismatchedpostfit.setWriteValue(0) 
-#			#	print 'ismatchedpostfit = %d'%(self.ismatchedpostfit.getWriteValue()) #DEBUG 
-#			#Write Kinematic fit debugging variables 
-#			self.chi2.setWriteValue(fitchi2) 
-#			locs = [self.par_0,self.par_1,self.par_2,self.par_3,self.par_4,self.par_5] 
-#			for i in range(len(finalpars)) : 
-#				locs[i].setWriteValue(finalpars[i]) 
-#			#write the scaled fourvectors
-#			self.__writeScaledFourvectors__(scaledlep,scaledmet,scaledlepb,scaledhadt,scaledhad1,scaledhad2,scaledhad3,hypotheses[hypindex])
-#			#reconstruct the observables in multiple ways
-#			self.__reconstructObservables__(scaledlep,scaledmet,scaledlepb,scaledhadt,lep,hypotheses,hypindex,corrhypindex,mctruthfourvecs['MClep'],mctruthfourvecs['MClepb'])
-#			#MC Truth observable and reweighting calculation 
-#			self.__calculateReweights__(mctruthfourvecs,topology,lep,ak4jets)
-#		#Finally write the event to the tree and closeout
-#		self.__closeout__() #yay! A complete event!
+			#send the hypotheses to the kinematic fit 
+			hypindex, scaledlep, scaledmet, scaledlepb, scaledhadt, scaledhad1, scaledhad2, scaledhad3, fitchi2, finalpars = self.__writeKinfitResults__(hypotheses,topology)
+			#print '		Done.' #DEBUG 
+		#--------------------------------------------------------------------Below here is event selection--------------------------------------------------------------------#
+		#print '	Calculating cut variables...' #DEBUG
+		#FULL SELECTION CRITERIA
+		if canreconstruct :
+			self.__assignFullSelectionCutVars__(canreconstruct,topology,nbtags,fitchi2,scaledlep+scaledmet+scaledlepb,lep,electrons,muons,ak4jets,scaledmet)
+		else :
+			self.__assignFullSelectionCutVars__(canreconstruct,topology,nbtags,1000000.,None,lep,electrons,muons,ak4jets,met)
+		#W+Jets Control Region Selections
+		self.__assignWJetsCRSelectionCutVars__()
+		#QCD sidebands for ABCD method background estimation (pass all cuts but MET and lepton isolation)
+		self.__assignQCDSBSelectionCutVars__()
+		#ELECTRON TRIGGER SAMPLE SELECTIONS
+		self.__assignElectronTriggerCRSelectionCutVars__(muons,electrons,topology,met1_vec,met2_vec)
+		#ALTERNATE LEPTON ISOLATION (MiniIsolation) ALGORITHM SELECTIONS
+		self.__assignMiniIsolationFullSelectionCutVars__(lep,muons,electrons)
+		#print '		Done. (fullselection=%d)'%(self.cut_branches['fullselection'].getWriteValue()) #DEBUG
+		#-----------------------------------------------------Below here is a bunch of variable and weight calculation-----------------------------------------------------# 
+ 		if canreconstruct :
+ 			#see if the kinematic fit returned the matched hypothesis
+ 			self.__checkForCorrectJetAssignment__(hypindex,corrhypindex,hypotheses)
+			#try the MC matching again with the postfit quantities 
+			if self.event_type.getWriteValue()<2 and not self.is_data : 
+				hypothesis=hypotheses[hypindex] 
+				MClep_vec = mctruthfourvecs['MClep']; MCv_vec = mctruthfourvecs['MCv']; MClepb_vec = mctruthfourvecs['MClepb']
+				MChadt_vec = mctruthfourvecs['MCtbar'] if mctruthfourvecs['MClep_charge']>0 else mctruthfourvecs['MCt']
+				self.ismatchedpostfit.setWriteValue(1) if (scaledlep.DeltaR(MClep_vec)<0.1 and scaledmet.DeltaPhi(MCv_vec)<0.3 and scaledlepb.DeltaR(MClepb_vec)<0.4 and scaledhadt.DeltaR(MChadt_vec)<0.8) else self.ismatchedpostfit.setWriteValue(0) 
+			#	print 'ismatchedpostfit = %d'%(self.ismatchedpostfit.getWriteValue()) #DEBUG 
+			#Write Kinematic fit debugging variables 
+			self.chi2.setWriteValue(fitchi2) 
+			locs = [self.par_0,self.par_1,self.par_2,self.par_3,self.par_4,self.par_5] 
+			for i in range(len(finalpars)) : 
+				locs[i].setWriteValue(finalpars[i]) 
+			#write the scaled fourvectors
+			self.__writeScaledFourvectors__(topology,scaledlep,scaledmet,scaledlepb,scaledhadt,scaledhad1,scaledhad2,scaledhad3,hypotheses[hypindex])
+			#reconstruct the observables in multiple ways
+			self.__reconstructObservables__(scaledlep,scaledmet,scaledlepb,scaledhadt,lep,hypotheses,hypindex,corrhypindex,mctruthfourvecs['MClep'],mctruthfourvecs['MClepb'],corrhypindex)
+			#MC Truth observable and reweighting calculation 
+			self.__calculateReweights__(mctruthfourvecs,topology,lep,ak4jets)
+		#Finally write the event to the tree and closeout
+		self.__closeout__() #yay! A complete event!
 
 	##################################  Event Analyzer helper functions  ##################################
 
@@ -715,10 +718,10 @@ class Reconstructor(object) :
 				matchedhypindex = index
 		#print '------------------------------------------------------------------------' #DEBUG
 		if matchedhypindex==-1 :
-			print 'EVENT IS NOT MATCHABLE' #DEBUG
+			#print 'EVENT IS NOT MATCHABLE' #DEBUG
 			self.ismatchable.setWriteValue(0)
-		else : #DEBUG
-			print 'Event has a correct assignment hypothesis at index %d'%(matchedhypindex) #DEBUG
+		#else : #DEBUG
+			#print 'Event has a correct assignment hypothesis at index %d'%(matchedhypindex) #DEBUG
 		#return the index of the best-matched hypothesis
 		return matchedhypindex
 	def __checkHypothesisMatchingParallel__(self,topology,hypothesis,mcvecs,i,hypdict) :
@@ -799,7 +802,7 @@ class Reconstructor(object) :
 				if thishyp[0]==corrhyp[0] and thishyp[2]==corrhyp[2] and thishyp[3][0]==corrhyp[3][0] and (topology==1 or (thishyp[3][1]==corrhyp[3][1] and thishyp[3][2]==corrhyp[3][2])) :  
 					self.iscorrect.setWriteValue(1) 
 
-	def __writeScaledFourvectors__(self,slep,smet,slepb,shadt,shad1,shad2,shad3,hyp) :
+	def __writeScaledFourvectors__(self,topology,slep,smet,slepb,shadt,shad1,shad2,shad3,hyp) :
 		#fill the TTree with the scaled fourvector variables 
 		self.__setFourVectorBranchValues__('scaled_lep',slep) 
 		self.__setFourVectorBranchValues__('scaled_met',smet) 
@@ -811,13 +814,13 @@ class Reconstructor(object) :
 			self.allBranches['scaled_hadt_tau32'].setWriteValue(hyp[3][0].getTau32()) 
 			self.allBranches['scaled_hadt_tau21'].setWriteValue(hyp[3][0].getTau21()) 
 			self.allBranches['scaled_hadt_SDM'].setWriteValue(hyp[3][0].getSDM()) 
-			docut('scaled_hadt_isttagged',hyp[3][0].isTopTagged(),self.allBranches)
-			docut('scaled_hadt_isWtagged',hyp[3][0].isWTagged(),self.allBranches)
+			self.docut('scaled_hadt_isttagged',hyp[3][0].isTopTagged(),self.allBranches)
+			self.docut('scaled_hadt_isWtagged',hyp[3][0].isWTagged(),self.allBranches)
 		if shad1!=None: self.__setFourVectorBranchValues__('scaled_had1',shad1) 
 		if shad2!=None: self.__setFourVectorBranchValues__('scaled_had2',shad2) 
 		if shad3!=None: self.__setFourVectorBranchValues__('scaled_had3',shad3) 
 
-	def __reconstructObservables__(self,slep,smet,slepb,shadt,lep,hyps,hypi,chypi,mclepv,mclepbv) :	
+	def __reconstructObservables__(self,slep,smet,slepb,shadt,lep,hyps,hypi,chypi,mclepv,mclepbv,corrhypindex) :	
 		#first using the chosen postfit 
 		cstar_s,xF_s,M_s = getObservables(slep+smet+slepb,shadt,lep.getQ())  
 		self.cstar.setWriteValue(cstar_s); self.x_F.setWriteValue(xF_s); self.M.setWriteValue(M_s) 
@@ -842,8 +845,8 @@ class Reconstructor(object) :
 			self.lepWcorprefitM.setWriteValue(prefitlepW.M())
 			self.leptcorprefitM.setWriteValue(prefitlept.M())
 			self.hadtcorprefitM.setWriteValue(prefithadt.M())
-			self.corlep_sf.setWriteValue(MClep_vec.P()/slep.P())
-			self.corlepb_sf.setWriteValue(MClepb_vec.P()/slepb.P())
+			self.corlep_sf.setWriteValue(mclepv.P()/slep.P())
+			self.corlepb_sf.setWriteValue(mclepbv.P()/slepb.P())
 			cstar,xF,M = getObservables(prefitlept,prefithadt,hyp[0].getQ()) 
 			#print 'setting correct prefit observable values: cstar = %.2f, x_F = %.2f, M = %.2f'%(cstar,x_F,M) #DEBUG
 			self.cstar_corprefit.setWriteValue(cstar); self.x_F_corprefit.setWriteValue(xF); self.M_corprefit.setWriteValue(M)
@@ -920,9 +923,9 @@ class Reconstructor(object) :
 			cutdict=self.cut_branches
 		cutdict[cutname].setWriteValue(1) if cutbool else cutdict[cutname].setWriteValue(0)
 
-	def __assignFullSelectionCutVars__(self,canreconstruct,topology,nbtags,fitchi2,scaledlep,scaledmet,scaledlepb,lep,electrons,muons,ak4jets,met) :
+	def __assignFullSelectionCutVars__(self,canreconstruct,topology,nbtags,fitchi2,scaledlept,lep,electrons,muons,ak4jets,met) :
 		#number of AK4 jets
-		docut('ak4jetmult',canreconstruct)
+		self.docut('ak4jetmult',canreconstruct)
 		#met filtering
 		metfiltercuts = []
 		for branch in self.filterBranches.values() :
@@ -930,13 +933,13 @@ class Reconstructor(object) :
 				continue
 			if branch.getWriteValue()!=1 :
 				metfiltercuts.append(False)
-		docut('metfilters',metfiltercuts.count(False)==0)
+		self.docut('metfilters',metfiltercuts.count(False)==0)
 		#number of btags
-		docut('btags',((topology<3 and nbtags>0) or (topology==3 and nbtags>1)))
+		self.docut('btags',((topology<3 and nbtags>0) or (topology==3 and nbtags>1)))
 		#kinematic fit chi2
-		docut('kinfitchi2',(canreconstruct and (topology==3 or fitchi2<-15)))
+		self.docut('kinfitchi2',(canreconstruct and (topology==3 or fitchi2<-15)))
 		#reconstructed leptonic top mass for boosted events
-		docut('recoleptM',(canreconstruct and (topology==3 or (scaledlep+scaledmet+scaledlepb).M()<210.)))
+		self.docut('recoleptM',(canreconstruct and (topology==3 or scaledlept.M()<210.)))
 		#other cuts are lepton flavor specific
 		other_leps = []; allcuts = []
 		if self.lepflavor.getWriteValue()==1 :
@@ -944,49 +947,44 @@ class Reconstructor(object) :
 			trigvals = []
 			for trigName in MU_TRIG_PATHS :
 				trigvals.append(self.triggerBranches[trigName].getWriteValue())
-			docut('trigger',trigvals.count(1)>0)
+			self.docut('trigger',trigvals.count(1)>0)
 			#isolated lepton
-			docut('isolepton',(lep.is2DIso(topology) and (topology<3 or lep.isTightIso())))
+			self.docut('isolepton',(lep.is2DIso(topology) and (topology<3 or lep.isTightIso())))
 			#exactly one isolated lepton
 			other_leps+=electrons; other_leps+=muons[1:]; noOtherLeps = True
 			for olep in other_leps :
 				if olep.is2DIso(topology) and (topology<3 or olep.isLooseIso()) :
 					noOtherLeps = False
 					break
-			docut('onelepton',noOtherLeps)
+			self.docut('onelepton',noOtherLeps)
 			#leading ak4 jets
-			docut('ak4jetcuts',(topology==3 or (len(ak4jets)>1 and ak4jets[0].getPt()>150. and ak4jets[1].getPt()>50.)))
+			self.docut('ak4jetcuts',(topology==3 or (len(ak4jets)>1 and ak4jets[0].getPt()>150. and ak4jets[1].getPt()>50.)))
 			#MET cuts
-			cutmetE = scaledmet.E()
-			if not canreconstruct :
-				cutmetE = met.E()
-			docut('METcuts',((topology==3 and cutmetE>40.) or cutmetE>50.))
+			self.docut('METcuts',((topology==3 and met.E()>40.) or met.E()>50.))
 		elif self.lepflavor.getWriteValue()==2 :
 			#trigger
+			trigvals = []
 			for trigName in EL_TRIG_PATHS :
 				trigvals.append(self.triggerBranches[trigName].getWriteValue())
-			docut('trigger',trigvals.count(1)>0)
+			self.docut('trigger',trigvals.count(1)>0)
 			#isolated lepton
-			docut('isolepton',(lep.is2DIso(topology) and (topology<3 or lep.isIso())))
+			self.docut('isolepton',(lep.is2DIso(topology) and (topology<3 or lep.isIso())))
 			#exactly one isolated lepton
 			other_leps+=muons; other_leps+=electrons[1:]; noOtherLeps = True
 			for lep in other_leps :
 				if (topology<3 and lep.is2DIso(topology)) or (topology==3 and lep.is2DIso(topology) and lep.isLooseIso()) :
 					noOtherLeps = False
 					break
-			docut('onelepton',noOtherLeps)
+			self.docut('onelepton',noOtherLeps)
 			#leading ak4 jets
-			docut('ak4jetcuts',(topology==3 or (len(ak4jets)>1 and ak4jets[0].getPt()>250. and ak4jets[1].getPt()>70.)))
+			self.docut('ak4jetcuts',(topology==3 or (len(ak4jets)>1 and ak4jets[0].getPt()>250. and ak4jets[1].getPt()>70.)))
 			#MET cuts
-			cutmetE = scaledmet.E()
-			if not canreconstruct :
-				cutmetE = met.E()
-			docut('METcuts',((topology==3 and cutmetE>40.) or cutmetE>100.))
+			self.docut('METcuts',((topology==3 and met.E()>40.) or met.E()>100.))
 		#full selection
 		for cutbranch in self.cut_branches.values() :
 			if cutbranch.getWriteValue()==0 :
 				allcuts.append(False)
-		docut('fullselection',allcuts.count(False)==0)
+		self.docut('fullselection',allcuts.count(False)==0)
 
 	def __assignWJetsCRSelectionCutVars__(self) :
 		#W+Jets control region (fails kinematic fit chi2 cuts OR reconstructed leptonic top mass cuts) for boosted events
@@ -1016,21 +1014,21 @@ class Reconstructor(object) :
 		if self.cr_sb_cut_branches['qcd_A_sb_selection'].getWriteValue()!=0 :
 			isolepval = self.cut_branches['isolepton'].getWriteValue()
 			metcutsval = self.cut_branches['METcuts'].getWriteValue()
-			docut('qcd_A_sb_selection',isolepval==1 and metcutsval==0,self.cr_sb_cut_branches)
-			docut('qcd_B_sb_selection',isolepval==0 and metcutsval==0,self.cr_sb_cut_branches)
-			docut('qcd_C_sb_selection',isolepval==0 and metcutsval==1,self.cr_sb_cut_branches)
+			self.docut('qcd_A_sb_selection',isolepval==1 and metcutsval==0,self.cr_sb_cut_branches)
+			self.docut('qcd_B_sb_selection',isolepval==0 and metcutsval==0,self.cr_sb_cut_branches)
+			self.docut('qcd_C_sb_selection',isolepval==0 and metcutsval==1,self.cr_sb_cut_branches)
 
-	def __assignElectronTriggerCRSelectionCutVars__(self,muons,electrons,topology) :
+	def __assignElectronTriggerCRSelectionCutVars__(self,muons,electrons,topology,met1,met2) :
 		#muon trigger
 		trigvals = []
 		for trigName in MU_TRIG_PATHS :
 			trigvals.append(self.triggerBranches[trigName].getWriteValue())
-		docut('eltrig_mutrigger',trigvals.count(1)>0,self.eltrig_cut_branches)
+		self.docut('eltrig_mutrigger',trigvals.count(1)>0,self.eltrig_cut_branches)
 		#electron trigger
 		trigvals = []
 		for trigName in EL_TRIG_PATHS :
 			trigvals.append(self.triggerBranches[trigName].getWriteValue())
-		docut('eltrig_eltrigger',trigvals.count(1)>0,self.eltrig_cut_branches)
+		self.docut('eltrig_eltrigger',trigvals.count(1)>0,self.eltrig_cut_branches)
 		#find the hardest isolated (if possible) muon and electron and set the "two leptons" variable
 		allisoleps = []
 		themuon = None; theelectron = None
@@ -1058,15 +1056,15 @@ class Reconstructor(object) :
 		if theelectron!=None :
 			self.eltrig_theelectron_pt.setWriteValue(theelectron.getPt())
 			self.eltrig_theelectron_eta.setWriteValue(theelectron.getEta())
-		docut('eltrig_twoleptons',themuon!=None and theelectron!=None and len(allisoleps)==2,self.eltrig_cut_branches)
+		self.docut('eltrig_twoleptons',themuon!=None and theelectron!=None and len(allisoleps)==2,self.eltrig_cut_branches)
 		#tightly ID'd electron
-		docut('eltrig_tightel',theelectron!=None and theelectron.getTightID()==1,self.eltrig_cut_branches)
+		self.docut('eltrig_tightel',theelectron!=None and theelectron.getTightID()==1,self.eltrig_cut_branches)
 		#isolated muon
-		docut('eltrig_isomu',themuon!=None and themuon.is2DIso(topology) and (topology<3 or themuon.isTightIso()),self.eltrig_cut_branches)
+		self.docut('eltrig_isomu',themuon!=None and themuon.is2DIso(topology) and (topology<3 or themuon.isTightIso()),self.eltrig_cut_branches)
 		#isolated electron
-		docut('eltrig_isoel',theelectron!=None and theelectron.is2DIso(topology) and (topology<3 or theelectron.isIso()),self.eltrig_cut_branches)
+		self.docut('eltrig_isoel',theelectron!=None and theelectron.is2DIso(topology) and (topology<3 or theelectron.isIso()),self.eltrig_cut_branches)
 		#opposite lepton charge
-		docut('eltrig_opplepcharge',themuon!=None and theelectron!=None and themuon.getQ()*theelectron.getQ()<0,self.eltrig_cut_branches)
+		self.docut('eltrig_opplepcharge',themuon!=None and theelectron!=None and themuon.getQ()*theelectron.getQ()<0,self.eltrig_cut_branches)
 		#number of btags
 		self.eltrig_cut_branches['eltrig_btags'].setWriteValue(self.cut_branches['btags'].getWriteValue())
 		#ak4 jet cuts
@@ -1074,7 +1072,7 @@ class Reconstructor(object) :
 		#leptonic-side W pT
 		themuonvec = None if themuon==None else themuon.getFourVector()
 		theelectronvec = None if theelectron==None else theelectron.getFourVector()
-		docut('eltrig_lepWpT',(themuon!=None and ((themuonvec+met1_vec).Pt()>50. or (themuonvec+met2_vec).Pt()>50.)) or (theelectronvec!=None and ((theelectronvec+met1_vec).Pt()>50. or (theelectronvec+met2_vec).Pt()>50.)),self.eltrig_cut_branches)
+		self.docut('eltrig_lepWpT',(themuon!=None and ((themuonvec+met1).Pt()>50. or (themuonvec+met2).Pt()>50.)) or (theelectronvec!=None and ((theelectronvec+met1).Pt()>50. or (theelectronvec+met2).Pt()>50.)),self.eltrig_cut_branches)
 		#full selection
 		self.eltrig_cut_branches['eltrig_fullselection'].setWriteValue(1)
 		for cutkey, cutbranch in self.eltrig_cut_branches.iteritems() :
@@ -1088,24 +1086,24 @@ class Reconstructor(object) :
 		other_leps = []
 		if self.lepflavor.getWriteValue()==1 :
 			#lepton miniisolation
-			docut('miniisolepton',lep.isMedMiniIso(),self.alt_lep_iso_cut_branches)
+			self.docut('miniisolepton',lep.isMedMiniIso(),self.alt_lep_iso_cut_branches)
 			#other loose lepton veto
 			other_leps+=electrons; other_leps+=muons[1:]; noOtherLeps = True
 			for olep in other_leps :
 				if olep.isLooseMiniIso() :
 					noOtherLeps = False
 					break
-			docut('oneminiisolepton',noOtherLeps,self.alt_lep_iso_cut_branches)
+			self.docut('oneminiisolepton',noOtherLeps,self.alt_lep_iso_cut_branches)
 		elif self.lepflavor.getWriteValue()==2 :
 			#lepton miniisolation
-			docut('miniisolepton',lep.isTightMiniIso(),self.alt_lep_iso_cut_branches)
+			self.docut('miniisolepton',lep.isTightMiniIso(),self.alt_lep_iso_cut_branches)
 			#other loose lepton veto
 			other_leps+=electrons; other_leps+=muons[1:]; noOtherLeps = True
 			for olep in other_leps :
 				if olep.isLooseMiniIso() :
 					noOtherLeps = False
 					break
-			docut('oneminiisolepton',noOtherLeps,self.alt_lep_iso_cut_branches)
+			self.docut('oneminiisolepton',noOtherLeps,self.alt_lep_iso_cut_branches)
 		#full selection just uses what we already have
 		for passcut in otherpasscuts :
 			if self.cut_branches[passcut].getWriteValue()!=1 :

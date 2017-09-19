@@ -81,11 +81,11 @@ class Muon(Lepton) :
 		self.setIsValid(self.getPt()>55. and abs(self.getEta())<2.5 and self.getID()==1)
 
 	def isLooseIso(self) :
-		return self.__iso<0.25 #loose WP https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
+		return self.getIso<0.25 #loose WP https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
 	def isTightIso(self) :
-		return self.__iso<0.15 #tight WP, already divided by pt https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
+		return self.getIso<0.15 #tight WP, already divided by pt https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
 	def isIso(self) : #really just to match with electron functions
-		return self.__iso<0.15 #tight WP, already divided by pt https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
+		return self.getIso<0.15 #tight WP, already divided by pt https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
 	def is2DIso(self,eventtopology) :
 		if eventtopology<3 :
 			return self.getDR()>0.4 or self.getRelPt()>30.
@@ -97,6 +97,7 @@ class Electron(Lepton) :
 	def __init__(self,branches,index) :
 		Lepton.__init__(self,branches,index,'el')
 		self.setID(branches['el_IDMedium_NoIso'].getReadValue(index))
+		self.__tightID = branches['el_IDTight_NoIso'].getReadValue(index)
 		self.__scEta = branches['el_SCEta'].getReadValue(index)
 		self.setIso(branches['el_Iso03'].getReadValue(index))
 		self.setMiniIso(branches['el_MiniIso'].getReadValue(index))
@@ -105,14 +106,16 @@ class Electron(Lepton) :
 	def getEtaSC(self) :
 		return self.__scEta
 	def isLooseIso(self) :
-		return self.__iso<0.0695 #what was removed from the Medium ID https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
+		return self.getIso<0.0695 #what was removed from the Medium ID https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
 	def isIso(self) :
-		return self.__iso<0.0695 #what was removed from the Medium ID https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
+		return self.getIso<0.0695 #what was removed from the Medium ID https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
 	def is2DIso(self,eventtopology) :
 		if eventtopology<3 :
 			return self.getDR()>0.4 or self.getRelPt()>30.
 		elif eventtopology==3 :
 			return self.getDR()>0.4 or self.getRelPt()>20.
+	def getTightID(self) :
+		return self.__tightID
 
 def findNearestJet(lepvec,jets) :
 	closestJet = jets[0]
