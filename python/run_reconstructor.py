@@ -92,7 +92,10 @@ def make_renormalization_dict(name,alpha,epsilon,muRup,muRdown,muFup,muFdown,scu
 		alpha_minuit = TMinuit(1); alpha_minuit.SetFCN(alpha_fcn)
 		epsilon_minuit = TMinuit(1); epsilon_minuit.SetFCN(epsilon_fcn)
 		#miscellaneous minuit stuff
-		ierflag = Long(1); arglist = array('d',[100000.])
+		ierflag = Long(1); arglist = array('d',[-1])
+		alpha_minuit.mnexcm('SET PRINT', arglist, 1,ierflag); alpha_minuit.mnexcm('SET NOWARNINGS',arglist,1,ierflag)
+		epsilon_minuit.mnexcm('SET PRINT', arglist, 1,ierflag); epsilon_minuit.mnexcm('SET NOWARNINGS',arglist,1,ierflag)
+		arglist[0]=100000.
 		#for each bin in beta
 		for i in range(1,csvb_qq_global_hist.GetXaxis().GetNbins()+1) :
 			BETA[0] = csvb_qq_global_hist.GetXaxis().GetBinCenter(i)

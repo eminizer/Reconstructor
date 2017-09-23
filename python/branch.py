@@ -12,6 +12,7 @@ MAX_ALPHAS_ARRAY_LENGTH = 2
 #Imports
 from array import array
 from ROOT import std
+from memsniffer import checkmem
 
 class Branch(object) :
 
@@ -51,6 +52,10 @@ class Branch(object) :
 		if self.__readname!=None and self.__arraytype!='vi' :
 			for i in range(self.__arraylength) :
 				self.__readArray[i]=self.__inival
+		elif self.__readname!=None and self.__arraytype=='vi' :
+			checkmem('&&&','%s_%s_clear_start'%(self.__readname,self.__writename))
+			self.__readArray.clear()
+			checkmem('&&&','%s_%s_clear_end'%(self.__readname,self.__writename))
 		if self.__writename!=None :
 			for i in range(self.__arraylength) :
 				self.__writeArray[i]=self.__inival
@@ -67,7 +72,9 @@ class Branch(object) :
 				writetree.Branch(self.__writename,self.__writeArray,self.__writename+'['+self.__size+']/'+self.__ttreetype)
 
 	def setWriteValue(self,value,index=0) :
+		checkmem('&&&&&','%s_setwrite_start'%(self.__writename))
 		self.__writeArray[index]=value
+		checkmem('&&&&&','%s_setwrite_end'%(self.__writename))
 	def getReadValue(self,index=0) :
 		if index<len(self.__readArray) :
 			return self.__readArray[index]

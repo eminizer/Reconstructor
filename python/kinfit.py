@@ -61,9 +61,10 @@ class KinFit(object) :
 		parNames = ['fitindex','pZv','scalelep','scaleblep','scalehad1','scalehad2','scalehad3']
 		parinivals = [self.fitindex,0.,1.,1.,1.,1.,1.]
 		parerrs = [0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+		bestParValues = []
 		nPars = 6 if self.topology==1 else 7
 		for i in range(1,nPars) :
-			self.bestParValues.append(parinivals[i])
+			bestParValues.append(parinivals[i])
 		ierflag = Long(1)
 		arglist = array( 'd', [-1.0] )
 		minuit = TMinuit(nPars)
@@ -81,28 +82,35 @@ class KinFit(object) :
 		elif self.topology==3 : minuit.SetFCN(fcnt3)
 		#minimize and get the error flag
 		minuit.mnexcm('MIGRAD', arglist, 1, ierflag)
-		#print 'errflag = '+str(ierflag) #DEBUG
-		self.errflag = ierflag
+		#print 'index = %d, errflag = %s'%(self.fitindex,ierflag) #DEBUG
+		errflag = int(ierflag)
 		#Check fit Chi2 
 		tmp1 = Double(1.0); tmp2 = Double(1.0); tmp3 = Double(1.0)
 		minuit.mnstat(tmp1,tmp2,tmp3,Long(1),Long(1),Long(1))
 		#print 'chi2 = %.4f'%(tmp1) #DEBUG
-		self.chi2value = tmp1
+		chi2value = float(tmp1)
 		#Get the bestfit parameters back from minuit
 		for j in range(1,nPars) :
 			tmp = Double(1.0)
 			minuit.GetParameter(j,tmp,Double(parerrs[j]))
-			self.bestParValues[j-1] = tmp
+			bestParValues[j-1] = float(tmp)
+		return errflag, chi2value, bestParValues
 		#print '	done fit for hypothesis index %d, pZv = %.3f, had1scale = %.3f, chi2 = %.2f'%(self.fitindex,self.bestParValues[0],self.bestParValues[3],self.chi2value)#DEBUG
 
 	def getErrFlag(self) :
 		return self.errflag
+	def setErrFlag(self,nef) :
+		self.errflag=nef
 	def getFitChi2(self) :
 		return self.chi2value
+	def setFitChi2(self,nc2v) :
+		self.chi2value=nc2v
 	def getIndex(self) :
 		return self.fitindex
 	def getBestParValues(self) :
 		return self.bestParValues
+	def setBestParValues(self,nbpv) :
+		self.bestParValues=nbpv
 
 	@staticmethod
 	def __addHypothesisVectors__(t,h,clearvecs) :
@@ -215,17 +223,21 @@ def rescale(vec,fac) :
 	#note that the function returns a NEW TLorentzVector, meaning the original is unaltered
 	return TLorentzVector(fac*vec.Px(),fac*vec.Py(),fac*vec.Pz(),newE)
 
-def reconstructParallel(kfo) :
-	kfo.dofit()
+def reconstructParallel(kfo,c_fpt) :
+	fitinfotuple = kfo.dofit()
+	c_fpt.send(fitinfotuple)
+	c_fpt.close()
+
 
 #reconstruct takes in the list of hypotheses and returns a tuple of best fit information invluded the corrected fourvectors and chi2 value
-def reconstruct(hypotheses,topology) :
+def reconstruct(hypotheses,topology,ongrid) :
 	#print '-----------------------------'#DEBUG
-	#First declare and set up the kinematic fit objects (they'll be done in parallel in batches of ten)
+	#First declare and set up the kinematic fit objects (they'll be done in parallel in batches)
 	allkinfitobjlists = []; allkinfitobjs = []
 	j=-1
+	batchsize = 2 if ongrid=='yes' else 25
 	for i in range(len(hypotheses)) :
-		if i%10==0 :
+		if i%batchsize==0 :
 			j+=1
 			allkinfitobjlists.append([])
 		newfit = KinFit(topology,i,hypotheses[i])
@@ -235,10 +247,15 @@ def reconstruct(hypotheses,topology) :
 	for kinfitobjlist in allkinfitobjlists :
 		procs = []
 		for kfo in kinfitobjlist :
+			p_fpt, c_fpt = multiprocessing.Pipe()
 			#kfo.dofit()
-			p = multiprocessing.Process(target=reconstructParallel,args=(kfo,))
+			p = multiprocessing.Process(target=reconstructParallel,args=(kfo,c_fpt))
 			p.start()
 			procs.append(p)
+			newfitinfotuple = p_fpt.recv()
+			kfo.setErrFlag(newfitinfotuple[0])
+			kfo.setFitChi2(newfitinfotuple[1])
+			kfo.setBestParValues(newfitinfotuple[2])
 		for p in procs :
 			p.join()
 	#find the index of the best fit hypothesis

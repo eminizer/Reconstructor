@@ -3,17 +3,23 @@
 #imports
 from ROOT import TLorentzVector
 from math import *
+from memsniffer import checkmem
 
 class Jet(object) :
 
 	def __init__(self,branches,index,jes,jer,leps,corrector,isdata,pp) :
+		checkmem('&&&','step_into_jet_init')
 		#print '----------------------- New Jet --------------------------' #DEBUG
 		self.__fourvec, self.__cleanedLeptons, self.__metCorrVec = getfourvec(branches,index,jes,jer,leps,corrector,isdata,pp)
+		checkmem('&&&','after_getFourVec')
 		self.__pt = self.__fourvec.Pt() if self.__fourvec!=None else -900
 		self.__eta = self.__fourvec.Eta() if self.__fourvec!=None else -900
+		checkmem('&&&','after_setPtEta')
 		self.__isIDed = self.__checkID__(branches,index,pp)
+		checkmem('&&&','after_checkID')
 		self.__csvv2 = branches[pp+'_CSVv2'].getReadValue(index)
 		self.__isbtagged = self.__csvv2>0.5426 #loose working point https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation80XReReco
+		checkmem('&&&','after_settingbtaggingvariables')
 
 	def __checkID__(self,branches,index,pp) :
 		if self.__eta==None :
@@ -26,14 +32,15 @@ class Jet(object) :
 		chargedHadronFraction = branches[pp+'_chargedHadronEnergyFrac'].getReadValue(index)
 		chargedEMFraction = branches[pp+'_chargedEmEnergyFrac'].getReadValue(index)
 		#These are the "Loose" ID criteria from here: https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVRun2016
-		if abs(self.__eta)<2.7 :
+		abseta = abs(self.__eta)
+		if abseta<2.7 :
 			if neutralHadronFraction<0.99 and neutralEMFraction<0.99 and numConstituents>1 :
-				if abs(self.__eta)<2.4 :
+				if abseta<2.4 :
 					if chargedHadronFraction>0. and chargedMultiplicity>0 and chargedEMFraction<0.99 :
 						return True
 				else :
 					return True
-		elif abs(self.__eta)<3.0 :
+		elif abseta<3.0 :
 			if neutralEMFraction>0.1 and neutralHadronFraction<0.98 and neutralMultiplicity>2 :
 				return True
 		else :
@@ -134,6 +141,7 @@ class AK8Jet(Jet) :
 		return self.__isWtagged
 
 def getfourvec(branches,index,jes,jer,leps,corrector,isdata,pp) :
+	checkmem('&&&&','step_into_getfourvec')
 	#get all the jet fourvectors, etc.
 	pt  = branches[pp+'_Pt'].getReadValue(index)
 	eta = branches[pp+'_Eta'].getReadValue(index)
@@ -141,6 +149,7 @@ def getfourvec(branches,index,jes,jer,leps,corrector,isdata,pp) :
 	E   = branches[pp+'_E'].getReadValue(index)
 	jec0 = branches[pp+'_jecFactor0'].getReadValue(index)
 	jecunc = 0. if pp.find('subjet')!=-1 else branches[pp+'_jecUncertainty'].getReadValue(index)
+	checkmem('&&&&','after_initial_read')
 	#get the jet keys and subjet keys if necessary
 	jetkeys = branches[pp+'_Keys'].getReadValue(index)
 	subjet1keys = []; subjet2keys = []
@@ -151,22 +160,32 @@ def getfourvec(branches,index,jes,jer,leps,corrector,isdata,pp) :
 			subjet1keys = branches['sub'+pp+'_Keys'].getReadValue(int(subjet0index))
 		if subjet1index>-1 :
 			subjet2keys = branches['sub'+pp+'_Keys'].getReadValue(int(subjet1index))
+	checkmem('&&&&','after_getJetKeys')
 	#roll back the jec to get the raw jet
+	checkmem('&&&&','before_makingRawJetandMETCorrVec')
 	rawjet = TLorentzVector(); rawjet.SetPtEtaPhiE(pt,eta,phi,E); 
 	metcorrvec = TLorentzVector(); metcorrvec.SetPtEtaPhiE(pt,eta,phi,E)
+	checkmem('&&&&','after_makingRawJetandMETCorrVec')
 	#print '		metcorrvec initial = (%.1f,%.1f,%.1f,%.1f)'%(metcorrvec.Pt(),metcorrvec.Eta(),metcorrvec.Phi(),metcorrvec.M()) #DEBUG
 	if rawjet.M()==-900 :
+		#print 'RAW JET HAD NONSENSE MASS' #DEBUG
+		checkmem('&&&&','ret_from_getfourvecBADMASS')
 		return None, None, TLorentzVector()
 	#print 'new jet with initial pT = %.2f'%(pt) #DEBUG
 	rawjet*=jec0
 	#print '	raw pT = %.2f'%(rawjet.Pt()) #DEBUG
 	jetradius = 0.8 if pp.find('jetAK8')!=-1 else 0.4
+	checkmem('&&&&','before_cleanJet')
 	cleanjet, subtractedleps = cleanJet(rawjet,jetkeys,subjet1keys,subjet2keys,leps,jetradius)
+	checkmem('&&&&','after_cleanJet')
+	checkmem('&&&&','before_adjustingMETcorrvec')
 	for lep in subtractedleps :
 		metcorrvec=metcorrvec-lep.getFourVector()
+	checkmem('&&&&','after_adjustingMETcorrvec')
 	#print '		metcorrvec after lep sub = (%.1f,%.1f,%.1f,%.1f)'%(metcorrvec.Pt(),metcorrvec.Eta(),metcorrvec.Phi(),metcorrvec.M()) #DEBUG
 	if cleanjet == None :
 		#print 'CLEANED JET WAS "NONE"' #DEBUG
+		checkmem('&&&&','ret_from_getfourvecOVERCLEANED')
 		return None, None, metcorrvec
 	nominalJet = cleanjet
 	#print '	cleaned pT = %.2f'%(cleanjet.Pt()) #DEBUG
@@ -185,6 +204,7 @@ def getfourvec(branches,index,jes,jer,leps,corrector,isdata,pp) :
 	#print '	readjusted pT = %.2f'%(nominalJet.Pt()) #DEBUG
 	#If this is data, don't apply any smearing or systematics, just return the corrected, cleaned jet
 	if isdata :
+		checkmem('&&&&','ret_from_getfourvecISDATA')
 		return nominalJet, subtractedleps, metcorrvec-nominalJet
 	#The rest depends on whether we're doing JEC systematics
 	#Also we need the generated pt, eta, phi
@@ -218,20 +238,25 @@ def getfourvec(branches,index,jes,jer,leps,corrector,isdata,pp) :
 			jecDownJet = cleanjet*(newJEC+newJECuncDown)
 			newJet=corrector.smearJet(jecDownJet,jer,genJetVec,ptres,dRCheck)
 	#print '	final pT = %.2f'%(newJet.Pt()) #DEBUG
+	checkmem('&&&&','ret_from_getfourvecVANILLA')
 	return newJet, subtractedleps, metcorrvec-newJet
 
 def cleanJet(jetvec,jetkeys,sj1keys,sj2keys,leps,jetradius) :
+	checkmem('&&&&','step_into_cleanJet')
 	#keystring = '[' #DEBUG
 	#for key in jetkeys : #DEBUG
 	#	keystring+=str(key)+',' #DEBUG
 	#keystring+= ']' #DEBUG
 	#print 'cleaning jet with pT=%.1f and keys=%s'%(jetvec.Pt(),keystring) #DEBUG
 	subtractedleps = []
+	checkmem('&&&&','before_lepLoop')
 	for lep in leps :
+		checkmem('&&&&&','before_iteration_%d'%(leps.index(lep)))
 		lepvec=lep.getFourVector(); lepkey=lep.getKey(); leptype = lep.getType()
 		#if the lepton is within the jet, remove it
 	#	print '	jet/lep deltaR = %.4f'%(jetvec.DeltaR(lepvec)) #DEBUG
 		if (leptype=='el' and lepvec.DeltaR(jetvec)<jetradius) or (leptype=='mu' and (lepkey in jetkeys or lepkey in sj1keys or lepkey in sj2keys)) :
+			checkmem('&&&&&','before_cleaning_lep_at_iteration_%d'%(leps.index(lep)))
 	#		print '	found matching key %d'%(lepkey) #DEBUG
 			if lepvec.E() > jetvec.E() :
 	#			print '	THIS JET WAS BASICALLY JUST A LEPTON!!' #DEBUG
@@ -239,11 +264,15 @@ def cleanJet(jetvec,jetkeys,sj1keys,sj2keys,leps,jetradius) :
 	#		print '	REMOVING LEPTON FROM JET (%s with pT=%.1f)'%(lep.getType(),lep.getPt()) #DEBUG
 	#		print '	Jet Before = (pT, eta, phi, M) = (%.2f, %.2f, %.2f, %.2f)'%(jetvec.Pt(),jetvec.Eta(),jetvec.Phi(),jetvec.M()) #DEBUG
 			jetvec-=lepvec
+			checkmem('&&&&&','after_cleaning_lep_at_iteration_%d'%(leps.index(lep)))
 			subtractedleps.append(lep)
+			checkmem('&&&&&','after_appending_lep_at_iteration_%d'%(leps.index(lep)))
 	#		print '	Jet After = (pT, eta, phi, M) = (%.2f, %.2f, %.2f, %.2f)'%(jetvec.Pt(),jetvec.Eta(),jetvec.Phi(),jetvec.M()) #DEBUG
+		checkmem('&&&&&','after_iteration_%d'%(leps.index(lep)))
 	#	else : #DEBUG
 	#		print 'NO LEPTON CLEANING NEEDED' #DEBUG
 		if jetvec.Pt()==0. :
 	#		print '	RESULTING JET HAS NO PT' #DEBUG
 			return None, subtractedleps
+	checkmem('&&&&','after_lepLoop')
 	return jetvec, subtractedleps

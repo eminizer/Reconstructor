@@ -23,6 +23,8 @@ from metHelper import setupMET
 from kinfit import reconstruct
 from angleReconstructor import getObservables, getMCRWs
 from corrector import Corrector
+from memsniffer import checkmem
+import gc
 
 ################################   addBranch function  #################################
 def AddBranch(readname=None,writename=None,ttreetype='F',inival=-900.,size='1',dictlist=None) :
@@ -37,6 +39,7 @@ def AddBranch(readname=None,writename=None,ttreetype='F',inival=-900.,size='1',d
 ##########							   Treemaker Class 								##########
 
 class Reconstructor(object) :
+
 
 	##################################  Branches  ##################################
 	allBranches = {}
@@ -414,77 +417,112 @@ class Reconstructor(object) :
 	nearestJetPt = AddBranch(writename='nearestJetPt',dictlist=thisdictlist)
 	wasCleanedFromNearestJet = AddBranch(writename='wasCleanedFromNearestJet',dictlist=thisdictlist)
 
+
 	##################################  ANALYZE FUNCTION  ##################################
 	def analyze(self,eventnumber) :
+		checkmem('','evt_%d_start'%(eventnumber))
 		#get the event in the tree
+		checkmem('&','before_getEntry')
 		self.inputTree.GetEntry(eventnumber)
+		checkmem('&','after_getEntry')
 		#-----------------------------------------------------Below here is a bunch of preselection and object assignment-----------------------------------------------------#
 		#light preskim for requisite physics objects
 		if not self.__hasRequisitePhysicsObjects__() :
+			checkmem('','evt_%d_end'%(eventnumber))
 			return
 		#MC stuff (event type, addTwice, eventweight, MC truth fourvectors for ttbar events)
 		if not self.is_data :
 			mctruthfourvecs = self.__getMCTruthProperties__()
-		#print '------------------------------------------------' #DEBUG
+		#print '----------------------- event number %d -------------------------'%(eventnumber) #DEBUG
 		#For the record, trigger information is handled automatically
 		#initial raw MET
 		#print '	Handling MET...' #DEBUG
+		checkmem('&','before_initialMETHandling')
 		met = TLorentzVector(); met.SetPtEtaPhiM(self.met_pts.getReadValue(), 0., self.met_phis.getReadValue(), 0.)
+		checkmem('&','after_initialMETHandling')
 		#initial muons and electrons
+		checkmem('&','before_makeLeptonLists')
 		muons, electrons = self.__makeLeptonLists__()
+		checkmem('&','after_makeLeptonLists')
+		checkmem('&','before_makingallleps')
 		allleps = muons+electrons
 		allleps.sort(key=lambda x: x.getPt(), reverse=True)
 		if len(allleps)<1 :
-			#print 'EVENT NUMBER %d NOT VALID; MISSING LEPTONS (# muons = %d, # electrons = %d)'%(eventnumber,len(ak4jets),len(ak8jets)) #DEBUG
+			#print 'EVENT NUMBER %d NOT VALID; MISSING LEPTONS (# muons = %d, # electrons = %d)'%(eventnumber,len(muons),len(electrons)) #DEBUG
+			checkmem('','evt_%d_end'%(eventnumber))
 			return
+		checkmem('&','after_makingallleps')
 		#jets (adjusting met and counting btagged AK4 jets also)
-		ak4jets, ak4jetsforisocalc, ak8jets, met, nbtags = self.__makeJetLists__(met,allleps)
+		checkmem('&','before_makeJetLists')
+		ak4jets, ak4jetsforisocalc, ak8jets, newmet, nbtags = self.__makeJetLists__(met,allleps)
+		met.SetPtEtaPhiM(newmet.Pt(),newmet.Eta(),newmet.Phi(),newmet.M())
+		checkmem('&','after_makeJetLists')
 		#if the lepton cleaning got rid of too many jets toss the event
 		if not len(ak4jets)>0 :
 			#print 'EVENT NUMBER %d NOT VALID; MISSING JETS (# AK4jets = %d, # AK8Jets = %d)'%(eventnumber,len(ak4jets),len(ak8jets)) #DEBUG
+			checkmem('','evt_%d_end'%(eventnumber))
 			return
 		#calculate lepton isolation variables now that we know the list of valid jets
 		#print '	Calculating lepton isolation values...' #DEBUG
+		checkmem('&','before_calcLepIsos')
 		for lep in (allleps) :
 			lep.calculateIsolation(ak4jetsforisocalc)
+		checkmem('&','after_calcLepIsos')
 		#print '		Done.'#DEBUG
 		#Set the event toplogy
 		#print '	Setting event topology...' #DEBUG
+		checkmem('&','before_setEventTopology')
 		topology, ttags = self.__setEventTopology__(ak8jets)
+		checkmem('&','after_setEventTopology')
 		#print '		There are %d top-tagged jets; the event topology is type %d'%(len(ttags),topology) #DEBUG
 		#is it possibble to reconstruct this event using a lepton+jets topology?
 		canreconstruct = topology==1 or len(ak4jets)>=4
 		#figure out whether the event is muonic or electronic, assign lepton
+		checkmem('&','before_assignLepton')
 		lep = self.__assignLepton__(allleps,topology)
+		checkmem('&','after_assignLepton')
 		#Set physics object fourvectors
+		checkmem('&','before_writePhysOjFourVecs')
 		self.__writePhysObjFourvecs__(muons,electrons,ak4jets,ttags,ak8jets,topology)
+		checkmem('&','after_writePhysOjFourVecs')
 		#neutrino handling and setup for fit
+		checkmem('&','before_setupMET')
 		met1_vec, met2_vec = setupMET(lep.getFourVector(),met)
+		checkmem('&','after_setupMET')
 		self.nMETs.setWriteValue(2) if met1_vec.Pz() != met2_vec.Pz() else self.nMETs.setWriteValue(1)
 		self.metE.setWriteValue(met1_vec.E())
 		#-----------------------------------------------------------------Below here is event reconstruction-----------------------------------------------------------------#
 		if canreconstruct :
 			#print '	Reconstructing event...' #DEBUG
 			#build the list of jet assignment hypotheses
+			checkmem('&','before_getHypothesisList')
 			hypotheses = getHypothesisList(topology,lep,met1_vec,met2_vec,self.nMETs.getWriteValue(),ak4jets,ttags,nbtags)
+			checkmem('&','after_getHypothesisList')
 			#if there's no valid type-1 hypotheses, try again as type-2
 			if topology==1 and len(hypotheses)==0 :
 				if len(ak4jets)>3 :
 					topology=2
 					self.event_topology.setWriteValue(topology)
+					checkmem('&','before_getHypothesisListTakeTwo')
 					hypotheses = getHypothesisList(topology,lep,met1_vec,met2_vec,self.nMETs.getWriteValue(),ak4jets,ttags,nbtags)
+					checkmem('&','after_getHypothesisListTakeTwo')
 				else :
 					#print 'event %d invalid; no separated top tagged jets and not enough AK4 jets'%(eventnumber) #DEBUG
 					self.cut_branches['fullselection'].setWriteValue(0)
+					checkmem('','evt_%d_end'%(eventnumber))
 					return
 			#print '		Will try %d jet assignment hypotheses...'%(len(hypotheses)) #DEBUG
 			self.nhypotheses.setWriteValue(len(hypotheses))
 			#do the monte carlo matching
 			corrhypindex=-1
 			if self.event_type.getWriteValue()<2 and not self.is_data :
+				checkmem('&','before_matchJetAssignmentHypotheses')
 				corrhypindex = self.__matchJetAssignmentHypotheses__(topology,hypotheses,mctruthfourvecs)
+				checkmem('&','after_matchJetAssignmentHypotheses')
 			#send the hypotheses to the kinematic fit 
+			checkmem('&','before_writeKinfitResults')
 			hypindex, scaledlep, scaledmet, scaledlepb, scaledhadt, scaledhad1, scaledhad2, scaledhad3, fitchi2, finalpars = self.__writeKinfitResults__(hypotheses,topology)
+			checkmem('&','after_writeKinfitResults')
 			#print '		Done.' #DEBUG 
 		#--------------------------------------------------------------------Below here is event selection--------------------------------------------------------------------#
 		#print '	Calculating cut variables...' #DEBUG
@@ -503,9 +541,9 @@ class Reconstructor(object) :
 		self.__assignMiniIsolationFullSelectionCutVars__(lep,muons,electrons)
 		#print '		Done. (fullselection=%d)'%(self.cut_branches['fullselection'].getWriteValue()) #DEBUG
 		#-----------------------------------------------------Below here is a bunch of variable and weight calculation-----------------------------------------------------# 
- 		if canreconstruct :
- 			#see if the kinematic fit returned the matched hypothesis
- 			self.__checkForCorrectJetAssignment__(hypindex,corrhypindex,hypotheses)
+		if canreconstruct :
+			#see if the kinematic fit returned the matched hypothesis
+			self.__checkForCorrectJetAssignment__(topology,hypindex,corrhypindex,hypotheses)
 			#try the MC matching again with the postfit quantities 
 			if self.event_type.getWriteValue()<2 and not self.is_data : 
 				hypothesis=hypotheses[hypindex] 
@@ -526,10 +564,12 @@ class Reconstructor(object) :
 			self.__calculateReweights__(mctruthfourvecs,topology,lep,ak4jets)
 		#Finally write the event to the tree and closeout
 		self.__closeout__() #yay! A complete event!
+		checkmem('','evt_%d_end'%(eventnumber))
 
 	##################################  Event Analyzer helper functions  ##################################
 
 	def __hasRequisitePhysicsObjects__(self) :
+		checkmem('&','step_into_hasRequisitePhysicsObjects')
 		#Make sure the event has some met, at least one lepton, and at least one AK4 jet
 		metsize = self.met_size.getReadValue()
 		musize = self.mu_size.getReadValue()
@@ -538,85 +578,132 @@ class Reconstructor(object) :
 		ak8jetsize = self.ak8_size.getReadValue()
 		if not (metsize>0 and (musize>0 or elsize>0) and ak4jetsize>0) :
 			#print 'EVENT NUMBER %d NOT VALID; MISSING REQUISITE PHYSICS OBJECTS (metsize = %d, musize = %d, elsize = %d, ak4jetsize = %d, ak8jetsize = %d)'%(eventnumber,metsize,musize,elsize,ak4jetsize,ak8jetsize)
+			checkmem('&','ret_false_hasRequisitePhysicsObjects')
 			return False
+		checkmem('&','ret_true_hasRequisitePhysicsObjects')
 		return True
 
 	def __getMCTruthProperties__(self) :
+		checkmem('&','step_into_getMCTruthProperties')
 		#event type split
+		checkmem('&&','before_getEventType')
 		self.event_type.setWriteValue(getEventType(self.mcGenEventBranches))
+		checkmem('&&','after_getEventType')
 		#set the addTwice value (true for qqbar and symmetric gg events)
+		checkmem('&&','before_setAddTwice')
 		self.addTwice.setWriteValue(self.event_type.getWriteValue()==0 or (self.event_type.getWriteValue()==1 and self.mcGenEventBranches['MC_part1_ID'].getReadValue()==self.mcGenEventBranches['MC_part2_ID'].getReadValue()))
+		checkmem('&&','after_setAddTwice')
 		#set the eventweight
+		checkmem('&&','before_setEventWeight')
 		eventweight = self.genWeight.getReadValue()*(self.kfac*self.xsec/self.totalweight)
 		self.weight.setWriteValue(eventweight)
+		checkmem('&&','after_setEventWeight')
 		#Mother particle and MC truth top assignment
 		vecdict = {}
 		if self.event_type!=4 :
+			checkmem('&&','before_findInitialPartons')
 			q_vec, qbar_vec = findInitialPartons(self.mcGenEventBranches)
+			checkmem('&&','after_findInitialPartons')
+			checkmem('&&','before_findMCParticles')
 			MCt_vec, MCtbar_vec, MClep_vec, MCv_vec, MClepb_vec, MChadW_vec, MChadb_vec, MClep_charge = findMCParticles(self.mcGenEventBranches)				
 			vecdict = {'q':q_vec,'qbar':qbar_vec,'MCt':MCt_vec,'MCtbar':MCtbar_vec,'MClep':MClep_vec,'MCv':MCv_vec,
 					   'MClepb':MClepb_vec,'MChadW':MChadW_vec,'MChadb':MChadb_vec,'MClep_charge':MClep_charge}
+			checkmem('&&','after_findMCParticles')
 		#write out fourvectors of MC particles
+		checkmem('&&','before_setFourVecsLoop')
 		for name,vec in vecdict.iteritems() :
 			if vec!=None and name!='MClep_charge' :
+				checkmem('&&&','before_setFourVectorBranchValues_for_'+name)
 				self.__setFourVectorBranchValues__(name,vec)
+				checkmem('&&&','after_setFourVectorBranchValues_for_'+name)
+		checkmem('&&','after_setFourVecsLoop')
+		checkmem('&','ret_getMCTruthProperties')
 		return vecdict
 
 	def __makeLeptonLists__(self) :
 		#muons
-		#print '	Handling Muons...' #DEBUG
+		#print '	Handling Muons (%d total)...'%(self.mu_size.getReadValue()) #DEBUG
+		checkmem('&&','before_addingMuons')
 		muons = []
 		for i in range(self.mu_size.getReadValue()) :
+			checkmem('&&&','before_newMuon%d'%(i))
 			newmuon=Muon(self.muonBranches,i,self.run_era)
 			if newmuon.isValid() :
 				muons.append(newmuon)
 		#print '		Added %d Muons.'%(len(muons)) #DEBUG
+		checkmem('&&','after_addingMuons')
 		#electrons
-		#print '	Handling Electrons...' #DEBUG
+		#print '	Handling Electrons (%d total)...'%(self.el_size.getReadValue()) #DEBUG
+		checkmem('&&','before_addingElectrons')
 		electrons = []
 		for i in range(self.el_size.getReadValue()) :
+			checkmem('&&&','before_newElectron%d'%(i))
 			newele = Electron(self.electronBranches,i)
 			if newele.isValid() :
 				electrons.append(newele)
 		#print '		Added %d Electrons.'%(len(electrons)) #DEBUG
+		checkmem('&&','after_addingElectrons')
 		return muons,electrons
 
 	def __makeJetLists__(self,met,leplist) :
+		#print '	Adding AK4 jets (%d total)...'%(self.ak4_size.getReadValue())#DEBUG
 		ak4jets = []; ak4jetsforisocalc = []; ak8jets = []; metcorrvecs = []
+		checkmem('&&','before_addingAK4Jets')
 		for i in range(self.ak4_size.getReadValue()) :
+			checkmem('&&&','before_newAK4Jet%d'%(i))
 			newJet = AK4Jet(self.ak4JetBranches,i,self.JES,self.JER,leplist,self.corrector,self.is_data)
 			metcorrvecs.append(newJet.getMETCorrectionVec())
 			if newJet.isValidForIsoCalc() :
 				ak4jetsforisocalc.append(newJet)
 			if newJet.isValid() :
 				ak4jets.append(newJet)
-		for i in range(self.ak8_size.getReadValue()) :
-			newJet = AK8Jet(self.ak8JetBranches,i,self.JES,self.JER,leplist,self.corrector,self.is_data)
-			metcorrvecs.append(newJet.getMETCorrectionVec())
-			if newJet.isValid() :
-				ak8jets.append(newJet)
-		#sort the lists of jets by pT
-		ak4jets.sort(key=lambda x: x.getPt(), reverse=True)
-		ak4jetsforisocalc.sort(key=lambda x: x.getPt(), reverse=True)
-		ak8jets.sort(key=lambda x: x.getPt(), reverse=True)
-		self.nak4jets.setWriteValue(len(ak4jets)); self.nak8jets.setWriteValue(len(ak8jets));
+		checkmem('&&','after_addingAK4Jets')
 		#print '		Added %d AK4 Jets (%d for the isolation calcuations).'%(len(ak4jets),len(ak4jetsforisocalc)) #DEBUG
-		#print '		Added %d AK8 Jets.'%(len(ak8jets)) #DEBUG
 		#count the number of valid b-tagged AK4 jets
+		checkmem('&&','before_countingbtaggedjets')
 		nbtags = 0
 		for ak4jet in ak4jets :
 			if ak4jet.isbTagged() :
 				nbtags+=1
+		checkmem('&&','after_countingbtaggedjets')
 		#print '		%d of the AK4 jets are b-tagged.'%(nbtags) #DEBUG
+		checkmem('&&','before_settingnbtags')
 		self.nbTags.setWriteValue(nbtags)
+		checkmem('&&','after_settingnbtags')
+		#print '	Adding AK8 jets (%d total)...'%(self.ak8_size.getReadValue())#DEBUG
+		checkmem('&&','before_addingAK8Jets')
+		for i in range(self.ak8_size.getReadValue()) :
+			checkmem('&&&','before_newAK8Jet%d'%(i))
+			newJet = AK8Jet(self.ak8JetBranches,i,self.JES,self.JER,leplist,self.corrector,self.is_data)
+			metcorrvecs.append(newJet.getMETCorrectionVec())
+			if newJet.isValid() :
+				ak8jets.append(newJet)
+		checkmem('&&','after_addingAK8Jets')
+		#sort the lists of jets by pT
+		checkmem('&&','before_sortingJetLists')
+		ak4jets.sort(key=lambda x: x.getPt(), reverse=True)
+		ak4jetsforisocalc.sort(key=lambda x: x.getPt(), reverse=True)
+		ak8jets.sort(key=lambda x: x.getPt(), reverse=True)
+		checkmem('&&','after_sortingJetLists')
+		checkmem('&&','before_settingnJetsValues')
+		self.nak4jets.setWriteValue(len(ak4jets)); self.nak8jets.setWriteValue(len(ak8jets));
+		checkmem('&&','after_settingnJetsValues')
+		#print '		Added %d AK8 Jets.'%(len(ak8jets)) #DEBUG
 		#recorrect the met
+		#print '		met before = (%.1f,%.1f,%.1f,%.1f)'%(met.Pt(),met.Eta(),met.Phi(),met.M()) #DEBUG
+		checkmem('&&','before_adjustingMET')
 		for metcorrvec in metcorrvecs :
 			met+=metcorrvec
+		checkmem('&&','after_adjustingMET')
+		checkmem('&&','before_resettingMETMass')
 		met.SetPz(0.); met.SetE(met.Vect().Mag()) #reset the eta and mass of the MET
-		#print 'met after = (%.1f,%.1f,%.1f,%.1f)'%(met.Pt(),met.Eta(),met.Phi(),met.M()) #DEBUG
+		checkmem('&&','after_resettingMETMass')
+		#print '		met after = (%.1f,%.1f,%.1f,%.1f)'%(met.Pt(),met.Eta(),met.Phi(),met.M()) #DEBUG
 		#now that the MET is adjusted set its branch values
+		checkmem('&&','before_writingAdjustedMET')
 		self.__setFourVectorBranchValues__('met',met)
 		self.metE.setWriteValue(met.E())
+		checkmem('&&','after_writingAdjustedMET')
 		#return the stuff I'll need later
 		return ak4jets,ak4jetsforisocalc,ak8jets,met,nbtags
 
@@ -703,12 +790,21 @@ class Reconstructor(object) :
 		#print '----------------event %d--------------------'%(eventnumber) #DEBUG
 		manager = multiprocessing.Manager()
 		hypdict = manager.dict() #keys: hypothesis list indices. Values: sumdRdM
-		procs = []
+		all_parallel_matching_groups = []; j=-1
+		batchsize = 5 if self.onGrid=='yes' else 25
 		for i in range(len(hypotheses)) :
-			p = multiprocessing.Process(target=self.__checkHypothesisMatchingParallel__,args=(topology,hypotheses[i],mcvecs,i,hypdict))
-			p.start(); procs.append(p)
-		for proc in procs :
-			proc.join()
+			if i%batchsize==0 :
+				j+=1
+				all_parallel_matching_groups.append([])
+			newmatchinggroup = (hypotheses[i],i)
+			all_parallel_matching_groups[j].append(newmatchinggroup)
+		procs = []
+		for pmg in all_parallel_matching_groups :
+			for thisjob in pmg :
+				p = multiprocessing.Process(target=self.__checkHypothesisMatchingParallel__,args=(topology,thisjob[0],mcvecs,thisjob[1],hypdict))
+				p.start(); procs.append(p)
+			for proc in procs :
+				proc.join()
 		#find the best-matched hypothesis
 		mindRdM = 1000000.
 		for index in hypdict.keys() :
@@ -764,7 +860,7 @@ class Reconstructor(object) :
 		return
 
 	def __writeKinfitResults__(self,hypotheses,topology) :
-		hypindex, scaledlep, scaledmet, scaledlepb, scaledhadt, scaledhad1, scaledhad2, scaledhad3, fitchi2, finalpars = reconstruct(hypotheses,topology) 
+		hypindex, scaledlep, scaledmet, scaledlepb, scaledhadt, scaledhad1, scaledhad2, scaledhad3, fitchi2, finalpars = reconstruct(hypotheses,topology,self.onGrid) 
 		if scaledlep==None : 
 			#print 'EVENT NUMBER '+str(eventnumber)+' NOT VALID; NO KINEMATIC FITS CONVERGED' #DEBUG 
 			self.cut_branches['validminimization'].setWriteValue(0) 
@@ -790,7 +886,7 @@ class Reconstructor(object) :
 		self.tt_pt.setWriteValue((scaledlep+scaledmet+scaledlepb+scaledhadt).Pt())
 		return hypindex, scaledlep, scaledmet, scaledlepb, scaledhadt, scaledhad1, scaledhad2, scaledhad3, fitchi2, finalpars
 
-	def __checkForCorrectJetAssignment__(self,hypindex,corrhypindex,hypotheses) :
+	def __checkForCorrectJetAssignment__(self,topology,hypindex,corrhypindex,hypotheses) :
 		if not self.is_data : 
 			#if the fit returned the correct hypothesis with either MET solution, it was correct 
 			self.iscorrect.setWriteValue(0)
@@ -1140,6 +1236,8 @@ class Reconstructor(object) :
 		#JEC systematics?
 		self.JES = jes
 		self.JER = jer
+		#are we running on the grid?
+		self.onGrid = onGrid
 		#Set the total weight
 		self.totalweight = totweight
 		#Set the corrector that does event weights and JEC calculations
@@ -1148,16 +1246,27 @@ class Reconstructor(object) :
 	##################################   reset function   ##################################
 	#########  sets all relevant values back to initial values to get ready for next event  ##########
 	def reset(self) :
+		checkmem('&','reset_start')
 		for branch in self.allBranches.values() :
+			checkmem('&&','%s_%s_reset_start'%(branch.getReadName(),branch.getWriteName()))
 			branch.reset()
+			checkmem('&&','%s_%s_reset_end'%(branch.getReadName(),branch.getWriteName()))
+		checkmem('&','before_gcCollect')
+		gc.collect()
+		checkmem('&','reset_end')
 
 	##############################   tree filling functions  ###############################		
 
 	def __setFourVectorBranchValues__(self,name,vec) :
+		checkmem('&&&&','before_settingFourVector_pt_for_'+name)
 		self.allBranches[name+'_pt'].setWriteValue(vec.Pt())
+		checkmem('&&&&','before_settingFourVector_eta_for_'+name)
 		self.allBranches[name+'_eta'].setWriteValue(vec.Eta())
+		checkmem('&&&&','before_settingFourVector_phi_for_'+name)
 		self.allBranches[name+'_phi'].setWriteValue(vec.Phi())
+		checkmem('&&&&','before_settingFourVector_M_for_'+name)
 		self.allBranches[name+'_M'].setWriteValue(vec.M())
+		checkmem('&&&&','after_settingFourVectors_for_'+name)
 
 	def __setLeptonBranchValues__(self,name,lep) :
 		self.__setFourVectorBranchValues__(name,lep.getFourVector())
