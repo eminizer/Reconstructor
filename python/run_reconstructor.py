@@ -92,7 +92,10 @@ def make_renormalization_dict(name,alpha,epsilon,muRup,muRdown,muFup,muFdown,scu
 		alpha_minuit = TMinuit(1); alpha_minuit.SetFCN(alpha_fcn)
 		epsilon_minuit = TMinuit(1); epsilon_minuit.SetFCN(epsilon_fcn)
 		#miscellaneous minuit stuff
-		ierflag = Long(1); arglist = array('d',[100000.])
+		ierflag = Long(1); arglist = array('d',[-1])
+		alpha_minuit.mnexcm('SET PRINT', arglist, 1,ierflag); alpha_minuit.mnexcm('SET NOWARNINGS',arglist,1,ierflag)
+		epsilon_minuit.mnexcm('SET PRINT', arglist, 1,ierflag); epsilon_minuit.mnexcm('SET NOWARNINGS',arglist,1,ierflag)
+		arglist[0]=100000.
 		#for each bin in beta
 		for i in range(1,csvb_qq_global_hist.GetXaxis().GetNbins()+1) :
 			BETA[0] = csvb_qq_global_hist.GetXaxis().GetBinCenter(i)
@@ -263,13 +266,9 @@ nanalysisevents = abs(int(ntotalevents/options.n_jobs))
 if options.max_events!=-1 :
 	nanalysisevents = min(options.max_events, nanalysisevents)
 if options.n_jobs>1 :
-	#adjust so they don't all pile up in the last job
-	while ntotalevents-options.n_jobs*nanalysisevents > nanalysisevents :
+	#adjust so they don't all pile up too badly in the last job but every job runs on some events
+	while ntotalevents-options.n_jobs*nanalysisevents > nanalysisevents and (options.n_jobs-1)*(nanalysisevents+1)<ntotalevents :
 		nanalysisevents+=1
-#if this job isn't needed based on the splitting just return
-if options.i_job*nanalysisevents>ntotalevents :
-	print 'This job is unnecessary because of the grid splitting.'
-	quit()
 #copy the subset tree to be analyzed 
 garbageFile.cd()
 analysisTree = chain.CopyTree('','',nanalysisevents,options.i_job*nanalysisevents); analysisTree.SetDirectory(garbageFile) 

@@ -26,14 +26,15 @@ class Jet(object) :
 		chargedHadronFraction = branches[pp+'_chargedHadronEnergyFrac'].getReadValue(index)
 		chargedEMFraction = branches[pp+'_chargedEmEnergyFrac'].getReadValue(index)
 		#These are the "Loose" ID criteria from here: https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVRun2016
-		if abs(self.__eta)<2.7 :
+		abseta = abs(self.__eta)
+		if abseta<2.7 :
 			if neutralHadronFraction<0.99 and neutralEMFraction<0.99 and numConstituents>1 :
-				if abs(self.__eta)<2.4 :
+				if abseta<2.4 :
 					if chargedHadronFraction>0. and chargedMultiplicity>0 and chargedEMFraction<0.99 :
 						return True
 				else :
 					return True
-		elif abs(self.__eta)<3.0 :
+		elif abseta<3.0 :
 			if neutralEMFraction>0.1 and neutralHadronFraction<0.98 and neutralMultiplicity>2 :
 				return True
 		else :
@@ -52,6 +53,10 @@ class Jet(object) :
 		return self.__eta
 	def isIDed(self) :
 		return self.__isIDed
+	def setIsValid(self,iv) :
+		self.__isValid = iv
+	def isValid(self) :
+		return self.__isValid
 	def getCSVv2(self) :
 		return self.__csvv2
 	def isbTagged(self) :
@@ -64,31 +69,29 @@ class AK4Jet(Jet) :
 	def __init__(self,branches,index,jes,jer,leps,corrector,isdata) :
 		Jet.__init__(self,branches,index,jes,jer,leps,corrector,isdata,'jetAK4CHS')
 		self.__flavor = branches['jetAK4CHS_HadronFlavour'].getReadValue(index)
+		self.setIsValid(self.getPt()>30. and abs(self.getEta())<2.4 and self.isIDed()==1)
 		self.__isValidForIsoCalc = self.getPt()>15. and abs(self.getEta())<3.0 and self.isIDed()==1
-		self.__isValid = self.getPt()>30. and abs(self.getEta())<2.4 and self.isIDed()==1
 		#print '	isvalid = %s, for iso calc = %s'%(self.__isValid,self.__isValidForIsoCalc) #DEBUG
 
 	def getFlavor(self) :
 		return self.__flavor
 	def isValidForIsoCalc(self) :
 		return self.__isValidForIsoCalc
-	def isValid(self) :
-		return self.__isValid
 
 class AK8Jet(Jet) :
 
 	def __init__(self,branches,index,jes,jer,leps,corrector,isdata) :
 		Jet.__init__(self,branches,index,jes,jer,leps,corrector,isdata,'jetAK8CHS')
+		#print 'Adding AK8 jet with soft drop mass %.4f'%(self.__sdm) #DEBUG
+		self.__subjets = self.__getsubjets__(branches,index,jes,jer,leps,corrector,isdata)
+		self.__n_subjets = len(self.__subjets)
+		self.setIsValid(self.getPt()>200. and abs(self.getEta())<2.4 and self.isIDed()==1 and self.__n_subjets>1)
 		self.__tau3 = branches['jetAK8CHS_tau3CHS'].getReadValue(index)
 		self.__tau2 = branches['jetAK8CHS_tau2CHS'].getReadValue(index)
 		self.__tau1 = branches['jetAK8CHS_tau1CHS'].getReadValue(index)
 		self.__sdm  = branches['jetAK8CHS_softDropMassCHS'].getReadValue(index)
-		#print 'Adding AK8 jet with soft drop mass %.4f'%(self.__sdm) #DEBUG
-		self.__subjets = self.__getsubjets__(branches,index,jes,jer,leps,corrector,isdata)
-		self.__n_subjets = len(self.__subjets)
 		self.__isttagged = self.getPt()>400. and self.__sdm>105. and self.__sdm<220. and self.__tau3!=0. and self.__tau2!=0. and (self.__tau3/self.__tau2)<0.80
 		self.__isWtagged = self.getPt()>200. and self.__sdm>65. and self.__sdm<105. and self.__tau2!=0. and self.__tau1!=0. and (self.__tau2/self.__tau1)<0.55
-		self.__isValid = self.getPt()>200. and abs(self.getEta())<2.4 and self.isIDed()==1 and self.__n_subjets>1
 
 	def __getsubjets__(self,branches,index,jes,jer,leps,corrector,isdata) :
 		#start by making a list of all the subjets for this jet
@@ -110,8 +113,6 @@ class AK8Jet(Jet) :
 		#print '----------------------DONE ADDING SUBJETS----------------------' #DEBUG
 		return allsubjets
 
-	def isValid(self) :
-		return self.__isValid
 	def getTau32(self) :
 		if self.__tau2!=0 :
 			return self.__tau3/self.__tau2
@@ -156,6 +157,7 @@ def getfourvec(branches,index,jes,jer,leps,corrector,isdata,pp) :
 	metcorrvec = TLorentzVector(); metcorrvec.SetPtEtaPhiE(pt,eta,phi,E)
 	#print '		metcorrvec initial = (%.1f,%.1f,%.1f,%.1f)'%(metcorrvec.Pt(),metcorrvec.Eta(),metcorrvec.Phi(),metcorrvec.M()) #DEBUG
 	if rawjet.M()==-900 :
+		#print 'RAW JET HAD NONSENSE MASS' #DEBUG
 		return None, None, TLorentzVector()
 	#print 'new jet with initial pT = %.2f'%(pt) #DEBUG
 	rawjet*=jec0

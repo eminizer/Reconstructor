@@ -28,15 +28,15 @@ def getEventType(branches) :
 	etype = -1
 	p1id = branches['MC_part1_ID'].getReadValue(); p2id = branches['MC_part2_ID'].getReadValue()
 	#first check the initial parton IDs to assign the production mechanism
-	if p1id==p2id==-9999. : #neither initial parton ID was filled because nothing made a ttbar pair; this is "other" background
-		etype=4
+	if p1id==p2id==-9999. : #neither initial parton ID was filled because nothing made a ttbar pair; this is "other" background so just return
+		return 4
 	elif p1id+p2id==0 : #parton IDs are opposites of each other, qqbar
 		etype=0
 	else :
 		etype=1 #otherwise we'll say it's qg/gg for now
 	#next check whether it's background
 	isbkg = branches['MC_lepb_pt'].getReadValue()==-9999. and branches['MC_hadb_pt'].getReadValue()==-9999.
-	if (not isbkg) or etype==4 : #if it's signal or definitely non-ttbar background return its current event type
+	if not isbkg : #if it's signal return its current event type
 		return etype
 	haslepside = branches['MC_lep_pt'].getReadValue()!=-9999.
 	hashadside = branches['MC_hadW_pt'].getReadValue()!=-9999.

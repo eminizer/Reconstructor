@@ -51,6 +51,8 @@ class Branch(object) :
 		if self.__readname!=None and self.__arraytype!='vi' :
 			for i in range(self.__arraylength) :
 				self.__readArray[i]=self.__inival
+		elif self.__readname!=None and self.__arraytype=='vi' :
+			self.__readArray.clear()
 		if self.__writename!=None :
 			for i in range(self.__arraylength) :
 				self.__writeArray[i]=self.__inival
