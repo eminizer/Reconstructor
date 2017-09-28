@@ -81,11 +81,11 @@ class Muon(Lepton) :
 		self.setIsValid(self.getPt()>55. and abs(self.getEta())<2.5 and self.getID()==1)
 
 	def isLooseIso(self) :
-		return self.getIso<0.25 #loose WP https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
+		return self.getIso()<0.25 #loose WP https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
 	def isTightIso(self) :
-		return self.getIso<0.15 #tight WP, already divided by pt https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
+		return self.getIso()<0.15 #tight WP, already divided by pt https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
 	def isIso(self) : #really just to match with electron functions
-		return self.getIso<0.15 #tight WP, already divided by pt https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
+		return self.getIso()<0.15 #tight WP, already divided by pt https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
 	def is2DIso(self,eventtopology) :
 		if eventtopology<3 :
 			return self.getDR()>0.4 or self.getRelPt()>30.
@@ -106,9 +106,9 @@ class Electron(Lepton) :
 	def getEtaSC(self) :
 		return self.__scEta
 	def isLooseIso(self) :
-		return self.getIso<0.0695 #what was removed from the Medium ID https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
+		return self.getIso()<0.0695 #what was removed from the Medium ID https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
 	def isIso(self) :
-		return self.getIso<0.0695 #what was removed from the Medium ID https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
+		return self.getIso()<0.0695 #what was removed from the Medium ID https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
 	def is2DIso(self,eventtopology) :
 		if eventtopology<3 :
 			return self.getDR()>0.4 or self.getRelPt()>30.

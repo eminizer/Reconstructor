@@ -1,6 +1,5 @@
 #!/bin/bash
 
-rm -rf notneeded
 rm -rf commands.cmd
 rm -rf tarball.tgz
 rm -rf garbage*root

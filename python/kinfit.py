@@ -9,19 +9,19 @@ SIGMAJ  = 0.10 #jet momentum resolution
 SIGMAL  = 0.02 #lepton momentum resolution
 MW = 80.4 #W mass
 MT = 172.5 #top mass
-MT_l1 = 172.8 #leptonic top mass for type 1 tops
-MT_h1 = 182.3 #hadronic top mass for type 1 tops
-MT_l2 = 172.8 #leptonic top mass for type 2 tops
-MT_h2 = 173.3 #hadronic top mass for type 2 tops
-MT_l3 = 172.5 #leptonic top mass for type 3 tops
-MT_h3 = 168.6 #hadronic top mass for type 3 tops
+MT_l1 = 172.7 #leptonic top mass for type 1 tops
+MT_h1 = 182.6 #hadronic top mass for type 1 tops
+MT_l2 = 173.0 #leptonic top mass for type 2 tops
+MT_h2 = 173.2 #hadronic top mass for type 2 tops
+MT_l3 = 172.4 #leptonic top mass for type 3 tops
+MT_h3 = 168.5 #hadronic top mass for type 3 tops
 WW = 2.0 #W width
 WT = 1.4 #top width
-WT_l1 = 15.6 #leptonic top width for type 1 tops
-WT_h1 = 17.6 #hadronic top width for type 1 tops
-WT_l2 = 15.7 #leptonic top width for type 2 tops
+WT_l1 = 15.4 #leptonic top width for type 1 tops
+WT_h1 = 17.2 #hadronic top width for type 1 tops
+WT_l2 = 15.9 #leptonic top width for type 2 tops
 WT_h2 = 16.2 #hadronic top width for type 2 tops
-WT_l3 = 15.1 #leptonic top width for type 3 tops
+WT_l3 = 15.3 #leptonic top width for type 3 tops
 WT_h3 = 18.2 #hadronic top width for type 3 tops
 #manager = multiprocessing.Manager()
 #lep_gvs=manager.list()
@@ -235,7 +235,7 @@ def reconstruct(hypotheses,topology,ongrid) :
 	#First declare and set up the kinematic fit objects (they'll be done in parallel in batches)
 	allkinfitobjlists = []; allkinfitobjs = []
 	j=-1
-	batchsize = 2 if ongrid=='yes' else 25
+	batchsize = 1 if ongrid=='yes' else 25
 	for i in range(len(hypotheses)) :
 		if i%batchsize==0 :
 			j+=1

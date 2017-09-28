@@ -14,7 +14,6 @@ BEAM_ENERGY=SQRT_S/2.0
 #Imports
 from ROOT import TLorentzVector
 from math import *
-from memsniffer import checkmem
 
 #################################  REFERENCED FUNCTIONS  ##################################
 
@@ -51,34 +50,26 @@ def getEventType(branches) :
 
 #finds which "down-the-beampipe" fourvector corresponds to the initial quark
 def findInitialPartons(branches) :
-	checkmem('&&&','step_into_findInitialPartons')
 	factor = branches['MC_part1_factor'].getReadValue()
 	ID = branches['MC_part1_ID'].getReadValue()
 	qvec = TLorentzVector(1.0,0.0,(abs(ID)/ID)*factor*sqrt(BEAM_ENERGY*BEAM_ENERGY - 1.*1.),BEAM_ENERGY)
 	qbar_vec = TLorentzVector(1.0,0.0,-1.*(abs(ID)/ID)*factor*sqrt(BEAM_ENERGY*BEAM_ENERGY - 1.*1.),BEAM_ENERGY)
-	checkmem('&&&','ret_from_findInitialPartons')
 	return qvec,qbar_vec
 
 #returns a bunch of fourvectors from Monte Carlo for MC truth reconstruction and matching
 def findMCParticles(branches) :
-	checkmem('&&&','step_into_findMCParticles')
 	returnlist = []
 	names = ['t','tbar','lep','nu','lepb','hadW','hadb'] 
 	for name in names :
-		checkmem('&&&&','read_branchvals_for_'+name)
 		thispt = branches['MC_'+name+'_pt'].getReadValue()
 		thiseta = branches['MC_'+name+'_eta'].getReadValue()
 		thisphi = branches['MC_'+name+'_phi'].getReadValue()
 		thisE = branches['MC_'+name+'_E'].getReadValue()
 		thisvec = None
 		if thispt!=-9999. :
-			checkmem('&&&&','make_MCvec_for_'+name)
 			thisvec = TLorentzVector()
 			thisvec.SetPtEtaPhiE(thispt,thiseta,thisphi,thisE)
-		checkmem('&&&&','append_MCvec_for_'+name)
 		returnlist.append(thisvec)
-		checkmem('&&&&','done_with_'+name)
 	lepID = branches['MC_lep_ID'].getReadValue()
 	returnlist.append(-1.*abs(lepID)/lepID)
-	checkmem('&&&','ret_from_findMCParticles')
 	return returnlist

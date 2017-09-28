@@ -23,7 +23,6 @@ from metHelper import setupMET
 from kinfit import reconstruct
 from angleReconstructor import getObservables, getMCRWs
 from corrector import Corrector
-from memsniffer import checkmem
 import gc
 
 ################################   addBranch function  #################################
@@ -420,15 +419,11 @@ class Reconstructor(object) :
 
 	##################################  ANALYZE FUNCTION  ##################################
 	def analyze(self,eventnumber) :
-		checkmem('','evt_%d_start'%(eventnumber))
 		#get the event in the tree
-		checkmem('&','before_getEntry')
 		self.inputTree.GetEntry(eventnumber)
-		checkmem('&','after_getEntry')
 		#-----------------------------------------------------Below here is a bunch of preselection and object assignment-----------------------------------------------------#
 		#light preskim for requisite physics objects
 		if not self.__hasRequisitePhysicsObjects__() :
-			checkmem('','evt_%d_end'%(eventnumber))
 			return
 		#MC stuff (event type, addTwice, eventweight, MC truth fourvectors for ttbar events)
 		if not self.is_data :
@@ -437,92 +432,63 @@ class Reconstructor(object) :
 		#For the record, trigger information is handled automatically
 		#initial raw MET
 		#print '	Handling MET...' #DEBUG
-		checkmem('&','before_initialMETHandling')
 		met = TLorentzVector(); met.SetPtEtaPhiM(self.met_pts.getReadValue(), 0., self.met_phis.getReadValue(), 0.)
-		checkmem('&','after_initialMETHandling')
 		#initial muons and electrons
-		checkmem('&','before_makeLeptonLists')
 		muons, electrons = self.__makeLeptonLists__()
-		checkmem('&','after_makeLeptonLists')
-		checkmem('&','before_makingallleps')
 		allleps = muons+electrons
 		allleps.sort(key=lambda x: x.getPt(), reverse=True)
 		if len(allleps)<1 :
 			#print 'EVENT NUMBER %d NOT VALID; MISSING LEPTONS (# muons = %d, # electrons = %d)'%(eventnumber,len(muons),len(electrons)) #DEBUG
-			checkmem('','evt_%d_end'%(eventnumber))
 			return
-		checkmem('&','after_makingallleps')
 		#jets (adjusting met and counting btagged AK4 jets also)
-		checkmem('&','before_makeJetLists')
 		ak4jets, ak4jetsforisocalc, ak8jets, newmet, nbtags = self.__makeJetLists__(met,allleps)
 		met.SetPtEtaPhiM(newmet.Pt(),newmet.Eta(),newmet.Phi(),newmet.M())
-		checkmem('&','after_makeJetLists')
 		#if the lepton cleaning got rid of too many jets toss the event
 		if not len(ak4jets)>0 :
 			#print 'EVENT NUMBER %d NOT VALID; MISSING JETS (# AK4jets = %d, # AK8Jets = %d)'%(eventnumber,len(ak4jets),len(ak8jets)) #DEBUG
-			checkmem('','evt_%d_end'%(eventnumber))
 			return
 		#calculate lepton isolation variables now that we know the list of valid jets
 		#print '	Calculating lepton isolation values...' #DEBUG
-		checkmem('&','before_calcLepIsos')
 		for lep in (allleps) :
 			lep.calculateIsolation(ak4jetsforisocalc)
-		checkmem('&','after_calcLepIsos')
 		#print '		Done.'#DEBUG
 		#Set the event toplogy
 		#print '	Setting event topology...' #DEBUG
-		checkmem('&','before_setEventTopology')
 		topology, ttags = self.__setEventTopology__(ak8jets)
-		checkmem('&','after_setEventTopology')
 		#print '		There are %d top-tagged jets; the event topology is type %d'%(len(ttags),topology) #DEBUG
 		#is it possibble to reconstruct this event using a lepton+jets topology?
 		canreconstruct = topology==1 or len(ak4jets)>=4
 		#figure out whether the event is muonic or electronic, assign lepton
-		checkmem('&','before_assignLepton')
 		lep = self.__assignLepton__(allleps,topology)
-		checkmem('&','after_assignLepton')
 		#Set physics object fourvectors
-		checkmem('&','before_writePhysOjFourVecs')
 		self.__writePhysObjFourvecs__(muons,electrons,ak4jets,ttags,ak8jets,topology)
-		checkmem('&','after_writePhysOjFourVecs')
 		#neutrino handling and setup for fit
-		checkmem('&','before_setupMET')
 		met1_vec, met2_vec = setupMET(lep.getFourVector(),met)
-		checkmem('&','after_setupMET')
 		self.nMETs.setWriteValue(2) if met1_vec.Pz() != met2_vec.Pz() else self.nMETs.setWriteValue(1)
 		self.metE.setWriteValue(met1_vec.E())
 		#-----------------------------------------------------------------Below here is event reconstruction-----------------------------------------------------------------#
 		if canreconstruct :
 			#print '	Reconstructing event...' #DEBUG
 			#build the list of jet assignment hypotheses
-			checkmem('&','before_getHypothesisList')
 			hypotheses = getHypothesisList(topology,lep,met1_vec,met2_vec,self.nMETs.getWriteValue(),ak4jets,ttags,nbtags)
-			checkmem('&','after_getHypothesisList')
 			#if there's no valid type-1 hypotheses, try again as type-2
 			if topology==1 and len(hypotheses)==0 :
 				if len(ak4jets)>3 :
 					topology=2
 					self.event_topology.setWriteValue(topology)
-					checkmem('&','before_getHypothesisListTakeTwo')
 					hypotheses = getHypothesisList(topology,lep,met1_vec,met2_vec,self.nMETs.getWriteValue(),ak4jets,ttags,nbtags)
-					checkmem('&','after_getHypothesisListTakeTwo')
 				else :
 					#print 'event %d invalid; no separated top tagged jets and not enough AK4 jets'%(eventnumber) #DEBUG
 					self.cut_branches['fullselection'].setWriteValue(0)
-					checkmem('','evt_%d_end'%(eventnumber))
 					return
 			#print '		Will try %d jet assignment hypotheses...'%(len(hypotheses)) #DEBUG
 			self.nhypotheses.setWriteValue(len(hypotheses))
 			#do the monte carlo matching
 			corrhypindex=-1
 			if self.event_type.getWriteValue()<2 and not self.is_data :
-				checkmem('&','before_matchJetAssignmentHypotheses')
 				corrhypindex = self.__matchJetAssignmentHypotheses__(topology,hypotheses,mctruthfourvecs)
-				checkmem('&','after_matchJetAssignmentHypotheses')
 			#send the hypotheses to the kinematic fit 
-			checkmem('&','before_writeKinfitResults')
 			hypindex, scaledlep, scaledmet, scaledlepb, scaledhadt, scaledhad1, scaledhad2, scaledhad3, fitchi2, finalpars = self.__writeKinfitResults__(hypotheses,topology)
-			checkmem('&','after_writeKinfitResults')
 			#print '		Done.' #DEBUG 
 		#--------------------------------------------------------------------Below here is event selection--------------------------------------------------------------------#
 		#print '	Calculating cut variables...' #DEBUG
@@ -542,15 +508,16 @@ class Reconstructor(object) :
 		#print '		Done. (fullselection=%d)'%(self.cut_branches['fullselection'].getWriteValue()) #DEBUG
 		#-----------------------------------------------------Below here is a bunch of variable and weight calculation-----------------------------------------------------# 
 		if canreconstruct :
-			#see if the kinematic fit returned the matched hypothesis
-			self.__checkForCorrectJetAssignment__(topology,hypindex,corrhypindex,hypotheses)
-			#try the MC matching again with the postfit quantities 
-			if self.event_type.getWriteValue()<2 and not self.is_data : 
-				hypothesis=hypotheses[hypindex] 
-				MClep_vec = mctruthfourvecs['MClep']; MCv_vec = mctruthfourvecs['MCv']; MClepb_vec = mctruthfourvecs['MClepb']
-				MChadt_vec = mctruthfourvecs['MCtbar'] if mctruthfourvecs['MClep_charge']>0 else mctruthfourvecs['MCt']
-				self.ismatchedpostfit.setWriteValue(1) if (scaledlep.DeltaR(MClep_vec)<0.1 and scaledmet.DeltaPhi(MCv_vec)<0.3 and scaledlepb.DeltaR(MClepb_vec)<0.4 and scaledhadt.DeltaR(MChadt_vec)<0.8) else self.ismatchedpostfit.setWriteValue(0) 
-			#	print 'ismatchedpostfit = %d'%(self.ismatchedpostfit.getWriteValue()) #DEBUG 
+			if not self.is_data : 
+				#see if the kinematic fit returned the matched hypothesis
+				self.__checkForCorrectJetAssignment__(topology,hypindex,corrhypindex,hypotheses)
+				#try the MC matching again with the postfit quantities 
+				if self.event_type.getWriteValue()<2 : 
+					hypothesis=hypotheses[hypindex] 
+					MClep_vec = mctruthfourvecs['MClep']; MCv_vec = mctruthfourvecs['MCv']; MClepb_vec = mctruthfourvecs['MClepb']
+					MChadt_vec = mctruthfourvecs['MCtbar'] if mctruthfourvecs['MClep_charge']>0 else mctruthfourvecs['MCt']
+					self.ismatchedpostfit.setWriteValue(1) if (scaledlep.DeltaR(MClep_vec)<0.1 and scaledmet.DeltaPhi(MCv_vec)<0.3 and scaledlepb.DeltaR(MClepb_vec)<0.4 and scaledhadt.DeltaR(MChadt_vec)<0.8) else self.ismatchedpostfit.setWriteValue(0) 
+				#	print 'ismatchedpostfit = %d'%(self.ismatchedpostfit.getWriteValue()) #DEBUG 
 			#Write Kinematic fit debugging variables 
 			self.chi2.setWriteValue(fitchi2) 
 			locs = [self.par_0,self.par_1,self.par_2,self.par_3,self.par_4,self.par_5] 
@@ -559,17 +526,19 @@ class Reconstructor(object) :
 			#write the scaled fourvectors
 			self.__writeScaledFourvectors__(topology,scaledlep,scaledmet,scaledlepb,scaledhadt,scaledhad1,scaledhad2,scaledhad3,hypotheses[hypindex])
 			#reconstruct the observables in multiple ways
-			self.__reconstructObservables__(scaledlep,scaledmet,scaledlepb,scaledhadt,lep,hypotheses,hypindex,corrhypindex,mctruthfourvecs['MClep'],mctruthfourvecs['MClepb'],corrhypindex)
+			if not self.is_data :
+				self.__reconstructObservables__(scaledlep,scaledmet,scaledlepb,scaledhadt,lep,hypotheses,hypindex,corrhypindex,mctruthfourvecs['MClep'],mctruthfourvecs['MClepb'])
+			else :
+				self.__reconstructObservables__(scaledlep,scaledmet,scaledlepb,scaledhadt,lep,hypotheses,hypindex,corrhypindex)
 			#MC Truth observable and reweighting calculation 
-			self.__calculateReweights__(mctruthfourvecs,topology,lep,ak4jets)
+			if not self.is_data :
+				self.__calculateReweights__(mctruthfourvecs,topology,lep,ak4jets)
 		#Finally write the event to the tree and closeout
 		self.__closeout__() #yay! A complete event!
-		checkmem('','evt_%d_end'%(eventnumber))
 
 	##################################  Event Analyzer helper functions  ##################################
 
 	def __hasRequisitePhysicsObjects__(self) :
-		checkmem('&','step_into_hasRequisitePhysicsObjects')
 		#Make sure the event has some met, at least one lepton, and at least one AK4 jet
 		metsize = self.met_size.getReadValue()
 		musize = self.mu_size.getReadValue()
@@ -578,132 +547,88 @@ class Reconstructor(object) :
 		ak8jetsize = self.ak8_size.getReadValue()
 		if not (metsize>0 and (musize>0 or elsize>0) and ak4jetsize>0) :
 			#print 'EVENT NUMBER %d NOT VALID; MISSING REQUISITE PHYSICS OBJECTS (metsize = %d, musize = %d, elsize = %d, ak4jetsize = %d, ak8jetsize = %d)'%(eventnumber,metsize,musize,elsize,ak4jetsize,ak8jetsize)
-			checkmem('&','ret_false_hasRequisitePhysicsObjects')
 			return False
-		checkmem('&','ret_true_hasRequisitePhysicsObjects')
 		return True
 
 	def __getMCTruthProperties__(self) :
-		checkmem('&','step_into_getMCTruthProperties')
 		#event type split
-		checkmem('&&','before_getEventType')
 		self.event_type.setWriteValue(getEventType(self.mcGenEventBranches))
-		checkmem('&&','after_getEventType')
 		#set the addTwice value (true for qqbar and symmetric gg events)
-		checkmem('&&','before_setAddTwice')
 		self.addTwice.setWriteValue(self.event_type.getWriteValue()==0 or (self.event_type.getWriteValue()==1 and self.mcGenEventBranches['MC_part1_ID'].getReadValue()==self.mcGenEventBranches['MC_part2_ID'].getReadValue()))
-		checkmem('&&','after_setAddTwice')
 		#set the eventweight
-		checkmem('&&','before_setEventWeight')
 		eventweight = self.genWeight.getReadValue()*(self.kfac*self.xsec/self.totalweight)
 		self.weight.setWriteValue(eventweight)
-		checkmem('&&','after_setEventWeight')
 		#Mother particle and MC truth top assignment
 		vecdict = {}
 		if self.event_type!=4 :
-			checkmem('&&','before_findInitialPartons')
 			q_vec, qbar_vec = findInitialPartons(self.mcGenEventBranches)
-			checkmem('&&','after_findInitialPartons')
-			checkmem('&&','before_findMCParticles')
 			MCt_vec, MCtbar_vec, MClep_vec, MCv_vec, MClepb_vec, MChadW_vec, MChadb_vec, MClep_charge = findMCParticles(self.mcGenEventBranches)				
 			vecdict = {'q':q_vec,'qbar':qbar_vec,'MCt':MCt_vec,'MCtbar':MCtbar_vec,'MClep':MClep_vec,'MCv':MCv_vec,
 					   'MClepb':MClepb_vec,'MChadW':MChadW_vec,'MChadb':MChadb_vec,'MClep_charge':MClep_charge}
-			checkmem('&&','after_findMCParticles')
 		#write out fourvectors of MC particles
-		checkmem('&&','before_setFourVecsLoop')
 		for name,vec in vecdict.iteritems() :
 			if vec!=None and name!='MClep_charge' :
-				checkmem('&&&','before_setFourVectorBranchValues_for_'+name)
 				self.__setFourVectorBranchValues__(name,vec)
-				checkmem('&&&','after_setFourVectorBranchValues_for_'+name)
-		checkmem('&&','after_setFourVecsLoop')
-		checkmem('&','ret_getMCTruthProperties')
 		return vecdict
 
 	def __makeLeptonLists__(self) :
 		#muons
 		#print '	Handling Muons (%d total)...'%(self.mu_size.getReadValue()) #DEBUG
-		checkmem('&&','before_addingMuons')
 		muons = []
 		for i in range(self.mu_size.getReadValue()) :
-			checkmem('&&&','before_newMuon%d'%(i))
 			newmuon=Muon(self.muonBranches,i,self.run_era)
 			if newmuon.isValid() :
 				muons.append(newmuon)
 		#print '		Added %d Muons.'%(len(muons)) #DEBUG
-		checkmem('&&','after_addingMuons')
 		#electrons
 		#print '	Handling Electrons (%d total)...'%(self.el_size.getReadValue()) #DEBUG
-		checkmem('&&','before_addingElectrons')
 		electrons = []
 		for i in range(self.el_size.getReadValue()) :
-			checkmem('&&&','before_newElectron%d'%(i))
 			newele = Electron(self.electronBranches,i)
 			if newele.isValid() :
 				electrons.append(newele)
 		#print '		Added %d Electrons.'%(len(electrons)) #DEBUG
-		checkmem('&&','after_addingElectrons')
 		return muons,electrons
 
 	def __makeJetLists__(self,met,leplist) :
 		#print '	Adding AK4 jets (%d total)...'%(self.ak4_size.getReadValue())#DEBUG
 		ak4jets = []; ak4jetsforisocalc = []; ak8jets = []; metcorrvecs = []
-		checkmem('&&','before_addingAK4Jets')
 		for i in range(self.ak4_size.getReadValue()) :
-			checkmem('&&&','before_newAK4Jet%d'%(i))
 			newJet = AK4Jet(self.ak4JetBranches,i,self.JES,self.JER,leplist,self.corrector,self.is_data)
 			metcorrvecs.append(newJet.getMETCorrectionVec())
 			if newJet.isValidForIsoCalc() :
 				ak4jetsforisocalc.append(newJet)
 			if newJet.isValid() :
 				ak4jets.append(newJet)
-		checkmem('&&','after_addingAK4Jets')
 		#print '		Added %d AK4 Jets (%d for the isolation calcuations).'%(len(ak4jets),len(ak4jetsforisocalc)) #DEBUG
 		#count the number of valid b-tagged AK4 jets
-		checkmem('&&','before_countingbtaggedjets')
 		nbtags = 0
 		for ak4jet in ak4jets :
 			if ak4jet.isbTagged() :
 				nbtags+=1
-		checkmem('&&','after_countingbtaggedjets')
 		#print '		%d of the AK4 jets are b-tagged.'%(nbtags) #DEBUG
-		checkmem('&&','before_settingnbtags')
 		self.nbTags.setWriteValue(nbtags)
-		checkmem('&&','after_settingnbtags')
 		#print '	Adding AK8 jets (%d total)...'%(self.ak8_size.getReadValue())#DEBUG
-		checkmem('&&','before_addingAK8Jets')
 		for i in range(self.ak8_size.getReadValue()) :
-			checkmem('&&&','before_newAK8Jet%d'%(i))
 			newJet = AK8Jet(self.ak8JetBranches,i,self.JES,self.JER,leplist,self.corrector,self.is_data)
 			metcorrvecs.append(newJet.getMETCorrectionVec())
 			if newJet.isValid() :
 				ak8jets.append(newJet)
-		checkmem('&&','after_addingAK8Jets')
 		#sort the lists of jets by pT
-		checkmem('&&','before_sortingJetLists')
 		ak4jets.sort(key=lambda x: x.getPt(), reverse=True)
 		ak4jetsforisocalc.sort(key=lambda x: x.getPt(), reverse=True)
 		ak8jets.sort(key=lambda x: x.getPt(), reverse=True)
-		checkmem('&&','after_sortingJetLists')
-		checkmem('&&','before_settingnJetsValues')
 		self.nak4jets.setWriteValue(len(ak4jets)); self.nak8jets.setWriteValue(len(ak8jets));
-		checkmem('&&','after_settingnJetsValues')
 		#print '		Added %d AK8 Jets.'%(len(ak8jets)) #DEBUG
 		#recorrect the met
 		#print '		met before = (%.1f,%.1f,%.1f,%.1f)'%(met.Pt(),met.Eta(),met.Phi(),met.M()) #DEBUG
-		checkmem('&&','before_adjustingMET')
 		for metcorrvec in metcorrvecs :
 			met+=metcorrvec
-		checkmem('&&','after_adjustingMET')
-		checkmem('&&','before_resettingMETMass')
 		met.SetPz(0.); met.SetE(met.Vect().Mag()) #reset the eta and mass of the MET
-		checkmem('&&','after_resettingMETMass')
 		#print '		met after = (%.1f,%.1f,%.1f,%.1f)'%(met.Pt(),met.Eta(),met.Phi(),met.M()) #DEBUG
 		#now that the MET is adjusted set its branch values
-		checkmem('&&','before_writingAdjustedMET')
 		self.__setFourVectorBranchValues__('met',met)
 		self.metE.setWriteValue(met.E())
-		checkmem('&&','after_writingAdjustedMET')
 		#return the stuff I'll need later
 		return ak4jets,ak4jetsforisocalc,ak8jets,met,nbtags
 
@@ -723,6 +648,7 @@ class Reconstructor(object) :
 			topology=2
 		else : #If there are no AK8 jets at all, but there are at least 4 AK4 jets, the event is "resolved" (type-3 topology)
 			topology=3
+		#print 'n_ttags = %d, nAK8Jets = %d, topology = %d'%(n_ttags,len(ak8jets),topology)
 		self.event_topology.setWriteValue(topology)
 		return topology, ttags
 
@@ -816,8 +742,9 @@ class Reconstructor(object) :
 		if matchedhypindex==-1 :
 			#print 'EVENT IS NOT MATCHABLE' #DEBUG
 			self.ismatchable.setWriteValue(0)
-		#else : #DEBUG
+		else : 
 			#print 'Event has a correct assignment hypothesis at index %d'%(matchedhypindex) #DEBUG
+			self.ismatchable.setWriteValue(1)
 		#return the index of the best-matched hypothesis
 		return matchedhypindex
 	def __checkHypothesisMatchingParallel__(self,topology,hypothesis,mcvecs,i,hypdict) :
@@ -887,16 +814,15 @@ class Reconstructor(object) :
 		return hypindex, scaledlep, scaledmet, scaledlepb, scaledhadt, scaledhad1, scaledhad2, scaledhad3, fitchi2, finalpars
 
 	def __checkForCorrectJetAssignment__(self,topology,hypindex,corrhypindex,hypotheses) :
-		if not self.is_data : 
-			#if the fit returned the correct hypothesis with either MET solution, it was correct 
-			self.iscorrect.setWriteValue(0)
-			if hypindex==corrhypindex :
+		#if the fit returned the correct hypothesis with either MET solution, it was correct 
+		self.iscorrect.setWriteValue(0)
+		if hypindex==corrhypindex :
+			self.iscorrect.setWriteValue(1) 
+		elif corrhypindex!=-1 :
+			thishyp = hypotheses[hypindex]
+			corrhyp = hypotheses[corrhypindex]
+			if thishyp[0]==corrhyp[0] and thishyp[2]==corrhyp[2] and thishyp[3][0]==corrhyp[3][0] and (topology==1 or (thishyp[3][1]==corrhyp[3][1] and thishyp[3][2]==corrhyp[3][2])) :  
 				self.iscorrect.setWriteValue(1) 
-			elif corrhypindex!=-1 :
-				thishyp = hypotheses[hypindex]
-				corrhyp = hypotheses[corrhypindex]
-				if thishyp[0]==corrhyp[0] and thishyp[2]==corrhyp[2] and thishyp[3][0]==corrhyp[3][0] and (topology==1 or (thishyp[3][1]==corrhyp[3][1] and thishyp[3][2]==corrhyp[3][2])) :  
-					self.iscorrect.setWriteValue(1) 
 
 	def __writeScaledFourvectors__(self,topology,slep,smet,slepb,shadt,shad1,shad2,shad3,hyp) :
 		#fill the TTree with the scaled fourvector variables 
@@ -916,7 +842,7 @@ class Reconstructor(object) :
 		if shad2!=None: self.__setFourVectorBranchValues__('scaled_had2',shad2) 
 		if shad3!=None: self.__setFourVectorBranchValues__('scaled_had3',shad3) 
 
-	def __reconstructObservables__(self,slep,smet,slepb,shadt,lep,hyps,hypi,chypi,mclepv,mclepbv,corrhypindex) :	
+	def __reconstructObservables__(self,slep,smet,slepb,shadt,lep,hyps,hypi,chypi,mclepv=None,mclepbv=None) :	
 		#first using the chosen postfit 
 		cstar_s,xF_s,M_s = getObservables(slep+smet+slepb,shadt,lep.getQ())  
 		self.cstar.setWriteValue(cstar_s); self.x_F.setWriteValue(xF_s); self.M.setWriteValue(M_s) 
@@ -930,7 +856,7 @@ class Reconstructor(object) :
 		self.cstar_prefit.setWriteValue(cstar); self.x_F_prefit.setWriteValue(xF); self.M_prefit.setWriteValue(M) 
 		#finally using the correct assignment prefit
 		#print 'isData = %s, corrhypindex=%d'%(self.is_data,corrhypindex) #DEBUG
-		if (not self.is_data) and corrhypindex!=-1 : 
+		if (not self.is_data) and chypi!=-1 : 
 			hyp = hyps[chypi]	
 			prefitlepW = hyp[0].getFourVector()+hyp[1]
 			prefitlept = prefitlepW+hyp[2].getFourVector()
@@ -949,7 +875,7 @@ class Reconstructor(object) :
 
 	def __calculateReweights__(self,mctvecs,topology,lep,ak4jets) :
 		#template reweights
-		if self.event_type.getWriteValue()<2 and not self.is_data : 
+		if self.event_type.getWriteValue()<2 : 
 			self.cstar_MC.setWriteValue(self.mcGenEventBranches['MC_cstar'].getReadValue()) 
 			self.x_F_MC.setWriteValue(self.mcGenEventBranches['MC_x_F'].getReadValue()) 
 			self.M_MC.setWriteValue(self.mcGenEventBranches['MC_Mtt'].getReadValue()) 
@@ -978,39 +904,38 @@ class Reconstructor(object) :
 			self.wega.setWriteValue(wega) 
 			self.wegc.setWriteValue(wegc) 
 		#scale factor and reweighting calculations
-		if not self.is_data :
-			#Pileup reweighting
-			pu_sf, pu_sf_up, pu_sf_down = self.corrector.getPileupReweight(self.allBranches['npv'].getReadValue())
-			self.sf_pileup.setWriteValue(pu_sf); self.sf_pileup_hi.setWriteValue(pu_sf_up); self.sf_pileup_low.setWriteValue(pu_sf_down)
-			#Trigger efficiency reweighting
-			( trig_eff_BtoF_sf, trig_eff_BtoF_sf_up, trig_eff_BtoF_sf_down, 
-				trig_eff_GH_sf, trig_eff_GH_sf_up, trig_eff_GH_sf_down ) = self.corrector.getTrigEff(topology,lep)
-			self.sf_trig_eff_BtoF.setWriteValue(trig_eff_BtoF_sf); self.sf_trig_eff_BtoF_hi.setWriteValue(trig_eff_BtoF_sf_up); self.sf_trig_eff_BtoF_low.setWriteValue(trig_eff_BtoF_sf_down)
-			self.sf_trig_eff_GH.setWriteValue(trig_eff_GH_sf); 	   self.sf_trig_eff_GH_hi.setWriteValue(trig_eff_GH_sf_up); 	self.sf_trig_eff_GH_low.setWriteValue(trig_eff_GH_sf_down)
-			#Lepton ID efficiency reweighting
-			( lep_ID_BtoF_sf, lep_ID_BtoF_sf_up, lep_ID_BtoF_sf_down, 
-				lep_ID_GH_sf, lep_ID_GH_sf_up, lep_ID_GH_sf_down ) = self.corrector.getIDEff(self.allBranches['npv'].getReadValue(),lep)
-			self.sf_lep_ID_BtoF.setWriteValue(lep_ID_BtoF_sf); self.sf_lep_ID_BtoF_hi.setWriteValue(lep_ID_BtoF_sf_up); self.sf_lep_ID_BtoF_low.setWriteValue(lep_ID_BtoF_sf_down)
-			self.sf_lep_ID_GH.setWriteValue(lep_ID_GH_sf); 	   self.sf_lep_ID_GH_hi.setWriteValue(lep_ID_GH_sf_up); 	self.sf_lep_ID_GH_low.setWriteValue(lep_ID_GH_sf_down)
-			#Lepton isolation efficiency reweighting
-			( lep_iso_BtoF_sf, lep_iso_BtoF_sf_up, lep_iso_BtoF_sf_down, 
-				lep_iso_GH_sf, lep_iso_GH_sf_up, lep_iso_GH_sf_down ) = self.corrector.getIsoEff(self.allBranches['npv'].getReadValue(),topology,lep)
-			self.sf_lep_iso_BtoF.setWriteValue(lep_iso_BtoF_sf); self.sf_lep_iso_BtoF_hi.setWriteValue(lep_iso_BtoF_sf_up); self.sf_lep_iso_BtoF_low.setWriteValue(lep_iso_BtoF_sf_down)
-			self.sf_lep_iso_GH.setWriteValue(lep_iso_GH_sf); 	 self.sf_lep_iso_GH_hi.setWriteValue(lep_iso_GH_sf_up); 	self.sf_lep_iso_GH_low.setWriteValue(lep_iso_GH_sf_down)
-			#Lepton mini isolation efficiency reweighting
-			lep_mini_iso_sf, lep_mini_iso_sf_up, lep_mini_iso_sf_down = self.corrector.getMiniIsoEff(self.allBranches['npv'].getReadValue(),lep)
-			self.sf_lep_mini_iso.setWriteValue(lep_mini_iso_sf); self.sf_lep_mini_iso_hi.setWriteValue(lep_mini_iso_sf_up); self.sf_lep_mini_iso_low.setWriteValue(lep_mini_iso_sf_down)
-			#b-tagging efficiency reweighting
-			btag_eff_sf, btag_eff_sf_up, btag_eff_sf_down = self.corrector.getBTagEff(ak4jets)
-			self.sf_btag_eff.setWriteValue(btag_eff_sf); self.sf_btag_eff_hi.setWriteValue(btag_eff_sf_up); self.sf_btag_eff_low.setWriteValue(btag_eff_sf_down)
-			#Scale, and pdf/alpha_s reweights (ttbar only)
-			if self.event_type.getWriteValue()<4 :
-				( mu_R_sf, mu_R_sf_up, mu_R_sf_down, mu_F_sf, mu_F_sf_up, mu_F_sf_down,
-				 scale_comb_sf, scale_comb_sf_up, scale_comb_sf_down, pdf_alphas_sf, pdf_alphas_sf_up, pdf_alphas_sf_down ) = self.corrector.getGenReweights(self.genUncBranches)
-				self.sf_mu_R.setWriteValue(mu_R_sf); self.sf_mu_R_hi.setWriteValue(mu_R_sf_up); self.sf_mu_R_low.setWriteValue(mu_R_sf_down)
-				self.sf_mu_F.setWriteValue(mu_F_sf); self.sf_mu_F_hi.setWriteValue(mu_F_sf_up); self.sf_mu_F_low.setWriteValue(mu_F_sf_down)
-				self.sf_scale_comb.setWriteValue(scale_comb_sf); self.sf_scale_comb_hi.setWriteValue(scale_comb_sf_up); self.sf_scale_comb_low.setWriteValue(scale_comb_sf_down)
-				self.sf_pdf_alphas.setWriteValue(pdf_alphas_sf); self.sf_pdf_alphas_hi.setWriteValue(pdf_alphas_sf_up); self.sf_pdf_alphas_low.setWriteValue(pdf_alphas_sf_down)
+		#Pileup reweighting
+		pu_sf, pu_sf_up, pu_sf_down = self.corrector.getPileupReweight(self.allBranches['npv'].getReadValue())
+		self.sf_pileup.setWriteValue(pu_sf); self.sf_pileup_hi.setWriteValue(pu_sf_up); self.sf_pileup_low.setWriteValue(pu_sf_down)
+		#Trigger efficiency reweighting
+		( trig_eff_BtoF_sf, trig_eff_BtoF_sf_up, trig_eff_BtoF_sf_down, 
+			trig_eff_GH_sf, trig_eff_GH_sf_up, trig_eff_GH_sf_down ) = self.corrector.getTrigEff(topology,lep)
+		self.sf_trig_eff_BtoF.setWriteValue(trig_eff_BtoF_sf); self.sf_trig_eff_BtoF_hi.setWriteValue(trig_eff_BtoF_sf_up); self.sf_trig_eff_BtoF_low.setWriteValue(trig_eff_BtoF_sf_down)
+		self.sf_trig_eff_GH.setWriteValue(trig_eff_GH_sf); 	   self.sf_trig_eff_GH_hi.setWriteValue(trig_eff_GH_sf_up); 	self.sf_trig_eff_GH_low.setWriteValue(trig_eff_GH_sf_down)
+		#Lepton ID efficiency reweighting
+		( lep_ID_BtoF_sf, lep_ID_BtoF_sf_up, lep_ID_BtoF_sf_down, 
+			lep_ID_GH_sf, lep_ID_GH_sf_up, lep_ID_GH_sf_down ) = self.corrector.getIDEff(self.allBranches['npv'].getReadValue(),lep)
+		self.sf_lep_ID_BtoF.setWriteValue(lep_ID_BtoF_sf); self.sf_lep_ID_BtoF_hi.setWriteValue(lep_ID_BtoF_sf_up); self.sf_lep_ID_BtoF_low.setWriteValue(lep_ID_BtoF_sf_down)
+		self.sf_lep_ID_GH.setWriteValue(lep_ID_GH_sf); 	   self.sf_lep_ID_GH_hi.setWriteValue(lep_ID_GH_sf_up); 	self.sf_lep_ID_GH_low.setWriteValue(lep_ID_GH_sf_down)
+		#Lepton isolation efficiency reweighting
+		( lep_iso_BtoF_sf, lep_iso_BtoF_sf_up, lep_iso_BtoF_sf_down, 
+			lep_iso_GH_sf, lep_iso_GH_sf_up, lep_iso_GH_sf_down ) = self.corrector.getIsoEff(self.allBranches['npv'].getReadValue(),topology,lep)
+		self.sf_lep_iso_BtoF.setWriteValue(lep_iso_BtoF_sf); self.sf_lep_iso_BtoF_hi.setWriteValue(lep_iso_BtoF_sf_up); self.sf_lep_iso_BtoF_low.setWriteValue(lep_iso_BtoF_sf_down)
+		self.sf_lep_iso_GH.setWriteValue(lep_iso_GH_sf); 	 self.sf_lep_iso_GH_hi.setWriteValue(lep_iso_GH_sf_up); 	self.sf_lep_iso_GH_low.setWriteValue(lep_iso_GH_sf_down)
+		#Lepton mini isolation efficiency reweighting
+		lep_mini_iso_sf, lep_mini_iso_sf_up, lep_mini_iso_sf_down = self.corrector.getMiniIsoEff(self.allBranches['npv'].getReadValue(),lep)
+		self.sf_lep_mini_iso.setWriteValue(lep_mini_iso_sf); self.sf_lep_mini_iso_hi.setWriteValue(lep_mini_iso_sf_up); self.sf_lep_mini_iso_low.setWriteValue(lep_mini_iso_sf_down)
+		#b-tagging efficiency reweighting
+		btag_eff_sf, btag_eff_sf_up, btag_eff_sf_down = self.corrector.getBTagEff(ak4jets)
+		self.sf_btag_eff.setWriteValue(btag_eff_sf); self.sf_btag_eff_hi.setWriteValue(btag_eff_sf_up); self.sf_btag_eff_low.setWriteValue(btag_eff_sf_down)
+		#Scale, and pdf/alpha_s reweights (ttbar only)
+		if self.event_type.getWriteValue()<4 :
+			( mu_R_sf, mu_R_sf_up, mu_R_sf_down, mu_F_sf, mu_F_sf_up, mu_F_sf_down,
+			 scale_comb_sf, scale_comb_sf_up, scale_comb_sf_down, pdf_alphas_sf, pdf_alphas_sf_up, pdf_alphas_sf_down ) = self.corrector.getGenReweights(self.genUncBranches)
+			self.sf_mu_R.setWriteValue(mu_R_sf); self.sf_mu_R_hi.setWriteValue(mu_R_sf_up); self.sf_mu_R_low.setWriteValue(mu_R_sf_down)
+			self.sf_mu_F.setWriteValue(mu_F_sf); self.sf_mu_F_hi.setWriteValue(mu_F_sf_up); self.sf_mu_F_low.setWriteValue(mu_F_sf_down)
+			self.sf_scale_comb.setWriteValue(scale_comb_sf); self.sf_scale_comb_hi.setWriteValue(scale_comb_sf_up); self.sf_scale_comb_low.setWriteValue(scale_comb_sf_down)
+			self.sf_pdf_alphas.setWriteValue(pdf_alphas_sf); self.sf_pdf_alphas_hi.setWriteValue(pdf_alphas_sf_up); self.sf_pdf_alphas_low.setWriteValue(pdf_alphas_sf_down)
 
 	##################################  selection cut helper functions  ##################################
 
@@ -1246,27 +1171,17 @@ class Reconstructor(object) :
 	##################################   reset function   ##################################
 	#########  sets all relevant values back to initial values to get ready for next event  ##########
 	def reset(self) :
-		checkmem('&','reset_start')
 		for branch in self.allBranches.values() :
-			checkmem('&&','%s_%s_reset_start'%(branch.getReadName(),branch.getWriteName()))
 			branch.reset()
-			checkmem('&&','%s_%s_reset_end'%(branch.getReadName(),branch.getWriteName()))
-		checkmem('&','before_gcCollect')
 		gc.collect()
-		checkmem('&','reset_end')
 
 	##############################   tree filling functions  ###############################		
 
 	def __setFourVectorBranchValues__(self,name,vec) :
-		checkmem('&&&&','before_settingFourVector_pt_for_'+name)
 		self.allBranches[name+'_pt'].setWriteValue(vec.Pt())
-		checkmem('&&&&','before_settingFourVector_eta_for_'+name)
 		self.allBranches[name+'_eta'].setWriteValue(vec.Eta())
-		checkmem('&&&&','before_settingFourVector_phi_for_'+name)
 		self.allBranches[name+'_phi'].setWriteValue(vec.Phi())
-		checkmem('&&&&','before_settingFourVector_M_for_'+name)
 		self.allBranches[name+'_M'].setWriteValue(vec.M())
-		checkmem('&&&&','after_settingFourVectors_for_'+name)
 
 	def __setLeptonBranchValues__(self,name,lep) :
 		self.__setFourVectorBranchValues__(name,lep.getFourVector())
