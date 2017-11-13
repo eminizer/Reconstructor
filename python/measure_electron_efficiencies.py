@@ -13,20 +13,10 @@ from glob import glob
 import sys
 
 #Global variables
-##Histogram bins
-ele_pt_bins 	 = array('d',[0.,40.,50.,95.,130.,165.,210.,300.,500.])
-eta_bins 		 = array('d',[-2.5,-1.,-0.5,0.,0.5,0.75,1.,2.5])
-ele_pt_bins_2D 	 = array('d',[50.,95.,130.,165.,210.,300.])
-eta_bins_2D 	 = array('d',[0.,0.5,0.75,1.,2.5])
-pu_bins 		 = array('d',[0.,2.5,4.5,6.5,8.5,10.5,12.5,14.5,16.5,18.5,20.5,22.5,24.5,26.5,28.5,30.5,32.5,34.5,36.5,38.5,40.5,42.5,44.5])
-n_ele_pt_bins 	 = len(ele_pt_bins)-1
-n_eta_bins 		 = len(eta_bins)-1
-n_ele_pt_bins_2D = len(ele_pt_bins_2D)-1
-n_eta_bins_2D 	 = len(eta_bins_2D)-1
-n_pu_bins 		 = len(pu_bins)-1
 #constants
 LUMINOSITYBTOFELE = 19171.010
-LUMINOSITYGHELE   = 16214.862
+#LUMINOSITYGHELE   = 16214.862
+LUMINOSITYGHELE   = 7564.499 #without Hv2 and Hv3
 LUMINOSITYBTOFMU  = 19690.184
 LUMINOSITYGHMU 	  = 16226.452
 
@@ -38,7 +28,7 @@ parser.add_option('--mode', 	  type='string', action='store', dest='mode',
 	help='What would you like to measure with this run? ("trigger/trig", "ID", or "iso[lation]")')
 parser.add_option('--ttbar_generator', 	  type='string', action='store', default='powheg', dest='ttbar_generator',	   	  
 	help='Use "powheg" or "mcatnlo" ttbar MC?')
-parser.add_option('--topology', 	  type='string', action='store', default='boosted', dest='topology',	   	  
+parser.add_option('--topology', 	  type='string', action='store', dest='topology',	   	  
 	help='Measure for "boosted" or "resolved" events?')
 parser.add_option('--use_preskimmed_files', type='string', action='store', default='no', dest='usepreskim')
 parser.add_option('--print_every',type='int',    action='store', default=1000000,	  dest='print_every', 
@@ -57,6 +47,25 @@ elif mode in ['id'] :
 elif mode in ['iso','isolation'] :
 	mode = 'iso'
 print 'Running electron %s efficiencies'%('trigger' if mode=='t' else mode)
+
+##Histogram bins
+if options.topology=='boosted' :
+	ele_pt_bins 	 = array('d',[0.,40.,95.,130.,165.,210.,275.,500.])
+	eta_bins 		 = array('d',[-2.5,-1.,-0.5,0.,0.5,1.,2.5])
+	ele_pt_bins_2D 	 = array('d',[40.,95.,130.,165.,210.,275.,500.])
+	eta_bins_2D 	 = array('d',[0.,0.5,1.,2.5])
+	pu_bins 		 = array('d',[0.,8.5,10.5,12.5,14.5,16.5,18.5,20.5,22.5,24.5,26.5,28.5,30.5,50.5])
+elif options.topology=='resolved' :
+	ele_pt_bins 	 = array('d',[0.,40.,80.,95.,110.,130.,155.,210.,275.,500.])
+	eta_bins 		 = array('d',[-2.5,-1.,-0.5,0.,0.5,1.,2.5])
+	ele_pt_bins_2D 	 = array('d',[40.,80.,95.,110.,130.,155.,210.,275.,500.])
+	eta_bins_2D 	 = array('d',[0.,0.5,1.,2.5])
+	pu_bins 		 = array('d',[0.,8.5,10.5,12.5,14.5,16.5,18.5,20.5,22.5,24.5,26.5,28.5,30.5,50.5])
+n_ele_pt_bins 	 = len(ele_pt_bins)-1
+n_eta_bins 		 = len(eta_bins)-1
+n_ele_pt_bins_2D = len(ele_pt_bins_2D)-1
+n_eta_bins_2D 	 = len(eta_bins_2D)-1
+n_pu_bins 		 = len(pu_bins)-1
 
 ##########							Sample List 								##########
 
@@ -123,7 +132,7 @@ data_samplenames = []
 #	samplenames.append('SingleMu_Run2016G')
 #	samplenames.append('SingleMu_Run2016Hv2')
 #	samplenames.append('SingleMu_Run2016Hv3')
-if mode=='t' or mode=='id' or mode=='iso' :
+if mode=='t' :
 	samplenames.append('SingleEl_Run2016Bv2')
 	samplenames.append('SingleEl_Run2016C')
 	samplenames.append('SingleEl_Run2016D')
@@ -145,7 +154,7 @@ class filegroup :
 	#__init__function
 	def __init__(self,name,chain,outputfile,mode) :
 		self.name = name
-		isdata = name.find('SingleEl')!=-1 or name.find('SingleMu')!=-1
+		isdata = name.find('data')!=-1
 		self.chain = chain
 		self.mode=mode
 		self.corrector = Corrector(isdata,'no',TH1F('pileup','pileup',100,0.,100.),'B',{'alpha':1.0,'epsilon':1.0})
@@ -156,10 +165,6 @@ class filegroup :
 		themuon_eta   = array('f',[100.0]); self.chain.SetBranchAddress('eltrig_themuon_eta',themuon_eta); 	  self.phyobjbs['themuon_eta'] = (themuon_eta,100.0)
 		theele_pt 	  = array('f',[-1.0]);  self.chain.SetBranchAddress('eltrig_theelectron_pt',theele_pt);   self.phyobjbs['theele_pt'] = (theele_pt,-1.0)
 		theele_eta 	  = array('f',[100.0]); self.chain.SetBranchAddress('eltrig_theelectron_eta',theele_eta); self.phyobjbs['theele_eta'] = (theele_eta,100.0)
-		#tag_pt 		  = array('f',[-1.0]);  self.chain.SetBranchAddress('elID_tag_pt',tag_pt); 				  self.phyobjbs['tag_pt'] = (tag_pt,-1.0)
-		#tag_eta 	  = array('f',[100.0]); self.chain.SetBranchAddress('elID_tag_eta',tag_eta); 			  self.phyobjbs['tag_eta'] = (tag_eta,100.0)
-		#probe_pt 	  = array('f',[-1.0]);  self.chain.SetBranchAddress('elID_probe_pt',probe_pt); 			  self.phyobjbs['probe_pt'] = (probe_pt,-1.0)
-		#probe_eta 	  = array('f',[100.0]); self.chain.SetBranchAddress('elID_probe_eta',probe_eta); 		  self.phyobjbs['probe_eta'] = (probe_eta,100.0)
 		evt_pu 		  = array('i',[-1]); 	self.chain.SetBranchAddress('ngoodvtx',evt_pu); 				  self.phyobjbs['evt_pu'] = (evt_pu,-1)
 		evt_top 	  = array('i',[0]); 	self.chain.SetBranchAddress('eventTopology',evt_top); 			  self.phyobjbs['evt_top'] = (evt_top,0)
 		nbTags 		  = array('i',[0]); 	self.chain.SetBranchAddress('nbTags',nbTags); 					  self.phyobjbs['nbTags'] = (nbTags,0)
@@ -167,12 +172,14 @@ class filegroup :
 		#selection and trigger variables
 		self.selecpassbs = {}
 		selectiontrig = array('I',[2]); self.chain.SetBranchAddress('eltrig_fullselection',selectiontrig); self.selecpassbs['selectiontrig'] = (selectiontrig,2)
+		#mutrig 		  = array('I',[2]); self.chain.SetBranchAddress('eltrig_mutrigger',mutrig); 		   self.selecpassbs['mutrig'] = (mutrig,2)
+		#isomu 		  = array('I',[2]); self.chain.SetBranchAddress('eltrig_isomu',isomu); 				   self.selecpassbs['isomu'] = (isomu,2)
+		#isoel 		  = array('I',[2]); self.chain.SetBranchAddress('eltrig_isoel',isoel); 				   self.selecpassbs['isoel'] = (isoel,2)
+		#twoleptons 	  = array('I',[2]); self.chain.SetBranchAddress('eltrig_twoleptons',twoleptons); 	   self.selecpassbs['twoleptons'] = (twoleptons,2)
+		#opplepcharge  = array('I',[2]); self.chain.SetBranchAddress('eltrig_opplepcharge',opplepcharge);   self.selecpassbs['opplepcharge'] = (opplepcharge,2)
+		#btags 		  = array('I',[2]); self.chain.SetBranchAddress('eltrig_btags',btags); 				   self.selecpassbs['btags'] = (btags,2)
+		#lepWpT 		  = array('I',[2]); self.chain.SetBranchAddress('eltrig_lepWpT',lepWpT); 			   self.selecpassbs['lepWpT'] = (lepWpT,2)
 		passtrig 	  = array('I',[2]); self.chain.SetBranchAddress('eltrig_eltrigger',passtrig); 		   self.selecpassbs['passtrig'] = (passtrig,2)
-		#selectionID   = array('I',[2]); self.chain.SetBranchAddress('elID_fullselection',selectionID); 	   self.selecpassbs['selectionID'] = (selectionID,2)
-		#passID 		  = array('I',[2]); self.chain.SetBranchAddress('elID_probeID',passID); 			   self.selecpassbs['passID'] = (passID,2)
-		#selectioniso  = array('I',[2]); self.chain.SetBranchAddress('elID_fullselection',selectioniso);    self.selecpassbs['selectioniso'] = (selectioniso,2)
-		#passiso 	  = array('I',[2]); self.chain.SetBranchAddress('elID_isoprobe',passiso); 			   self.selecpassbs['passiso'] = (passiso,2)
-		jets_cut 	  = array('I',[2]); self.chain.SetBranchAddress('ak4jetcuts',jets_cut); 			   self.selecpassbs['jets_cut'] = (jets_cut,2)
 		#reweighting factors we can read from the files without recalculating
 		self.rwbs = {}
 		weight 		  = array('f',[1.0]);  self.chain.SetBranchAddress('weight',weight); 			   self.rwbs['weight'] = (weight,1.0)
@@ -183,15 +190,14 @@ class filegroup :
 		sf_scale_comb = array('f',[1.0]);  self.chain.SetBranchAddress('sf_scale_comb',sf_scale_comb); self.rwbs['sf_scale_comb'] = (sf_scale_comb,1.0)
 		sf_pdf_alphas = array('f',[1.0]);  self.chain.SetBranchAddress('sf_pdf_alphas',sf_pdf_alphas); self.rwbs['sf_pdf_alphas'] = (sf_pdf_alphas,1.0)
 		#Set up output TTree
-		self.tree  = TTree('tree','tree')
+		tname = 'data_tree' if isdata else 'MC_tree'
+		self.tree  = TTree(tname,tname)
 		self.otbs = {}
 		el_pt 	   = array('f',[-1.0]); self.tree.Branch('el_pt',el_pt,'el_pt/F'); self.otbs['el_pt'] = (el_pt,-1.0)
 		el_eta 	   = array('f',[100.]); self.tree.Branch('el_eta',el_eta,'el_eta/F'); self.otbs['el_eta'] = (el_eta,100.)
 		pu 		   = array('i',[-1]);   self.tree.Branch('pu',pu,'pu/I'); self.otbs['pu'] = (pu,-1)
 		topology   = array('i',[0]); 	self.tree.Branch('topology',topology,'topology/I'); self.otbs['topology'] = (topology,0)
 		pass_trig  = array('I',[2]);    self.tree.Branch('pass_trig',pass_trig,'pass_trig/i'); self.otbs['pass_trig'] = (pass_trig,2)
-		pass_ID    = array('I',[2]);    self.tree.Branch('pass_ID',pass_ID,'pass_ID/i'); self.otbs['pass_ID'] = (pass_ID,2)
-		pass_iso   = array('I',[2]);    self.tree.Branch('pass_iso',pass_iso,'pass_iso/i'); self.otbs['pass_iso'] = (pass_iso,2)
 		evt_weight = array('f',[1.0]); 	self.tree.Branch('evt_weight',evt_weight,'evt_weight/F'); self.otbs['evt_weight'] = (evt_weight,1.0)
 		self.allbranchdicts = [self.phyobjbs,self.selecpassbs,self.rwbs,self.otbs]
 		#Set up histograms and efficiency graphs
@@ -245,33 +251,28 @@ class filegroup :
 			#print progress
 			if count % options.print_every == 0 or count == 1:
 				print 'Count at '+str(count)+' out of '+str(nEntries)+', (%.4f%% complete)'%(float(count) / float(nEntries) * 100.0)
+
+			#reset all of the arrays holding tree branches
+			for branchdict in self.allbranchdicts :
+				for branchtuple in branchdict.values() :
+					branchtuple[0][0] = branchtuple[1]
 			
 			chain.GetEntry(entry)
+
+			##readjust the trigger selection cuts (for now, until I fix how they're hardcoded)
+			#selectiontrig[0] = 1 if (mutrig[0]==1 and isomu[0]==1 and isoel[0]==1 and twoleptons[0]==1 and opplepcharge[0]==1 and btags[0]==1 and lepWpT[0]==1) else 0 		  
 			
 			cuts = []
-			cuts.append(self.name.lower().find('data')!=-1 or weight[0]!=1.0)
+			cuts.append(isdata or weight[0]!=1.0)
 			#cuts only dependent on topology
 			if options.topology=='boosted' :
 				cuts.append(evt_top[0]<3)
-				cuts.append(nbTags[0]>0)
 			elif options.topology=='resolved' :
 				cuts.append(evt_top[0]==3)
-				cuts.append(nbTags[0]>1)
 			#cuts for trigger analysis
 			if mode=='t' :
 				cuts.append(selectiontrig[0]==1)
 				cuts.append(lepflavor[0]==2)
-			#cuts for ID analysis
-			elif mode=='id' :
-				##print 'selection = %d'%(selectionID[0]) #DEBUG
-				#cuts.append(selectionID[0]==1)
-				cuts.append(lepflavor[0]==2)
-			#cuts for isolation analysis
-			elif mode=='iso' :
-				print 'hey, this is trying to measure isolation efficiency, which is no longer a thing, thanks, yikes!'
-				#cuts.append(selectioniso[0]==1)
-			#miscellaneous
-			cuts.append(jets_cut[0]==1)
 			#check all cuts
 			if cuts.count(False) > 0 :
 				continue
@@ -282,28 +283,19 @@ class filegroup :
 			pu[0] = evt_pu[0]
 			topology[0] = evt_top[0]
 			pass_trig[0] = passtrig[0]
-			#pass_ID[0] 	 = passID[0]
-			#pass_iso[0]  = passiso[0]
 			evt_weight[0] = self.__getEvtWeight__()
 			self.tree.Fill()
-			
+
 			#fill the histograms (bring parameters in range)
-			self.ele_pt_all.Fill(max(min(el_pt[0],ele_pt_bins[n_ele_pt_bins-1]-0.0001),ele_pt_bins[0]+0.0001),evt_weight[0])
-			self.ele_eta_all.Fill(max(min(el_eta[0],eta_bins[n_eta_bins-1]-0.0001),eta_bins[0]+0.0001),evt_weight[0])
-			self.evt_pu_all.Fill(max(min(pu[0],pu_bins[n_pu_bins-1]-0.0001),pu_bins[0]+0.0001),evt_weight[0])
-			self.histo_2d_all.Fill(max(min(el_pt[0],ele_pt_bins_2D[n_ele_pt_bins_2D-1]-0.0001),ele_pt_bins_2D[0]+0.0001),max(min(abs(el_eta[0]),eta_bins_2D[n_eta_bins_2D-1]-0.0001),eta_bins_2D[0]+0.0001),evt_weight[0])
-			if mode=='id': #DEBUG
-				print 'pass_ID[0]=%d'%(pass_ID[0]) #DEBUG
-			if (mode=='t' and pass_trig[0]==1) or (mode=='id' and pass_ID[0]==1) or (mode=='iso' and pass_iso[0]==1) :
-				self.ele_pt_pass.Fill(max(min(el_pt[0],ele_pt_bins[n_ele_pt_bins-1]-0.0001),ele_pt_bins[0]+0.0001),evt_weight[0])
-				self.ele_eta_pass.Fill(max(min(el_eta[0],eta_bins[n_eta_bins-1]-0.0001),eta_bins[0]+0.0001),evt_weight[0])
-				self.evt_pu_pass.Fill(max(min(pu[0],pu_bins[n_pu_bins-1]-0.0001),pu_bins[0]+0.0001),evt_weight[0])
-				self.histo_2d_pass.Fill(max(min(el_pt[0],ele_pt_bins_2D[n_ele_pt_bins_2D-1]-0.0001),ele_pt_bins_2D[0]+0.0001),max(min(abs(el_eta[0]),eta_bins_2D[n_eta_bins_2D-1]-0.0001),eta_bins_2D[0]+0.0001),evt_weight[0])
-		
-			#reset all of the arrays holding tree branches
-			for branchdict in self.allbranchdicts :
-				for branchtuple in branchdict.values() :
-					branchtuple[0][0] = branchtuple[1]
+			self.ele_pt_all.Fill(el_pt[0],evt_weight[0])
+			self.ele_eta_all.Fill(el_eta[0],evt_weight[0])
+			self.evt_pu_all.Fill(pu[0],evt_weight[0])
+			self.histo_2d_all.Fill(el_pt[0],abs(el_eta[0]),evt_weight[0])
+			if (mode=='t' and pass_trig[0]==1) :
+				self.ele_pt_pass.Fill(el_pt[0],evt_weight[0])
+				self.ele_eta_pass.Fill(el_eta[0],evt_weight[0])
+				self.evt_pu_pass.Fill(pu[0],evt_weight[0])
+				self.histo_2d_pass.Fill(el_pt[0],abs(el_eta[0]),evt_weight[0])
 
 		print 'Done'
 		
@@ -414,20 +406,11 @@ class filegroup :
 		#	if self.rwbs['sf_pileup'][0][0]<0.5 : #DEBUG
 		#		print 'finalweight=%.4f'%(finalweight) #DEBUG
 			return finalweight
-		elif self.mode=='id' :
-			#tag ID efficiency
-			#tagideffbtof, scrap1, scrap2, tagideffgh, scrap3, scrap4 = self.corrector.getIDEff(self.phyobjbs['evt_pu'][0][0],'el',self.phyobjbs['tag_pt'][0][0],self.phyobjbs['tag_eta'][0][0])
-			#tag isolation efficiency
-			#tagisoeffbtof, scrap1, scrap2, tagisoeffgh, scrap3, scrap4 = self.corrector.getIsoEff(self.phyobjbs['evt_pu'][0][0],self.phyobjbs['evt_top'][0][0],'el',self.phyobjbs['tag_pt'][0][0],self.phyobjbs['tag_eta'][0][0])
-			#combine and return
-			return initialweight*((LUMINOSITYBTOFELE*tagideffbtof*tagisoeffbtof)+(LUMINOSITYGHELE*tagideffgh*tagisoeffgh))
-		elif self.mode=='iso' : #fix this later
-			return None
 
 	def getEventsSelected(self) :
-		return self.ele_pt_all.Integral()
+		return self.histo_2d_all.Integral()
 	def getEventsPassing(self) :
-		return self.ele_pt_pass.Integral()
+		return self.histo_2d_pass.Integral()
 	def getGraphs(self) :
 		return self.ele_pt_gr, self.ele_eta_gr, self.pu_gr
 	def getFitGraphs(self) :
@@ -451,6 +434,8 @@ for sample in samplenames :
 		filenamelist+=glob('../total_ttree_files/'+sample+'_skim_all.root')
 print 'Chaining files... '
 for filename in filenamelist :
+	if filename.find('JES')!=-1 or filename.find('JER')!=-1 :
+		continue
 	if filename.find('SingleMu')!=-1 or filename.find('SingleEl')!=-1 :
 		#print 'Adding file '+filename+' to data chain' #DEBUG
 		data_chain.Add(filename)
@@ -476,6 +461,7 @@ data_events_selected = data_group.getEventsSelected()
 data_events_passing  = data_group.getEventsPassing()
 mc_events_selected 	 = mc_group.getEventsSelected()
 mc_events_passing  	 = mc_group.getEventsPassing()
+print 'data selected = %d, data passing = %d, mc selected = %d, mc passing = %d'%(data_events_selected,data_events_passing,mc_events_selected,mc_events_passing)
 data_eff = data_events_passing/data_events_selected
 data_eff_err = data_eff*sqrt(1./data_events_passing+1./data_events_selected)
 mc_eff = mc_events_passing/mc_events_selected

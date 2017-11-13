@@ -7,16 +7,19 @@ from optparse import OptionParser
 parser = OptionParser()
 #Run options
 parser.add_option('--leptype', 	  type='string', action='store', default='all_leptons', dest='leptype',	   	  
-	help='Use SingleMu or SingleEl data? ("muons" of "electrons")')
+	help='Use SingleMu or SingleEl data? ("muons" or "electrons")')
+parser.add_option('--topologies', 	  type='string', action='store', default='t1_t2_t3', dest='topologies',	   	  
+	help='Which topologies should we make tables for? (default: t1_t2_t3)')
 (options, args) = parser.parse_args()
 
 leptype=options.leptype.lower()
+topologies = options.topologies.split('_')
 
 cutflow_filename = 'cutflow_count'
-cutflow_filename+='_'+leptype+'.csv'
+cutflow_filename+='_'+leptype+'_'+options.topologies+'.csv'
 
 tex_filename = 'cutflow_count'
-tex_filename+='_'+leptype+'_texlines.txt'
+tex_filename+='_'+leptype+'_'+options.topologies+'_texlines.txt'
 
 filenames = []
 shortnames = []
@@ -119,48 +122,77 @@ for ele_data_filename in ele_data_filenames :
 #Cut details
 cutnames = []; cutstrings = []; prior_cutstrings = []
 metfilters = 'metfilters==1'
+METcuts = 'METcuts==1'
 trigger = 'trigger==1'
-isolepton = 'isolepton==1 && ((eventTopology<3 && ((lepflavor==1 && (lep_relPt>30. || lep_dR>0.4)) || (lepflavor==2 && lep_relPt>30. && lep_dR>0.4)))'
-isolepton+=' || (eventTopology==3 && ((lepflavor==1 && (lep_relPt>30. || lep_dR>0.4)) || (lepflavor==2 && lep_relPt>20. && lep_dR>0.4))))'
+isolepton = 'isolepton==1'
 onelepton = 'onelepton==1'
 btags = 'btags==1'
-nak4jets = 'nak4jets'
 jetcuts = 'ak4jetcuts==1'
-othercuts = 'othercuts==1'
 validminimization = 'validminimization==1'
+kinfitchi2 = 'kinfitchi2==1'
+recoleptM = 'recoleptM==1'
 fullselection = 'fullselection==1'
+wjetscrselection = 'wjets_cr_selection==1'
+qcdbaseselection = 'metfilters==1 && trigger==1 && onelepton==1 && btags==1 && ak4jetmult==1 && ak4jetcuts==1 && validminimization==1'
+qcdASRselection = qcdbaseselection+' && kinfitchi2==1 && recoleptM==1 && isolepton==1 && METcuts==0'
+qcdBSRselection = qcdbaseselection+' && kinfitchi2==1 && recoleptM==1 && isolepton==0 && METcuts==0'
+qcdCSRselection = qcdbaseselection+' && kinfitchi2==1 && recoleptM==1 && isolepton==0 && METcuts==1'
+qcdACRselection = qcdbaseselection+' && (kinfitchi2==0 || recoleptM==0) && isolepton==1 && METcuts==0'
+qcdBCRselection = qcdbaseselection+' && (kinfitchi2==0 || recoleptM==0) && isolepton==0 && METcuts==0'
+qcdCCRselection = qcdbaseselection+' && (kinfitchi2==0 || recoleptM==0) && isolepton==0 && METcuts==1'
 
-cutnames.append('t1 skim'); 				  cutstrings.append('weight!=0.'); 		prior_cutstrings.append('weight!=0.')
-cutnames.append('t1 MET filters'); 			  cutstrings.append(metfilters); 		prior_cutstrings.append('weight!=0.')
-cutnames.append('t1 trigger'); 				  cutstrings.append(trigger); 			prior_cutstrings.append('weight!=0.')
-cutnames.append('t1 lepton 2D isolation'); 	  cutstrings.append(isolepton); 		prior_cutstrings.append('weight!=0.')
-cutnames.append('t1 additional lepton veto'); cutstrings.append(onelepton); 		prior_cutstrings.append('weight!=0.')
-cutnames.append('t1 nbtags'); 				  cutstrings.append(btags); 			prior_cutstrings.append('weight!=0.')
-cutnames.append('t1 n AK4 jets'); 			  cutstrings.append(nak4jets); 			prior_cutstrings.append('weight!=0.')
-cutnames.append('t1 jet cuts'); 			  cutstrings.append(jetcuts); 			prior_cutstrings.append('weight!=0.')
-cutnames.append('t1 full selection'); 		  cutstrings.append(fullselection); 	prior_cutstrings.append('weight!=0.')
+if 't1' in topologies :
+	cutnames.append('t1 skim'); 				  cutstrings.append('weight!=0.'); 		prior_cutstrings.append('weight!=0.')
+	cutnames.append('t1 MET filters'); 			  cutstrings.append(metfilters); 		prior_cutstrings.append('weight!=0.')
+	cutnames.append('t1 trigger'); 				  cutstrings.append(trigger); 			prior_cutstrings.append('weight!=0.')
+	cutnames.append('t1 MET cuts'); 			  cutstrings.append(METcuts); 			prior_cutstrings.append('weight!=0.')
+	cutnames.append('t1 lepton 2D isolation'); 	  cutstrings.append(isolepton); 		prior_cutstrings.append('weight!=0.')
+	cutnames.append('t1 additional lepton veto'); cutstrings.append(onelepton); 		prior_cutstrings.append('weight!=0.')
+	cutnames.append('t1 nbtags'); 				  cutstrings.append(btags); 			prior_cutstrings.append('weight!=0.')
+	cutnames.append('t1 jet cuts'); 			  cutstrings.append(jetcuts); 			prior_cutstrings.append('weight!=0.')
+	cutnames.append('t1 valid minimization'); 	  cutstrings.append(validminimization); prior_cutstrings.append('weight!=0.')
+	cutnames.append('t1 reco lept mass'); 	  	  cutstrings.append(recoleptM); 		prior_cutstrings.append('weight!=0.')
+	cutnames.append('t1 kinfit chi2'); 	  	  	  cutstrings.append(kinfitchi2); 		prior_cutstrings.append('weight!=0.')
+	cutnames.append('t1 full selection'); 		  cutstrings.append(fullselection); 	prior_cutstrings.append('weight!=0.')
+	cutnames.append('t1 WJets CR selection'); 	  cutstrings.append(wjetscrselection); 	prior_cutstrings.append('weight!=0.')
 
-cutnames.append('t2 skim'); 				  cutstrings.append('weight!=0.'); 		prior_cutstrings.append('weight!=0.')
-cutnames.append('t2 MET filters'); 			  cutstrings.append(metfilters); 		prior_cutstrings.append('weight!=0.')
-cutnames.append('t2 trigger'); 				  cutstrings.append(trigger); 			prior_cutstrings.append('weight!=0.')
-cutnames.append('t2 lepton 2D isolation'); 	  cutstrings.append(isolepton); 		prior_cutstrings.append('weight!=0.')
-cutnames.append('t2 additional lepton veto'); cutstrings.append(onelepton); 		prior_cutstrings.append('weight!=0.')
-cutnames.append('t2 nbtags'); 				  cutstrings.append(btags); 			prior_cutstrings.append('weight!=0.')
-cutnames.append('t2 n AK4 jets'); 			  cutstrings.append(nak4jets); 			prior_cutstrings.append('weight!=0.')
-cutnames.append('t2 jet cuts'); 			  cutstrings.append(jetcuts); 			prior_cutstrings.append('weight!=0.')
-cutnames.append('t2 full selection'); 		  cutstrings.append(fullselection); 	prior_cutstrings.append('weight!=0.')
+if 't2' in topologies :
+	cutnames.append('t2 skim'); 				  cutstrings.append('weight!=0.'); 		prior_cutstrings.append('weight!=0.')
+	cutnames.append('t2 MET filters'); 			  cutstrings.append(metfilters); 		prior_cutstrings.append('weight!=0.')
+	cutnames.append('t2 trigger'); 				  cutstrings.append(trigger); 			prior_cutstrings.append('weight!=0.')
+	cutnames.append('t2 MET cuts'); 			  cutstrings.append(METcuts); 			prior_cutstrings.append('weight!=0.')
+	cutnames.append('t2 lepton 2D isolation'); 	  cutstrings.append(isolepton); 		prior_cutstrings.append('weight!=0.')
+	cutnames.append('t2 additional lepton veto'); cutstrings.append(onelepton); 		prior_cutstrings.append('weight!=0.')
+	cutnames.append('t2 nbtags'); 				  cutstrings.append(btags); 			prior_cutstrings.append('weight!=0.')
+	cutnames.append('t2 jet cuts'); 			  cutstrings.append(jetcuts); 			prior_cutstrings.append('weight!=0.')
+	cutnames.append('t2 valid minimization'); 	  cutstrings.append(validminimization); prior_cutstrings.append('weight!=0.')
+	cutnames.append('t2 reco lept mass'); 	  	  cutstrings.append(recoleptM); 		prior_cutstrings.append('weight!=0.')
+	cutnames.append('t2 kinfit chi2'); 	  	  	  cutstrings.append(kinfitchi2); 		prior_cutstrings.append('weight!=0.')
+	cutnames.append('t2 full selection'); 		  cutstrings.append(fullselection); 	prior_cutstrings.append('weight!=0.')
+	cutnames.append('t2 WJets CR selection'); 	  cutstrings.append(wjetscrselection); 	prior_cutstrings.append('weight!=0.')
+	cutnames.append('t2 QCD A SR selection'); 	  cutstrings.append(qcdASRselection); 	prior_cutstrings.append('weight!=0.')
+	cutnames.append('t2 QCD B SR selection'); 	  cutstrings.append(qcdBSRselection); 	prior_cutstrings.append('weight!=0.')
+	cutnames.append('t2 QCD C SR selection'); 	  cutstrings.append(qcdCSRselection); 	prior_cutstrings.append('weight!=0.')
+	cutnames.append('t2 QCD A CR selection'); 	  cutstrings.append(qcdACRselection); 	prior_cutstrings.append('weight!=0.')
+	cutnames.append('t2 QCD B CR selection'); 	  cutstrings.append(qcdBCRselection); 	prior_cutstrings.append('weight!=0.')
+	cutnames.append('t2 QCD C CR selection'); 	  cutstrings.append(qcdCCRselection); 	prior_cutstrings.append('weight!=0.')
 
-cutnames.append('t3 skim'); 				  cutstrings.append('weight!=0.'); 		prior_cutstrings.append('weight!=0.')
-cutnames.append('t3 MET filters'); 			  cutstrings.append(metfilters); 		prior_cutstrings.append('weight!=0.')
-cutnames.append('t3 trigger'); 				  cutstrings.append(trigger); 			prior_cutstrings.append('weight!=0.')
-cutnames.append('t3 lepton 2D isolation'); 	  cutstrings.append(isolepton); 		prior_cutstrings.append('weight!=0.')
-cutnames.append('t3 additional lepton veto'); cutstrings.append(onelepton); 		prior_cutstrings.append('weight!=0.')
-cutnames.append('t3 nbtags'); 				  cutstrings.append(btags); 			prior_cutstrings.append('weight!=0.')
-cutnames.append('t3 n AK4 jets'); 			  cutstrings.append(nak4jets); 			prior_cutstrings.append('weight!=0.')
-cutnames.append('t3 full selection'); 		  cutstrings.append(fullselection); 	prior_cutstrings.append('weight!=0.')
+if 't3' in topologies :
+	cutnames.append('t3 skim'); 				  cutstrings.append('weight!=0.'); 		prior_cutstrings.append('weight!=0.')
+	cutnames.append('t3 MET filters'); 			  cutstrings.append(metfilters); 		prior_cutstrings.append('weight!=0.')
+	cutnames.append('t3 trigger'); 				  cutstrings.append(trigger); 			prior_cutstrings.append('weight!=0.')
+	cutnames.append('t3 MET cuts'); 			  cutstrings.append(METcuts); 			prior_cutstrings.append('weight!=0.')
+	cutnames.append('t3 lepton isolation'); 	  cutstrings.append(isolepton); 		prior_cutstrings.append('weight!=0.')
+	cutnames.append('t3 additional lepton veto'); cutstrings.append(onelepton); 		prior_cutstrings.append('weight!=0.')
+	cutnames.append('t3 nbtags'); 				  cutstrings.append(btags); 			prior_cutstrings.append('weight!=0.')
+	cutnames.append('t3 valid minimization'); 	  cutstrings.append(validminimization); prior_cutstrings.append('weight!=0.')
+	cutnames.append('t3 full selection'); 		  cutstrings.append(fullselection); 	prior_cutstrings.append('weight!=0.')
+	cutnames.append('t3 QCD A SR selection'); 	  cutstrings.append(qcdASRselection); 	prior_cutstrings.append('weight!=0.')
+	cutnames.append('t3 QCD B SR selection'); 	  cutstrings.append(qcdBSRselection); 	prior_cutstrings.append('weight!=0.')
+	cutnames.append('t3 QCD C SR selection'); 	  cutstrings.append(qcdCSRselection); 	prior_cutstrings.append('weight!=0.')
 
 #weight string
-weightstring = '(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF*sf_lep_iso_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH*sf_lep_iso_GH))*weight*sf_pileup*sf_lep_trk*sf_btag_eff*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
+weightstring = '(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF*sf_lep_iso_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH*sf_lep_iso_GH))*weight*sf_pileup*sf_btag_eff*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
 
 #print out the number of events in data and the efficiencies for the MC samples
 #first line is just table headings for each cutflow and each sample type
@@ -252,35 +284,38 @@ for i in range(len(cutnames)) :
 			if events_at_cut[i][j]!=0. :
 				eff_err = eff*sqrt(1./events_at_cut[i][j]+1./events_at_prior_cut[i][j])
 		#adjust the values for sig figs
-		eff_err_str='('
-		eff_err_digit1 = str(eff_err).replace('.','').strip('0')[0]
-		eff_err_digit2 = str(eff_err).replace('.','').strip('0')[1]
-		eff_err_digit3 = str(eff_err).replace('.','').strip('0')[2]
-		if int(eff_err_digit1)<3 :
-			eff_err_str+=eff_err_digit1
-			if int(eff_err_digit3)<5 or int(eff_err_digit2)==9 :
-				eff_err_str+=eff_err_digit2
-			else :
-				eff_err_str+=str(int(eff_err_digit2)+1)
-		else :
-			if int(eff_err_digit2)<5 or int(eff_err_digit1)==9 :
+		if len(str(eff_err).replace('.','').strip('0'))>2 :
+			eff_err_str='('
+			eff_err_digit1 = str(eff_err).replace('.','').strip('0')[0]
+			eff_err_digit2 = str(eff_err).replace('.','').strip('0')[1]
+			eff_err_digit3 = str(eff_err).replace('.','').strip('0')[2]
+			if int(eff_err_digit1)<3 :
 				eff_err_str+=eff_err_digit1
+				if int(eff_err_digit3)<5 or int(eff_err_digit2)==9 :
+					eff_err_str+=eff_err_digit2
+				else :
+					eff_err_str+=str(int(eff_err_digit2)+1)
 			else :
-				eff_err_str+=str(int(eff_err_digit1)+1)
-		eff_err_str+=')'
-		eff_str_plus_one = str(eff)[:str(eff_err).find(eff_err_digit1)+len(eff_err_str)-1]
-		eff_str = ''
-		if eff_str_plus_one.endswith('.') :
-			if int(str(eff)[:str(eff_err).find(eff_err_digit1)+len(eff_err_str)][-1])<5 or int(eff_str_plus_one[-2])==9 :
-				eff_str+=eff_str_plus_one[:-1]+eff_err_str
+				if int(eff_err_digit2)<5 or int(eff_err_digit1)==9 :
+					eff_err_str+=eff_err_digit1
+				else :
+					eff_err_str+=str(int(eff_err_digit1)+1)
+			eff_err_str+=')'
+			eff_str_plus_one = str(eff)[:str(eff_err).find(eff_err_digit1)+len(eff_err_str)-1]
+			eff_str = ''
+			if eff_str_plus_one.endswith('.') :
+				if int(str(eff)[:str(eff_err).find(eff_err_digit1)+len(eff_err_str)][-1])<5 or int(eff_str_plus_one[-2])==9 :
+					eff_str+=eff_str_plus_one[:-1]+eff_err_str
+				else :
+					eff_str+=eff_str_plus_one[:-2]+str(int(eff_str_plus_one[-2])+1)+eff_err_str
 			else :
-				eff_str+=eff_str_plus_one[:-2]+str(int(eff_str_plus_one[-2])+1)+eff_err_str
+				if int(eff_str_plus_one[-1])<5 or int(eff_str_plus_one[-2])==9 :
+					eff_str+=eff_str_plus_one[:len(eff_str_plus_one)-1]+eff_err_str
+				else :
+					eff_str+=eff_str_plus_one[:len(eff_str_plus_one)-2]+str(int(eff_str_plus_one[-2])+1)+eff_err_str
 		else :
-			if int(eff_str_plus_one[-1])<5 or int(eff_str_plus_one[-2])==9 :
-				eff_str+=eff_str_plus_one[:len(eff_str_plus_one)-1]+eff_err_str
-			else :
-				eff_str+=eff_str_plus_one[:len(eff_str_plus_one)-2]+str(int(eff_str_plus_one[-2])+1)+eff_err_str
-		print 'eff_err = %s, d1 = %s, d2 = %s, d3 = %s, eff = %s, eff_str = %s'%(str(eff_err),eff_err_digit1,eff_err_digit2,eff_err_digit3,str(eff),eff_str) #DEBUG
+			eff_str = str(eff)+'('+str(eff_err)+')'
+		#print 'eff_err = %s, d1 = %s, d2 = %s, d3 = %s, eff = %s, eff_str = %s'%(str(eff_err),eff_err_digit1,eff_err_digit2,eff_err_digit3,str(eff),eff_str) #DEBUG
 		#add to the line
 		next_line+=',%.1f,%.4f,%.4f'%(events_at_cut[i][j],eff,eff_err)
 		next_tex_line+=' & %s'%eff_str

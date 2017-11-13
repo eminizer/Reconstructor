@@ -310,7 +310,7 @@ for event in range(nanalysisevents) :
 			timeSinceSetup = timedelta(seconds=time()-setupDoneTime)
 			percentDone = float(count) / float(min(nanalysisevents,maxEvents)) * 100.0
 			timeLeft = timedelta(seconds=(100.-percentDone)*timeSinceSetup.total_seconds()/percentDone)
-			print ( 'Count at %d out of %d, (%.4f%% complete; time elapsed = %02d:%02d:%02d, approx. time left = %02d:%02d:%02d)'
+			print ( 'Count at %d of %d, (%.4f%% complete; elapsed = %02d:%02d:%02d, remaining = %02d:%02d:%02d)'
 				   %(count,min(nanalysisevents,maxEvents),percentDone,timeSinceSetup.seconds/3600,(timeSinceSetup.seconds%3600)/60,(timeSinceSetup.seconds%60),timeLeft.seconds/3600,(timeLeft.seconds%3600)/60,(timeLeft.seconds%60))  )
 	#analyze event and add to TTree
 	analyzer.analyze(event)

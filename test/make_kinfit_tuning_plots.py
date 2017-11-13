@@ -11,7 +11,7 @@ tdrstyle.setTDRStyle()
 # COMMAND LINE OPTIONS
 parser = OptionParser()
 parser.add_option('--sample',  metavar='F', type='string', action='store', 
-                              dest='sample') 
+                              default='powheg_TT', dest='sample') 
 parser.add_option('--outtag',  metavar='F', type='string', action='store', 
                               default='', 
                               dest='outtag') ## name for output file

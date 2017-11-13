@@ -7,8 +7,8 @@ BEAM_ENERGY=SQRT_S/2.0
 #MU_TRIG_PATH = 'HLT_Mu45_eta2p1'
 MU_TRIG_PATHS = ['HLT_Mu50','HLT_TkMu50']
 #EL_TRIG_PATH = 'HLT_Ele35_CaloIdVT_GsfTrkIdT_PFJet150_PFJet50'
-#EL_TRIG_PATHS = ['HLT_Ele45_CaloIdVT_GsfTrkIdT_PFJet200_PFJet50']
-EL_TRIG_PATHS = ['HLT_Ele45_WPLoose_Gsf']
+#EL_TRIG_PATHS = ['HLT_Ele45_WPLoose_Gsf']
+EL_TRIG_PATHS = ['HLT_Ele27_WPTight_Gsf']
 
 ##########								   Imports  								##########
 
@@ -375,13 +375,13 @@ class Reconstructor(object) :
 	#cut variables for various control regions and sideband selections
 	cr_sb_cut_branches = {}
 	thisdictlist = [allBranches,cr_sb_cut_branches]
-	cutnames = ['wjets_cr_selection','qcd_A_sb_selection','qcd_B_sb_selection','qcd_C_sb_selection']
+	cutnames = ['wjets_cr_selection','qcd_A_SR_selection','qcd_B_SR_selection','qcd_C_SR_selection','qcd_A_CR_selection','qcd_B_CR_selection','qcd_C_CR_selection']
 	for cutname in cutnames :
 		AddBranch(writename=cutname,ttreetype='i',inival=2,dictlist=thisdictlist)
 	#cut variables etc. for electron trigger efficiency measurement
 	eltrig_cut_branches = {}
 	thisdictlist = [allBranches,eltrig_cut_branches]
-	cutnames = ['mutrigger','eltrigger','tightel','isomu','isoel','twoleptons','opplepcharge','btags','ak4jetcuts','lepWpT','fullselection']
+	cutnames = ['mutrigger','eltrigger','isomu','isoel','twoleptons','opplepcharge','btags','lepWpT','fullselection']
 	for cutname in cutnames :
 		AddBranch(writename='eltrig_'+cutname,ttreetype='i',inival=2,dictlist=thisdictlist)
 	eltrig_themuon_pt = AddBranch(writename='eltrig_themuon_pt',dictlist=[allBranches])
@@ -421,6 +421,7 @@ class Reconstructor(object) :
 	def analyze(self,eventnumber) :
 		#get the event in the tree
 		self.inputTree.GetEntry(eventnumber)
+
 		#-----------------------------------------------------Below here is a bunch of preselection and object assignment-----------------------------------------------------#
 		#light preskim for requisite physics objects
 		if not self.__hasRequisitePhysicsObjects__() :
@@ -460,6 +461,8 @@ class Reconstructor(object) :
 		canreconstruct = topology==1 or len(ak4jets)>=4
 		#figure out whether the event is muonic or electronic, assign lepton
 		lep = self.__assignLepton__(allleps,topology)
+		#if not lep.getType()=='mu' : return #DEBUG
+		#if not lep.getType()=='el' : return #DEBUG
 		#Set physics object fourvectors
 		self.__writePhysObjFourvecs__(muons,electrons,ak4jets,ttags,ak8jets,topology)
 		#neutrino handling and setup for fit
@@ -530,9 +533,9 @@ class Reconstructor(object) :
 				self.__reconstructObservables__(scaledlep,scaledmet,scaledlepb,scaledhadt,lep,hypotheses,hypindex,corrhypindex,mctruthfourvecs['MClep'],mctruthfourvecs['MClepb'])
 			else :
 				self.__reconstructObservables__(scaledlep,scaledmet,scaledlepb,scaledhadt,lep,hypotheses,hypindex,corrhypindex)
-			#MC Truth observable and reweighting calculation 
-			if not self.is_data :
-				self.__calculateReweights__(mctruthfourvecs,topology,lep,ak4jets)
+		#MC Truth observable and reweighting calculation 
+		if not self.is_data :
+			self.__calculateReweights__(mctruthfourvecs,topology,lep,ak4jets)
 		#Finally write the event to the tree and closeout
 		self.__closeout__() #yay! A complete event!
 
@@ -1024,20 +1027,29 @@ class Reconstructor(object) :
 			self.cr_sb_cut_branches['wjets_cr_selection'].setWriteValue(0)
 
 	def __assignQCDSBSelectionCutVars__(self) :
-		qcd_sb_pass_cutlist = ['metfilters','trigger','onelepton','btags','ak4jetmult','ak4jetcuts','kinfitchi2','recoleptM','validminimization']
+		qcd_sb_pass_cutlist = ['metfilters','trigger','onelepton','btags','ak4jetmult','ak4jetcuts','validminimization']
 		for cutname in qcd_sb_pass_cutlist :
 			if not self.cut_branches[cutname].getWriteValue()==1 :
-				self.cr_sb_cut_branches['qcd_A_sb_selection'].setWriteValue(0)
-				self.cr_sb_cut_branches['qcd_B_sb_selection'].setWriteValue(0)
-				self.cr_sb_cut_branches['qcd_C_sb_selection'].setWriteValue(0)
+				self.cr_sb_cut_branches['qcd_A_SR_selection'].setWriteValue(0)
+				self.cr_sb_cut_branches['qcd_B_SR_selection'].setWriteValue(0)
+				self.cr_sb_cut_branches['qcd_C_SR_selection'].setWriteValue(0)
+				self.cr_sb_cut_branches['qcd_A_CR_selection'].setWriteValue(0)
+				self.cr_sb_cut_branches['qcd_B_CR_selection'].setWriteValue(0)
+				self.cr_sb_cut_branches['qcd_C_CR_selection'].setWriteValue(0)
 				break
 		#separate QCD sideband regions in 2D space
-		if self.cr_sb_cut_branches['qcd_A_sb_selection'].getWriteValue()!=0 :
+		if self.cr_sb_cut_branches['qcd_A_SR_selection'].getWriteValue()!=0 :
+			issignalregion = self.cut_branches['kinfitchi2'].getWriteValue()==1 and self.cut_branches['recoleptM'].getWriteValue()==1
 			isolepval = self.cut_branches['isolepton'].getWriteValue()
 			metcutsval = self.cut_branches['METcuts'].getWriteValue()
-			self.docut('qcd_A_sb_selection',isolepval==1 and metcutsval==0,self.cr_sb_cut_branches)
-			self.docut('qcd_B_sb_selection',isolepval==0 and metcutsval==0,self.cr_sb_cut_branches)
-			self.docut('qcd_C_sb_selection',isolepval==0 and metcutsval==1,self.cr_sb_cut_branches)
+			if issignalregion :
+				self.docut('qcd_A_SR_selection',isolepval==1 and metcutsval==0,self.cr_sb_cut_branches)
+				self.docut('qcd_B_SR_selection',isolepval==0 and metcutsval==0,self.cr_sb_cut_branches)
+				self.docut('qcd_C_SR_selection',isolepval==0 and metcutsval==1,self.cr_sb_cut_branches)
+			else :
+				self.docut('qcd_A_CR_selection',isolepval==1 and metcutsval==0,self.cr_sb_cut_branches)
+				self.docut('qcd_B_CR_selection',isolepval==0 and metcutsval==0,self.cr_sb_cut_branches)
+				self.docut('qcd_C_CR_selection',isolepval==0 and metcutsval==1,self.cr_sb_cut_branches)
 
 	def __assignElectronTriggerCRSelectionCutVars__(self,muons,electrons,topology,met1,met2) :
 		#muon trigger
@@ -1078,8 +1090,6 @@ class Reconstructor(object) :
 			self.eltrig_theelectron_pt.setWriteValue(theelectron.getPt())
 			self.eltrig_theelectron_eta.setWriteValue(theelectron.getEta())
 		self.docut('eltrig_twoleptons',themuon!=None and theelectron!=None and len(allisoleps)==2,self.eltrig_cut_branches)
-		#tightly ID'd electron
-		self.docut('eltrig_tightel',theelectron!=None and theelectron.getTightID()==1,self.eltrig_cut_branches)
 		#isolated muon
 		self.docut('eltrig_isomu',themuon!=None and themuon.is2DIso(topology) and (topology<3 or themuon.isTightIso()),self.eltrig_cut_branches)
 		#isolated electron
@@ -1088,8 +1098,6 @@ class Reconstructor(object) :
 		self.docut('eltrig_opplepcharge',themuon!=None and theelectron!=None and themuon.getQ()*theelectron.getQ()<0,self.eltrig_cut_branches)
 		#number of btags
 		self.eltrig_cut_branches['eltrig_btags'].setWriteValue(self.cut_branches['btags'].getWriteValue())
-		#ak4 jet cuts
-		self.eltrig_cut_branches['eltrig_ak4jetcuts'].setWriteValue(self.cut_branches['ak4jetcuts'].getWriteValue())
 		#leptonic-side W pT
 		themuonvec = None if themuon==None else themuon.getFourVector()
 		theelectronvec = None if theelectron==None else theelectron.getFourVector()
