@@ -36,14 +36,14 @@ parser.add_option('--leptype', 	  type='string', action='store', default='all_le
 parser.add_option('--ttbar_generator', 	  type='string', action='store', default='powheg', dest='ttbar_generator',	   	  
 	help='Use "powheg" or "mcatnlo" ttbar MC?')
 parser.add_option('--mode', 	  type='string', action='store', default='', dest='mode')
-parser.add_option('--n_threads', 	  type='int', action='store', default=20, dest='n_threads')
+parser.add_option('--n_threads', 	  type='int', action='store', default=5, dest='n_threads')
 parser.add_option('--outtag', 	  type='string', action='store', default='', dest='outtag')
 parser.add_option('--skimcut', 	  type='string', action='store', 
-						default='fullselection==1', 
+						default='def', 
 						dest='skimcut')
 parser.add_option('--use_preskimmed_files', type='string', action='store', default='no', dest='usepreskim')
 parser.add_option('--MC_weights', 	  type='string', action='store', 
-						default='(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF*sf_lep_iso_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH*sf_lep_iso_GH))*weight*sf_pileup*sf_btag_eff*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas', 
+						default='def', 
 						dest='MC_weights')
 (options, args) = parser.parse_args()
 
@@ -73,48 +73,51 @@ elif mode in ['qcd_a_sr','qcdasr','qcd_a_sr'] :
 		options.outtag='qcd_a_sr_sb'
 	else :
 		options.outtag=options.outtag+'_qcd_a_sr_sb'
-	#options.skimcut='qcd_A_SR_selection==1'
-	options.skimcut='metfilters==1 && trigger==1 && onelepton==1 && btags==1 && ak4jetmult==1 && ak4jetcuts==1 && validminimization==1 && kinfitchi2==1 && recoleptM==1 && isolepton==1 && METcuts==0'
+	options.skimcut='qcd_A_SR_selection==1'
+	options.MC_weights = '(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH))*weight*sf_pileup*sf_btag_eff*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
 elif mode in ['qcd_b_sr','qcdbsr','qcd_b_sr'] :
 	mode = 'qcd_b_sr'
 	if options.outtag=='' :
 		options.outtag='qcd_b_sr_sb'
 	else :
 		options.outtag=options.outtag+'_qcd_b_sr_sb'
-	#options.skimcut='qcd_B_SR_selection==1'
-	options.skimcut='metfilters==1 && trigger==1 && onelepton==1 && btags==1 && ak4jetmult==1 && ak4jetcuts==1 && validminimization==1 && kinfitchi2==1 && recoleptM==1 && isolepton==0 && METcuts==0'
+	options.skimcut='qcd_B_SR_selection==1'
 elif mode in ['qcd_c_sr','qcdcsr','qcd_c_sr'] :
 	mode = 'qcd_c_sr'
 	if options.outtag=='' :
 		options.outtag='qcd_c_sr_sb'
 	else :
 		options.outtag=options.outtag+'_qcd_c_sr_sb'
-	#options.skimcut='qcd_C_SR_selection==1'
-	options.skimcut='metfilters==1 && trigger==1 && onelepton==1 && btags==1 && ak4jetmult==1 && ak4jetcuts==1 && validminimization==1 && kinfitchi2==1 && recoleptM==1 && isolepton==0 && METcuts==1'
+	options.skimcut='qcd_C_SR_selection==1'
+	options.MC_weights = '(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH))*weight*sf_pileup*sf_btag_eff*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
 elif mode in ['qcd_a_cr','qcdacr','qcd_a_cr'] :
 	mode = 'qcd_a_cr'
 	if options.outtag=='' :
 		options.outtag='qcd_a_cr_sb'
 	else :
 		options.outtag=options.outtag+'_qcd_a_cr_sb'
-	#options.skimcut='qcd_A_CR_selection==1'
-	options.skimcut='metfilters==1 && trigger==1 && onelepton==1 && btags==1 && ak4jetmult==1 && ak4jetcuts==1 && validminimization==1 && (kinfitchi2==0 || recoleptM==0) && isolepton==1 && METcuts==0'
+	options.skimcut='qcd_A_CR_selection==1'
+	options.MC_weights = '(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH))*weight*sf_pileup*sf_btag_eff*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
 elif mode in ['qcd_b_cr','qcdbcr','qcd_b_cr'] :
 	mode = 'qcd_b_cr'
 	if options.outtag=='' :
 		options.outtag='qcd_b_cr_sb'
 	else :
 		options.outtag=options.outtag+'_qcd_b_cr_sb'
-	#options.skimcut='qcd_B_CR_selection==1'
-	options.skimcut='metfilters==1 && trigger==1 && onelepton==1 && btags==1 && ak4jetmult==1 && ak4jetcuts==1 && validminimization==1 && (kinfitchi2==0 || recoleptM==0) && isolepton==0 && METcuts==0'
+	options.skimcut='qcd_B_CR_selection==1'
 elif mode in ['qcd_c_cr','qcdccr','qcd_c_cr'] :
 	mode = 'qcd_c_cr'
 	if options.outtag=='' :
 		options.outtag='qcd_c_cr_sb'
 	else :
 		options.outtag=options.outtag+'_qcd_c_cr_sb'
-	#options.skimcut='qcd_C_CR_selection==1'
-	options.skimcut='metfilters==1 && trigger==1 && onelepton==1 && btags==1 && ak4jetmult==1 && ak4jetcuts==1 && validminimization==1 && (kinfitchi2==0 || recoleptM==0) && isolepton==0 && METcuts==1'
+	options.skimcut='qcd_C_CR_selection==1'
+	options.MC_weights = '(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH))*weight*sf_pileup*sf_btag_eff*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
+
+if options.skimcut=='def' :
+	options.skimcut='fullselection==1'
+if options.MC_weights=='def' :
+	options.MC_weights='(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF*sf_lep_iso_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH*sf_lep_iso_GH))*weight*sf_pileup*sf_btag_eff*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
 
 lepstring = ''; shortlepstring = ''
 if leptype=='muons' :
@@ -148,6 +151,8 @@ if mode!='t' :
 		#samplenames.append('ZZ_to_4L'); 				 shortnames.append('Multiboson')
 		print 'skipping adding qcd and Multiboson'
 	#WJets
+	samplenames.append('WJets_HT-70to100'); 		 shortnames.append('WJets')
+	samplenames.append('WJets_HT-100to200'); 		 shortnames.append('WJets')
 	samplenames.append('WJets_HT-200to400'); 		 shortnames.append('WJets')
 	samplenames.append('WJets_HT-400to600'); 		 shortnames.append('WJets')
 	samplenames.append('WJets_HT-600to800'); 		 shortnames.append('WJets')
@@ -236,10 +241,13 @@ for i in range(len(samplenames)) :
 	if options.usepreskim == 'no' :
 		filenamelist = glob('../'+samplenames[i]+'/aggregated_'+samplenames[i]+'_*.root')
 	elif options.usepreskim == 'yes' :
-		filenamelist = glob('../total_ttree_files/'+samplenames[i]+'_skim_all.root')
+		filenamelist = glob('../total_ttree_files/'+samplenames[i]+'*_skim_all.root')
 	for filename in filenamelist :
 		if filename.find('JES')==-1 and filename.find('JER')==-1 :
+		#if filename.find('JES_up')!=-1 :
 			MC_chains[index].Add(filename)
+			print 'adding %s to chain for shortname %s'%(filename,shortnames[i]) #DEBUG
+#print 'MC_chains = %s'%(MC_chains) #DEBUG
 for data_samplename in data_samplenames :
 	if options.usepreskim == 'no' :
 		filenamelist = glob('../'+data_samplename+'/aggregated_'+data_samplename+'_*.root')
@@ -247,6 +255,7 @@ for data_samplename in data_samplenames :
 		filenamelist = glob('../total_ttree_files/'+data_samplename+'_skim_all.root')
 	for filename in filenamelist :
 		data_chain.Add(filename)
+		print 'adding %s to data chain'%(filename) #DEBUG
 
 #skim the chains into reduced trees and save the reduced trees in the garbage file
 manager = multiprocessing.Manager()
@@ -259,6 +268,10 @@ elif leptype=='electrons' :
 print 'Skim cuts: %s'%(com_cuts)
 procs = []
 for i in range(len(MC_chains)) :
+	if len(procs)>=5 :
+		for p in procs :
+			p.join()
+		procs = []
 	realcuts = '('+com_cuts+')'
 	if shortnames_done[i].find('semilep')!=-1 :
 		realcuts = '(('+com_cuts+') && eventType<2)'
@@ -291,7 +304,9 @@ class Plot(object) :
 		self._oneline.SetLineStyle(2)
 		self._MC_weights = MC_weights
 		self._addl_cuts = addl_cuts
-		self._cutstring = 'weight!=0'
+		self._cutstring = 'weight!=0' #vanilla (charge-summed)
+		#self._cutstring = 'weight!=0 && lep_Q>0.' #positively charged leptons only
+		#self._cutstring = 'weight!=0 && lep_Q<0.' #negatively charged leptons only
 		if addl_cuts!='' :
 			self._cutstring+=' && '+addl_cuts
 		#print 'cuts for '+name+' = '+self._cutstring #DEBUG
