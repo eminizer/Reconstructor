@@ -54,25 +54,25 @@ filenames.append('DYJets_M-50_HT-600to800');	shortnames.append('DYJets')
 filenames.append('DYJets_M-50_HT-800to1200');	shortnames.append('DYJets')
 filenames.append('DYJets_M-50_HT-1200to2500');	shortnames.append('DYJets')
 filenames.append('DYJets_M-50_HT-2500toInf');	shortnames.append('DYJets')
-##QCD
-filenames.append('QCD_HT-100to200');			shortnames.append('QCD')
-filenames.append('QCD_HT-200to300');			shortnames.append('QCD')
-filenames.append('QCD_HT-300to500');			shortnames.append('QCD')
-filenames.append('QCD_HT-500to700');			shortnames.append('QCD')
-filenames.append('QCD_HT-700to1000');			shortnames.append('QCD')
-filenames.append('QCD_HT-1000to1500');			shortnames.append('QCD')
-filenames.append('QCD_HT-1500to2000');			shortnames.append('QCD')
-filenames.append('QCD_HT-2000toInf');			shortnames.append('QCD')
-#Multiboson
-filenames.append('WW_to_L_Nu_2Q');				shortnames.append('Multiboson')
-filenames.append('WW_to_2L_2Nu');				shortnames.append('Multiboson')
-filenames.append('WZ_to_L_Nu_2Q');				shortnames.append('Multiboson')
-filenames.append('WZ_to_L_3Nu');				shortnames.append('Multiboson')
-filenames.append('WZ_to_2L_2Q');				shortnames.append('Multiboson')
-filenames.append('WZ_to_3L_Nu');				shortnames.append('Multiboson')
-filenames.append('ZZ_to_2L_2Nu');				shortnames.append('Multiboson')
-filenames.append('ZZ_to_2L_2Q');				shortnames.append('Multiboson')
-filenames.append('ZZ_to_4L');					shortnames.append('Multiboson')
+###QCD
+#filenames.append('QCD_HT-100to200');			shortnames.append('QCD')
+#filenames.append('QCD_HT-200to300');			shortnames.append('QCD')
+#filenames.append('QCD_HT-300to500');			shortnames.append('QCD')
+#filenames.append('QCD_HT-500to700');			shortnames.append('QCD')
+#filenames.append('QCD_HT-700to1000');			shortnames.append('QCD')
+#filenames.append('QCD_HT-1000to1500');			shortnames.append('QCD')
+#filenames.append('QCD_HT-1500to2000');			shortnames.append('QCD')
+#filenames.append('QCD_HT-2000toInf');			shortnames.append('QCD')
+##Multiboson
+#filenames.append('WW_to_L_Nu_2Q');				shortnames.append('Multiboson')
+#filenames.append('WW_to_2L_2Nu');				shortnames.append('Multiboson')
+#filenames.append('WZ_to_L_Nu_2Q');				shortnames.append('Multiboson')
+#filenames.append('WZ_to_L_3Nu');				shortnames.append('Multiboson')
+#filenames.append('WZ_to_2L_2Q');				shortnames.append('Multiboson')
+#filenames.append('WZ_to_3L_Nu');				shortnames.append('Multiboson')
+#filenames.append('ZZ_to_2L_2Nu');				shortnames.append('Multiboson')
+#filenames.append('ZZ_to_2L_2Q');				shortnames.append('Multiboson')
+#filenames.append('ZZ_to_4L');					shortnames.append('Multiboson')
 #data
 muon_data_filenames = []
 muon_data_filenames.append('SingleMu_Run2016Bv2')
@@ -133,13 +133,19 @@ kinfitchi2 = 'kinfitchi2==1'
 recoleptM = 'recoleptM==1'
 fullselection = 'fullselection==1'
 wjetscrselection = 'wjets_cr_selection==1'
-qcdbaseselection = 'metfilters==1 && trigger==1 && onelepton==1 && btags==1 && ak4jetmult==1 && ak4jetcuts==1 && validminimization==1'
-qcdASRselection = qcdbaseselection+' && kinfitchi2==1 && recoleptM==1 && isolepton==1 && METcuts==0'
-qcdBSRselection = qcdbaseselection+' && kinfitchi2==1 && recoleptM==1 && isolepton==0 && METcuts==0'
-qcdCSRselection = qcdbaseselection+' && kinfitchi2==1 && recoleptM==1 && isolepton==0 && METcuts==1'
-qcdACRselection = qcdbaseselection+' && (kinfitchi2==0 || recoleptM==0) && isolepton==1 && METcuts==0'
-qcdBCRselection = qcdbaseselection+' && (kinfitchi2==0 || recoleptM==0) && isolepton==0 && METcuts==0'
-qcdCCRselection = qcdbaseselection+' && (kinfitchi2==0 || recoleptM==0) && isolepton==0 && METcuts==1'
+#qcdbaseselection = 'metfilters==1 && trigger==1 && onelepton==1 && btags==1 && ak4jetmult==1 && ak4jetcuts==1 && validminimization==1'
+#qcdASRselection = qcdbaseselection+' && kinfitchi2==1 && recoleptM==1 && isolepton==1 && METcuts==0'
+#qcdBSRselection = qcdbaseselection+' && kinfitchi2==1 && recoleptM==1 && isolepton==0 && METcuts==0'
+#qcdCSRselection = qcdbaseselection+' && kinfitchi2==1 && recoleptM==1 && isolepton==0 && METcuts==1'
+#qcdACRselection = qcdbaseselection+' && (kinfitchi2==0 || recoleptM==0) && isolepton==1 && METcuts==0'
+#qcdBCRselection = qcdbaseselection+' && (kinfitchi2==0 || recoleptM==0) && isolepton==0 && METcuts==0'
+#qcdCCRselection = qcdbaseselection+' && (kinfitchi2==0 || recoleptM==0) && isolepton==0 && METcuts==1'
+qcdASRselection = 'qcd_A_SR_selection==1'
+qcdBSRselection = 'qcd_B_SR_selection==1'
+qcdCSRselection = 'qcd_C_SR_selection==1'
+qcdACRselection = 'qcd_A_CR_selection==1'
+qcdBCRselection = 'qcd_B_CR_selection==1'
+qcdCCRselection = 'qcd_C_CR_selection==1'
 
 if 't1' in topologies :
 	cutnames.append('t1 skim'); 				  cutstrings.append('weight!=0.'); 		prior_cutstrings.append('weight!=0.')
@@ -170,9 +176,9 @@ if 't2' in topologies :
 	cutnames.append('t2 kinfit chi2'); 	  	  	  cutstrings.append(kinfitchi2); 		prior_cutstrings.append('weight!=0.')
 	cutnames.append('t2 full selection'); 		  cutstrings.append(fullselection); 	prior_cutstrings.append('weight!=0.')
 	cutnames.append('t2 WJets CR selection'); 	  cutstrings.append(wjetscrselection); 	prior_cutstrings.append('weight!=0.')
-	cutnames.append('t2 QCD A SR selection'); 	  cutstrings.append(qcdASRselection); 	prior_cutstrings.append('weight!=0.')
-	cutnames.append('t2 QCD B SR selection'); 	  cutstrings.append(qcdBSRselection); 	prior_cutstrings.append('weight!=0.')
-	cutnames.append('t2 QCD C SR selection'); 	  cutstrings.append(qcdCSRselection); 	prior_cutstrings.append('weight!=0.')
+	#cutnames.append('t2 QCD A SR selection'); 	  cutstrings.append(qcdASRselection); 	prior_cutstrings.append('weight!=0.')
+	#cutnames.append('t2 QCD B SR selection'); 	  cutstrings.append(qcdBSRselection); 	prior_cutstrings.append('weight!=0.')
+	#cutnames.append('t2 QCD C SR selection'); 	  cutstrings.append(qcdCSRselection); 	prior_cutstrings.append('weight!=0.')
 	cutnames.append('t2 QCD A CR selection'); 	  cutstrings.append(qcdACRselection); 	prior_cutstrings.append('weight!=0.')
 	cutnames.append('t2 QCD B CR selection'); 	  cutstrings.append(qcdBCRselection); 	prior_cutstrings.append('weight!=0.')
 	cutnames.append('t2 QCD C CR selection'); 	  cutstrings.append(qcdCCRselection); 	prior_cutstrings.append('weight!=0.')
