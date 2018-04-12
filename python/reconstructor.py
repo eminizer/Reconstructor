@@ -5,7 +5,8 @@ BEAM_ENERGY=SQRT_S/2.0
 #Trigger paths
 #MU_TRIG_PATH = 'HLT_Mu30_eta2p1_PFJet150_PFJet50'
 #MU_TRIG_PATH = 'HLT_Mu45_eta2p1'
-MU_TRIG_PATHS = ['HLT_Mu50','HLT_TkMu50']
+MU_TRIG_PATHS_BOOSTED = ['HLT_Mu50','HLT_TkMu50']
+MU_TRIG_PATHS_RESOLVED = ['HLT_IsoMu24','HLT_IsoTkMu24']
 #EL_TRIG_PATH = 'HLT_Ele35_CaloIdVT_GsfTrkIdT_PFJet150_PFJet50'
 #EL_TRIG_PATHS = ['HLT_Ele45_WPLoose_Gsf']
 EL_TRIG_PATHS = ['HLT_Ele27_WPTight_Gsf']
@@ -50,6 +51,8 @@ class Reconstructor(object) :
 	#pileup
 	npv 	 = AddBranch('pu_NtrueInt','npv','I',-1,'1',[allBranches,ak4JetBranches,ak8JetBranches])
 	ngoodvtx = AddBranch('evt_NGoodVtx','ngoodvtx','I',-1,'1',[allBranches,ak4JetBranches,ak8JetBranches])
+	#top pT reweighting
+	toppTreweight = AddBranch('evt_top_pt_rw','toppTrw','F',1.0,'1',[allBranches])
 	#Scale, PDF, and alpha_s weights
 	genUncBranches = {}
 	thisdictlist=[allBranches,genUncBranches]
@@ -79,7 +82,9 @@ class Reconstructor(object) :
 	#Trigger Information
 	triggerBranches = {}
 	thisdictlist = [allBranches,triggerBranches]
-	for trigName in MU_TRIG_PATHS :
+	for trigName in MU_TRIG_PATHS_BOOSTED :
+		AddBranch(trigName,trigName,'I',-1,'1',thisdictlist)
+	for trigName in MU_TRIG_PATHS_RESOLVED :
 		AddBranch(trigName,trigName,'I',-1,'1',thisdictlist)
 	for trigName in EL_TRIG_PATHS :
 		AddBranch(trigName,trigName,'I',-1,'1',thisdictlist)
@@ -369,7 +374,7 @@ class Reconstructor(object) :
 	#cut variables for full selection
 	cut_branches = {}
 	thisdictlist = [allBranches,cut_branches]
-	cutnames = ['metfilters','trigger','onelepton','isolepton','btags','ak4jetmult','ak4jetcuts','METcuts','kinfitchi2','recoleptM','validminimization','fullselection']
+	cutnames = ['metfilters','trigger','onelepton','isolepton','btags','ak4jetmult','ak4jetcuts','METcuts','lepcuts','kinfitchi2','recoleptM','validminimization','fullselection']
 	for cutname in cutnames :
 		AddBranch(writename=cutname,ttreetype='i',inival=2,dictlist=thisdictlist)
 	#cut variables for various control regions and sideband selections
@@ -931,7 +936,7 @@ class Reconstructor(object) :
 		#b-tagging efficiency reweighting
 		btag_eff_sf, btag_eff_sf_up, btag_eff_sf_down = self.corrector.getBTagEff(ak4jets)
 		self.sf_btag_eff.setWriteValue(btag_eff_sf); self.sf_btag_eff_hi.setWriteValue(btag_eff_sf_up); self.sf_btag_eff_low.setWriteValue(btag_eff_sf_down)
-		#Scale, and pdf/alpha_s reweights (ttbar only)
+		#Scale, pdf/alpha_s, and top pT reweights (ttbar only)
 		if self.event_type.getWriteValue()<4 :
 			( mu_R_sf, mu_R_sf_up, mu_R_sf_down, mu_F_sf, mu_F_sf_up, mu_F_sf_down,
 			 scale_comb_sf, scale_comb_sf_up, scale_comb_sf_down, pdf_alphas_sf, pdf_alphas_sf_up, pdf_alphas_sf_down ) = self.corrector.getGenReweights(self.genUncBranches)
@@ -939,6 +944,7 @@ class Reconstructor(object) :
 			self.sf_mu_F.setWriteValue(mu_F_sf); self.sf_mu_F_hi.setWriteValue(mu_F_sf_up); self.sf_mu_F_low.setWriteValue(mu_F_sf_down)
 			self.sf_scale_comb.setWriteValue(scale_comb_sf); self.sf_scale_comb_hi.setWriteValue(scale_comb_sf_up); self.sf_scale_comb_low.setWriteValue(scale_comb_sf_down)
 			self.sf_pdf_alphas.setWriteValue(pdf_alphas_sf); self.sf_pdf_alphas_hi.setWriteValue(pdf_alphas_sf_up); self.sf_pdf_alphas_low.setWriteValue(pdf_alphas_sf_down)
+			self.toppTreweight.setWriteValue(self.toppTreweight.getReadValue()/self.toppTreweightmean)
 
 	##################################  selection cut helper functions  ##################################
 
@@ -969,8 +975,12 @@ class Reconstructor(object) :
 		if self.lepflavor.getWriteValue()==1 :
 			#trigger
 			trigvals = []
-			for trigName in MU_TRIG_PATHS :
-				trigvals.append(self.triggerBranches[trigName].getWriteValue())
+			if topology==1 or topology==2 :
+				for trigName in MU_TRIG_PATHS_BOOSTED :
+					trigvals.append(self.triggerBranches[trigName].getWriteValue())
+			elif topology==3 :
+				for trigName in MU_TRIG_PATHS_RESOLVED :
+					trigvals.append(self.triggerBranches[trigName].getWriteValue())
 			self.docut('trigger',trigvals.count(1)>0)
 			#isolated lepton
 			self.docut('isolepton',(lep.is2DIso(topology) and (topology<3 or lep.isTightIso())))
@@ -984,7 +994,9 @@ class Reconstructor(object) :
 			#leading ak4 jets
 			self.docut('ak4jetcuts',(topology==3 or (len(ak4jets)>1 and ak4jets[0].getPt()>150. and ak4jets[1].getPt()>50.)))
 			#MET cuts
-			self.docut('METcuts',((topology==3 and met.E()>40.) or met.E()>50.))
+			self.docut('METcuts',((topology==3 and met.E()>40.) or met.E()>30.))
+			#boosted lepton pT cuts
+			self.docut('lepcuts',(topology==3 or lep.getPt()>55.))
 		elif self.lepflavor.getWriteValue()==2 :
 			#trigger
 			trigvals = []
@@ -1003,7 +1015,9 @@ class Reconstructor(object) :
 			#leading ak4 jets
 			self.docut('ak4jetcuts',(topology==3 or (len(ak4jets)>1 and ak4jets[0].getPt()>250. and ak4jets[1].getPt()>70.)))
 			#MET cuts
-			self.docut('METcuts',((topology==3 and met.E()>40.) or met.E()>100.))
+			self.docut('METcuts',((topology==3 and met.E()>40.) or met.E()>50.))
+			#boosted lepton pT cuts
+			self.docut('lepcuts',(topology==3 or lep.getPt()>55.))
 		#full selection
 		for cutbranch in self.cut_branches.values() :
 			if cutbranch.getWriteValue()==0 :
@@ -1012,7 +1026,7 @@ class Reconstructor(object) :
 
 	def __assignWJetsCRSelectionCutVars__(self) :
 		#W+Jets control region (fails kinematic fit chi2 cuts OR reconstructed leptonic top mass cuts) for boosted events
-		wjets_cr_pass_cutlist = ['metfilters','trigger','onelepton','isolepton','btags','ak4jetmult','ak4jetcuts','METcuts','validminimization']
+		wjets_cr_pass_cutlist = ['metfilters','trigger','onelepton','isolepton','btags','ak4jetmult','ak4jetcuts','METcuts','lepcuts','validminimization']
 		wjets_cr_fail_cutlist = ['kinfitchi2','recoleptM']
 		for cutname in wjets_cr_pass_cutlist :
 			if not self.cut_branches[cutname].getWriteValue()==1 :
@@ -1027,7 +1041,7 @@ class Reconstructor(object) :
 			self.cr_sb_cut_branches['wjets_cr_selection'].setWriteValue(0)
 
 	def __assignQCDSBSelectionCutVars__(self) :
-		qcd_sb_pass_cutlist = ['metfilters','trigger','onelepton','btags','ak4jetmult','ak4jetcuts','validminimization']
+		qcd_sb_pass_cutlist = ['metfilters','trigger','onelepton','btags','ak4jetmult','ak4jetcuts','lepcuts','validminimization']
 		for cutname in qcd_sb_pass_cutlist :
 			if not self.cut_branches[cutname].getWriteValue()==1 :
 				self.cr_sb_cut_branches['qcd_A_SR_selection'].setWriteValue(0)
@@ -1054,8 +1068,12 @@ class Reconstructor(object) :
 	def __assignElectronTriggerCRSelectionCutVars__(self,muons,electrons,topology,met1,met2) :
 		#muon trigger
 		trigvals = []
-		for trigName in MU_TRIG_PATHS :
-			trigvals.append(self.triggerBranches[trigName].getWriteValue())
+		if topology==1 or topology==2 :
+			for trigName in MU_TRIG_PATHS_BOOSTED :
+				trigvals.append(self.triggerBranches[trigName].getWriteValue())
+		elif topology==3 :
+			for trigName in MU_TRIG_PATHS_RESOLVED :
+				trigvals.append(self.triggerBranches[trigName].getWriteValue())
 		self.docut('eltrig_mutrigger',trigvals.count(1)>0,self.eltrig_cut_branches)
 		#electron trigger
 		trigvals = []
@@ -1110,7 +1128,7 @@ class Reconstructor(object) :
 					self.eltrig_cut_branches['eltrig_fullselection'].setWriteValue(0)
 
 	def __assignMiniIsolationFullSelectionCutVars__(self,lep,muons,electrons) :
-		otherpasscuts = ['metfilters','trigger','btags','ak4jetmult','ak4jetcuts','METcuts','kinfitchi2','recoleptM','validminimization','fullselection']
+		otherpasscuts = ['metfilters','trigger','btags','ak4jetmult','ak4jetcuts','METcuts','lepcuts','kinfitchi2','recoleptM','validminimization','fullselection']
 		#start with lepton flavor-specific cuts
 		other_leps = []
 		if self.lepflavor.getWriteValue()==1 :
@@ -1175,6 +1193,8 @@ class Reconstructor(object) :
 		self.totalweight = totweight
 		#Set the corrector that does event weights and JEC calculations
 		self.corrector = Corrector(self.is_data,onGrid,pu_histo,self.run_era,renormdict)
+		#set the mean value of the top pT reweighting factor for this sample
+		self.toppTreweightmean = renormdict['topptrwmean']
 
 	##################################   reset function   ##################################
 	#########  sets all relevant values back to initial values to get ready for next event  ##########

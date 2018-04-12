@@ -70,7 +70,7 @@ def epsilon_fcn(npar, deriv, f, par, flag) :
 	f[0] = lnL
 
 #Helper function for making the renormalization dictionary
-def make_renormalization_dict(name,alpha,epsilon,muRup,muRdown,muFup,muFdown,scup,scdown,pdfas,pdfasup,pdfasdown) :
+def make_renormalization_dict(name,alpha,epsilon,muRup,muRdown,muFup,muFdown,scup,scdown,pdfas,pdfasup,pdfasdown,topptrwhist) :
 	global qq_global_hist_projection
 	global gg_global_hist_projection
 	returndict = {}
@@ -84,6 +84,7 @@ def make_renormalization_dict(name,alpha,epsilon,muRup,muRdown,muFup,muFdown,scu
 	returndict['pdfas']=pdfas.GetMean() 
 	returndict['pdfasup']=pdfasup.GetMean() 
 	returndict['pdfasdown']=pdfasdown.GetMean() 
+	returndict['topptrwmean']=topptrwhist.GetMean()
 	printlines = []
 	if alpha==1.0 and epsilon==1.0 and (name.find('_TT')!=-1 or name.find('_TTJets')!=-1) :
 		#now we've got to do the fits for the "deweighting" alpha and epsilon values
@@ -135,6 +136,7 @@ def make_renormalization_dict(name,alpha,epsilon,muRup,muRdown,muFup,muFdown,scu
 	print 'pdfas value = %.4f'%(returndict['pdfas'])
 	print 'pdfasup value = %.4f'%(returndict['pdfasup'])
 	print 'pdfasdown value = %.4f'%(returndict['pdfasdown'])
+	print 'top pT reweight mean value = %.4f'%(returndict['topptrwmean'])
 	for line in printlines :
 		print line
 	#return the dictionary
@@ -206,15 +208,16 @@ print 'Getting these files: '
 total_pileup_histo               = TH1D('total_pileup_histo','total MC pileup; pileup; events',100,0.,100.); total_pileup_histo.SetDirectory(0)
 total_cstar_vs_beta_qqbar_histo  = TH2D('total_cstar_vs_beta_qqbar_histo','MC truth c* vs. #beta (q#bar{q} events); #beta; c*; events',10,0.,1.,20,-1.,1.); total_cstar_vs_beta_qqbar_histo.SetDirectory(0)
 total_cstar_vs_beta_gg_histo     = TH2D('total_cstar_vs_beta_gg_histo','MC truth c* vs. #beta (qg/gg events); #beta; c*; events',10,0.,1.,20,-1.,1.); total_cstar_vs_beta_gg_histo.SetDirectory(0)
-total_mu_R_sf_up_histo           = TH1D('total_mu_R_sf_up_histo','total #mu_{R} sf (up); #mu_{R} sf up; events',100,-1.,3.); total_mu_R_sf_up_histo.SetDirectory(0);
-total_mu_R_sf_down_histo         = TH1D('total_mu_R_sf_down_histo','total #mu_{R} sf (down); #mu_{R} sf down; events',100,-1.,3.); total_mu_R_sf_down_histo.SetDirectory(0);
-total_mu_F_sf_up_histo           = TH1D('total_mu_F_sf_up_histo','total #mu_{F} sf (up); #mu_{F} sf up; events',100,-1.,3.); total_mu_F_sf_up_histo.SetDirectory(0);
-total_mu_F_sf_down_histo         = TH1D('total_mu_F_sf_down_histo','total #mu_{F} sf (down); #mu_{F} sf down; events',100,-1.,3.); total_mu_F_sf_down_histo.SetDirectory(0);
-total_scale_comb_sf_up_histo     = TH1D('total_scale_comb_sf_up_histo','total comb. scale sf (up); comb. scale sf up; events',100,-1.,3.); total_scale_comb_sf_up_histo.SetDirectory(0);
-total_scale_comb_sf_down_histo   = TH1D('total_scale_comb_sf_down_histo','total comb. scale sf (down); comb. scale sf down; events',100,-1.,3.); total_scale_comb_sf_down_histo.SetDirectory(0);
-total_pdf_alphas_sf_histo        = TH1D('total_pdf_alphas_sf_histo','total pdf/alpha_{s} sf; pdf/alpha_{s} sf; events',100,-1.,3.); total_pdf_alphas_sf_histo.SetDirectory(0);
-total_pdf_alphas_sf_up_histo     = TH1D('total_pdf_alphas_sf_up_histo','total pdf/alpha_{s} sf (up); pdf/alpha_{s} sf up; events',100,-1.,3.); total_pdf_alphas_sf_up_histo.SetDirectory(0);
-total_pdf_alphas_sf_down_histo   = TH1D('total_pdf_alphas_sf_down_histo','total pdf/alpha_{s} sf (down); pdf/alpha_{s} sf down; events',100,-1.,3.); total_pdf_alphas_sf_down_histo.SetDirectory(0);
+total_mu_R_sf_up_histo           = TH1D('total_mu_R_sf_up_histo','total #mu_{R} sf (up); #mu_{R} sf up; events',100,-1.,3.); total_mu_R_sf_up_histo.SetDirectory(0)
+total_mu_R_sf_down_histo         = TH1D('total_mu_R_sf_down_histo','total #mu_{R} sf (down); #mu_{R} sf down; events',100,-1.,3.); total_mu_R_sf_down_histo.SetDirectory(0)
+total_mu_F_sf_up_histo           = TH1D('total_mu_F_sf_up_histo','total #mu_{F} sf (up); #mu_{F} sf up; events',100,-1.,3.); total_mu_F_sf_up_histo.SetDirectory(0)
+total_mu_F_sf_down_histo         = TH1D('total_mu_F_sf_down_histo','total #mu_{F} sf (down); #mu_{F} sf down; events',100,-1.,3.); total_mu_F_sf_down_histo.SetDirectory(0)
+total_scale_comb_sf_up_histo     = TH1D('total_scale_comb_sf_up_histo','total comb. scale sf (up); comb. scale sf up; events',100,-1.,3.); total_scale_comb_sf_up_histo.SetDirectory(0)
+total_scale_comb_sf_down_histo   = TH1D('total_scale_comb_sf_down_histo','total comb. scale sf (down); comb. scale sf down; events',100,-1.,3.); total_scale_comb_sf_down_histo.SetDirectory(0)
+total_pdf_alphas_sf_histo        = TH1D('total_pdf_alphas_sf_histo','total pdf/alpha_{s} sf; pdf/alpha_{s} sf; events',100,-1.,3.); total_pdf_alphas_sf_histo.SetDirectory(0)
+total_pdf_alphas_sf_up_histo     = TH1D('total_pdf_alphas_sf_up_histo','total pdf/alpha_{s} sf (up); pdf/alpha_{s} sf up; events',100,-1.,3.); total_pdf_alphas_sf_up_histo.SetDirectory(0)
+total_pdf_alphas_sf_down_histo   = TH1D('total_pdf_alphas_sf_down_histo','total pdf/alpha_{s} sf (down); pdf/alpha_{s} sf down; events',100,-1.,3.); total_pdf_alphas_sf_down_histo.SetDirectory(0)
+total_top_pt_reweight_histo 	 = TH1D('total_top_pt_reweight_histo','total top p_{T} reweighting factors; top p_{T} reweight; events',150,-3.,3.); total_top_pt_reweight_histo.SetDirectory(0)
 totweight = 0.
 for input_file in input_files_list :
 	print '	'+input_file.rstrip()+''
@@ -244,6 +247,8 @@ for input_file in input_files_list :
 	total_pdf_alphas_sf_up_histo.Add(pdfasup_histo)
 	pdfasdown_histo = f.Get('EventCounter/pdf_alphas_sf_down')
 	total_pdf_alphas_sf_down_histo.Add(pdfasdown_histo)
+	top_pt_reweight_histo = f.Get('EventCounter/top_pt_rw')
+	total_top_pt_reweight_histo.Add(top_pt_reweight_histo)
 	histo=f.Get('EventCounter/totweight')
 	newweight=histo.GetBinContent(1)
 	print '		Added %.2f to total weight'%(newweight)
@@ -257,7 +262,7 @@ if options.name.lower().find('mcatnlo')!=-1 :
 csvb_qq_global_hist=total_cstar_vs_beta_qqbar_histo
 csvb_gg_global_hist=total_cstar_vs_beta_gg_histo
 renormalization_dict = make_renormalization_dict(options.name,options.alphaOverride,options.epsilonOverride,total_mu_R_sf_up_histo,total_mu_R_sf_down_histo,total_mu_F_sf_up_histo,total_mu_F_sf_down_histo,
-												 total_scale_comb_sf_up_histo,total_scale_comb_sf_down_histo,total_pdf_alphas_sf_histo,total_pdf_alphas_sf_up_histo,total_pdf_alphas_sf_down_histo)
+												 total_scale_comb_sf_up_histo,total_scale_comb_sf_down_histo,total_pdf_alphas_sf_histo,total_pdf_alphas_sf_up_histo,total_pdf_alphas_sf_down_histo,total_top_pt_reweight_histo)
 #Get the total number of events
 ntotalevents = chain.GetEntries()
 print 'number of total events = %d'%(ntotalevents) 

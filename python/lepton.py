@@ -78,7 +78,7 @@ class Muon(Lepton) :
 			self.setID(branches['mu_IsMediumMuon'].getReadValue(index))
 		self.setIso(branches['mu_Iso04'].getReadValue(index))
 		self.setMiniIso(branches['mu_MiniIso'].getReadValue(index))
-		self.setIsValid(self.getPt()>55. and abs(self.getEta())<2.5 and self.getID()==1)
+		self.setIsValid(self.getPt()>30. and abs(self.getEta())<2.4 and self.getID()==1)
 
 	def isLooseIso(self) :
 		return self.getIso()<0.25 #loose WP https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
@@ -96,26 +96,31 @@ class Electron(Lepton) :
 
 	def __init__(self,branches,index) :
 		Lepton.__init__(self,branches,index,'el')
-		self.setID(branches['el_IDMedium_NoIso'].getReadValue(index))
-		self.__tightID = branches['el_IDTight_NoIso'].getReadValue(index)
+		self.setID(branches['el_IDTight_NoIso'].getReadValue(index))
 		self.__scEta = branches['el_SCEta'].getReadValue(index)
 		self.setIso(branches['el_Iso03'].getReadValue(index))
 		self.setMiniIso(branches['el_MiniIso'].getReadValue(index))
-		self.setIsValid(self.getPt()>55. and abs(self.__scEta)<2.5 and self.getID()==1)
+		self.setIsValid(self.getPt()>30. and abs(self.__scEta)<2.4 and self.getID()==1)
 
 	def getEtaSC(self) :
 		return self.__scEta
 	def isLooseIso(self) :
-		return self.getIso()<0.0695 #what was removed from the Medium ID https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
+		#what was removed from the Tight ID https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
+		if abs(self.__scEta)>1.479 :
+			return self.getIso()<0.0571
+		else : 
+			return self.getIso()<0.0588 
 	def isIso(self) :
-		return self.getIso()<0.0695 #what was removed from the Medium ID https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
+		#what was removed from the Tight ID https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
+		if abs(self.__scEta)>1.479 :
+			return self.getIso()<0.0571
+		else : 
+			return self.getIso()<0.0588 
 	def is2DIso(self,eventtopology) :
 		if eventtopology<3 :
 			return self.getDR()>0.4 or self.getRelPt()>30.
 		elif eventtopology==3 :
 			return self.getDR()>0.4 or self.getRelPt()>20.
-	def getTightID(self) :
-		return self.__tightID
 
 def findNearestJet(lepvec,jets) :
 	closestJet = jets[0]
