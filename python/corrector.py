@@ -11,9 +11,12 @@ MUON_TRIG_EFF_BOOSTED_ETA_HISTONAME  = 'Mu50_OR_TkMu50_EtaBins/eta_ratio'
 MUON_TRIG_EFF_RESOLVED_PT_HISTONAME  = 'IsoMu24_OR_IsoTkMu24_PtBins/pt_ratio'
 MUON_TRIG_EFF_RESOLVED_ETA_HISTONAME = 'IsoMu24_OR_IsoTkMu24_EtaBins/eta_ratio'
 #Electron trigger efficiency
-ELE_TRIG_EFF_BTOF_ROOT_FILENAME = 'TriggerSF_Run2016BCDEF_v1.root'
-ELE_TRIG_EFF_GH_ROOT_FILENAME 	= 'TriggerSF_Run2016GH_v1.root'
-ELE_TRIG_EFF_HISTONAME 			= 'Ele27_WPTight_Gsf'
+ELE_TRIG_EFF_BOOSTED_ROOT_FILENAME = 'SFs_elec_eta_pt_DATA_Run2016_Ele50PFJet165_OR_Ele115.root'
+ELE_TRIG_EFF_BOOSTED_HISTONAME 	   = 'EGamma_SF2D'
+ELE_TRIG_EFF_RESOLVED_BTOF_ROOT_FILENAME = 'TriggerSF_Run2016BCDEF_v1.root'
+ELE_TRIG_EFF_RESOLVED_GH_ROOT_FILENAME 	 = 'TriggerSF_Run2016GH_v1.root'
+ELE_TRIG_EFF_RESOLVED_HISTONAME 		 = 'Ele27_WPTight_Gsf'
+
 #Muon tracking efficiency
 MUON_TRK_EFF_ROOT_FILENAME = 'Tracking_EfficienciesAndSF_BCDEFGH_muon_tracking.root'
 MUON_TRK_EFF_ETA_GRAPHNAME = 'ratio_eff_eta3_dr030e030_corr'
@@ -74,10 +77,13 @@ class Corrector(object) :
 		self.__muon_trig_r_pt_hi   = self.__muon_trig_eff_resolved_BtoF_vs_pt.GetXaxis().GetXmax()
 		self.__muon_trig_r_eta_low = self.__muon_trig_eff_resolved_BtoF_vs_eta.GetXaxis().GetXmin()
 		self.__muon_trig_r_eta_hi  = self.__muon_trig_eff_resolved_BtoF_vs_eta.GetXaxis().GetXmax()
-		self.__ele_trig_eff_BtoF, self.__ele_trig_eff_GH = setupEleTriggerHistos(onGrid)
-		etxa = self.__ele_trig_eff_BtoF.GetXaxis(); etya = self.__ele_trig_eff_BtoF.GetYaxis()
-		self.__ele_trig_eff_pt_low  = etxa.GetXmin(); self.__ele_trig_eff_pt_hi  = etxa.GetXmax()
-		self.__ele_trig_eff_eta_low = etya.GetXmin(); self.__ele_trig_eff_eta_hi = etya.GetXmax()
+		self.__ele_trig_eff_boosted, self.__ele_trig_eff_resolved_BtoF, self.__ele_trig_eff_resolved_GH = setupEleTriggerHistos(onGrid)
+		etxa_b = self.__ele_trig_eff_boosted.GetXaxis(); etya_b = self.__ele_trig_eff_boosted.GetYaxis()
+		self.__ele_trig_eff_b_pt_low  = etxa_b.GetXmin(); self.__ele_trig_eff_b_pt_hi  = etxa_b.GetXmax()
+		self.__ele_trig_eff_b_eta_low = etya_b.GetXmin(); self.__ele_trig_eff_eta_hi = etya_b.GetXmax()
+		etxa_r = self.__ele_trig_eff_resolved_BtoF.GetXaxis(); etya_r = self.__ele_trig_eff_resolved_BtoF.GetYaxis()
+		self.__ele_trig_eff_r_pt_low  = etxa_r.GetXmin(); self.__ele_trig_eff_r_pt_hi  = etxa_r.GetXmax()
+		self.__ele_trig_eff_r_eta_low = etya_r.GetXmin(); self.__ele_trig_eff_r_eta_hi = etya_r.GetXmax()
 		#Tracking efficiency
 		self.__muon_trk_eff_vs_eta, self.__muon_trk_eff_vs_pu = setupMuonTrackingGraphs(onGrid)
 		tempx = Double(0.); tempy = Double(0.)
@@ -367,30 +373,54 @@ class Corrector(object) :
 			downfac_GH 	 = nomfac_GH*(1.-sqrt((pterr_down_GH/ptfac_GH)**2+(etaerr_down_GH/etafac_GH)**2))
 		elif lepflav=='el' : #electrons
 			thiseta=eta; thispt=pt
-			#first bring the parameters back into range
-			if thiseta<self.__ele_trig_eff_eta_low : 
-				thiseta = self.__ele_trig_eff_eta_low 
-				doubleerr=True
-			elif thiseta>self.__ele_trig_eff_eta_hi : 
-				thiseta = self.__ele_trig_eff_eta_hi - 0.0000001
-				doubleerr=True
-			if thispt<self.__ele_trig_eff_pt_low : 
-				thispt = self.__ele_trig_eff_pt_low 
-				doubleerr=True
-			elif thispt>self.__ele_trig_eff_pt_hi : 
-				thispt = self.__ele_trig_eff_pt_hi - 0.0000001
-				doubleerr=True
-			#get factors
-			binx_BtoF = self.__ele_trig_eff_BtoF.GetXaxis().FindFixBin(thispt)
-			biny_BtoF = self.__ele_trig_eff_BtoF.GetYaxis().FindFixBin(thiseta)
-			binx_GH = self.__ele_trig_eff_GH.GetXaxis().FindFixBin(thispt)
-			biny_GH = self.__ele_trig_eff_GH.GetYaxis().FindFixBin(thiseta)
-			nomfac_BtoF = self.__ele_trig_eff_BtoF.GetBinContent(self.__ele_trig_eff_BtoF.GetBin(binx_BtoF,biny_BtoF))
-			err_up_BtoF = self.__ele_trig_eff_BtoF.GetBinErrorUp(binx_BtoF,biny_BtoF)
-			err_dn_BtoF = self.__ele_trig_eff_BtoF.GetBinErrorLow(binx_BtoF,biny_BtoF)
-			nomfac_GH = self.__ele_trig_eff_GH.GetBinContent(self.__ele_trig_eff_GH.GetBin(binx_GH,biny_GH))
-			err_up_GH = self.__ele_trig_eff_GH.GetBinErrorUp(binx_GH,biny_GH)
-			err_dn_GH = self.__ele_trig_eff_GH.GetBinErrorLow(binx_GH,biny_GH)
+			#first bring the parameters back into range and set the histograms to use
+			if topology==1 or topology==2 :
+				thiseta = abs(thiseta)
+				if thiseta<self.__ele_trig_eff_r_eta_low : 
+					thiseta = self.__ele_trig_eff_r_eta_low 
+					doubleerr=True
+				elif thiseta>self.__ele_trig_eff_r_eta_hi : 
+					thiseta = self.__ele_trig_eff_r_eta_hi - 0.0000001
+					doubleerr=True
+				if thispt<self.__ele_trig_eff_r_pt_low : 
+					thispt = self.__ele_trig_eff_r_pt_low 
+					doubleerr=True
+				elif thispt>self.__ele_trig_eff_r_pt_hi : 
+					thispt = self.__ele_trig_eff_r_pt_hi - 0.0000001
+					doubleerr=True
+				btofhisto = self.__ele_trig_eff_boosted
+				ghhisto = self.__ele_trig_eff_boosted
+				#get factors
+				binx_BtoF = btofhisto.GetXaxis().FindFixBin(thiseta)
+				biny_BtoF = btofhisto.GetYaxis().FindFixBin(thispt)
+				binx_GH = ghhisto.GetXaxis().FindFixBin(thiseta)
+				biny_GH = ghhisto.GetYaxis().FindFixBin(thispt)
+			elif topology==3 :
+				if thiseta<self.__ele_trig_eff_r_eta_low : 
+					thiseta = self.__ele_trig_eff_r_eta_low 
+					doubleerr=True
+				elif thiseta>self.__ele_trig_eff_r_eta_hi : 
+					thiseta = self.__ele_trig_eff_r_eta_hi - 0.0000001
+					doubleerr=True
+				if thispt<self.__ele_trig_eff_r_pt_low : 
+					thispt = self.__ele_trig_eff_r_pt_low 
+					doubleerr=True
+				elif thispt>self.__ele_trig_eff_r_pt_hi : 
+					thispt = self.__ele_trig_eff_r_pt_hi - 0.0000001
+					doubleerr=True
+				btofhisto = self.__ele_trig_eff_resolved_BtoF
+				ghhisto = self.__ele_trig_eff_resolved_GH
+				#get factors
+				binx_BtoF = btofhisto.GetXaxis().FindFixBin(thispt)
+				biny_BtoF = btofhisto.GetYaxis().FindFixBin(thiseta)
+				binx_GH = ghhisto.GetXaxis().FindFixBin(thispt)
+				biny_GH = ghhisto.GetYaxis().FindFixBin(thiseta)
+			nomfac_BtoF = btofhisto.GetBinContent(btofhisto.GetBin(binx_BtoF,biny_BtoF))
+			err_up_BtoF = btofhisto.GetBinErrorUp(binx_BtoF,biny_BtoF)
+			err_dn_BtoF = btofhisto.GetBinErrorLow(binx_BtoF,biny_BtoF)
+			nomfac_GH = ghhisto.GetBinContent(ghhisto.GetBin(binx_GH,biny_GH))
+			err_up_GH = ghhisto.GetBinErrorUp(binx_GH,biny_GH)
+			err_dn_GH = ghhisto.GetBinErrorLow(binx_GH,biny_GH)
 			if doubleerr :
 				err_up_BtoF*=2; err_dn_BtoF*=2; err_up_GH*=2; err_dn_GH*=2
 			#calculate total factors
@@ -673,6 +703,8 @@ class Corrector(object) :
 												pt) 	   # pt
 				sfup = self.__reader.eval_auto_bounds('up',0,eta,pt)
 				sfdown = self.__reader.eval_auto_bounds('down',0,eta,pt)
+			if mc_eff==0. :
+				mc_eff = self.__btag_MC_eff_udsg_histo.GetMaximum()
 			#if the jet is b-tagged
 			if jet.isbTagged() :
 				#multiply weights just by the sf
@@ -854,13 +886,15 @@ def setupMuonTriggerHistos(onGrid) :
 
 def setupEleTriggerHistos(onGrid) :
 	pp = './tardir/' if onGrid == 'yes' else '../other_input_files/'
-	ele_trig_BtoF_file = TFile.Open(pp+ELE_TRIG_EFF_BTOF_ROOT_FILENAME)
-	ele_trig_GH_file = TFile.Open(pp+ELE_TRIG_EFF_GH_ROOT_FILENAME)
-	btof_histo = ele_trig_BtoF_file.Get(ELE_TRIG_EFF_HISTONAME)
-	gh_histo = ele_trig_GH_file.Get(ELE_TRIG_EFF_HISTONAME)
-	btof_histo.SetDirectory(0); gh_histo.SetDirectory(0)
-	ele_trig_BtoF_file.Close(); ele_trig_GH_file.Close()
-	return btof_histo, gh_histo
+	ele_trig_b_file = TFile.Open(pp+ELE_TRIG_EFF_BOOSTED_ROOT_FILENAME)
+	ele_trig_r_BtoF_file = TFile.Open(pp+ELE_TRIG_EFF_RESOLVED_BTOF_ROOT_FILENAME)
+	ele_trig_r_GH_file = TFile.Open(pp+ELE_TRIG_EFF_RESOLVED_GH_ROOT_FILENAME)
+	histo_b = ele_trig_b_file.Get(ELE_TRIG_EFF_BOOSTED_HISTONAME)
+	btof_histo_r = ele_trig_r_BtoF_file.Get(ELE_TRIG_EFF_RESOLVED_HISTONAME)
+	gh_histo_r = ele_trig_r_GH_file.Get(ELE_TRIG_EFF_RESOLVED_HISTONAME)
+	histo_b.SetDirectory(0); btof_histo_r.SetDirectory(0); gh_histo_r.SetDirectory(0)
+	ele_trig_b_file.Close(); ele_trig_r_BtoF_file.Close(); ele_trig_r_GH_file.Close()
+	return histo_b, btof_histo_r, gh_histo_r
 
 def setupMuonIDHistos(onGrid) :
 	pp = './tardir/' if onGrid == 'yes' else '../other_input_files/'

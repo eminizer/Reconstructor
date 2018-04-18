@@ -227,7 +227,7 @@ def reconstruct(hypotheses,topology,ongrid) :
 	#First declare and set up the kinematic fit objects (they'll be done in parallel in batches)
 	allkinfitobjlists = []; allkinfitobjs = []
 	j=-1
-	batchsize = 1 if ongrid=='yes' else 25
+	batchsize = 1 if ongrid=='yes' else 5
 	for i in range(len(hypotheses)) :
 		if i%batchsize==0 :
 			j+=1

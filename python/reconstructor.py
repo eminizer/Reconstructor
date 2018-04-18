@@ -9,7 +9,8 @@ MU_TRIG_PATHS_BOOSTED = ['HLT_Mu50','HLT_TkMu50']
 MU_TRIG_PATHS_RESOLVED = ['HLT_IsoMu24','HLT_IsoTkMu24']
 #EL_TRIG_PATH = 'HLT_Ele35_CaloIdVT_GsfTrkIdT_PFJet150_PFJet50'
 #EL_TRIG_PATHS = ['HLT_Ele45_WPLoose_Gsf']
-EL_TRIG_PATHS = ['HLT_Ele27_WPTight_Gsf']
+EL_TRIG_PATHS_BOOSTED = ['HLT_Ele50_CaloIdVT_GsfTrkIdT_PFJet165','HLT_Ele115_CaloIdVT_GsfTrkIdT']
+EL_TRIG_PATHS_RESOLVED = ['HLT_Ele27_WPTight_Gsf']
 
 ##########								   Imports  								##########
 
@@ -86,7 +87,9 @@ class Reconstructor(object) :
 		AddBranch(trigName,trigName,'I',-1,'1',thisdictlist)
 	for trigName in MU_TRIG_PATHS_RESOLVED :
 		AddBranch(trigName,trigName,'I',-1,'1',thisdictlist)
-	for trigName in EL_TRIG_PATHS :
+	for trigName in EL_TRIG_PATHS_BOOSTED :
+		AddBranch(trigName,trigName,'I',-1,'1',thisdictlist)
+	for trigName in EL_TRIG_PATHS_RESOLVED :
 		AddBranch(trigName,trigName,'I',-1,'1',thisdictlist)
 	#MET Filter information
 	filterBranches = {}
@@ -382,7 +385,7 @@ class Reconstructor(object) :
 	thisdictlist = [allBranches,cr_sb_cut_branches]
 	cutnames = ['wjets_cr_selection','qcd_A_SR_selection','qcd_B_SR_selection','qcd_C_SR_selection','qcd_A_CR_selection','qcd_B_CR_selection','qcd_C_CR_selection']
 	for cutname in cutnames :
-		AddBranch(writename=cutname,ttreetype='i',inival=2,dictlist=thisdictlist)
+		AddBranch(writename=cutname,ttreetype='i',inival=0,dictlist=thisdictlist)
 	#cut variables etc. for electron trigger efficiency measurement
 	eltrig_cut_branches = {}
 	thisdictlist = [allBranches,eltrig_cut_branches]
@@ -402,7 +405,7 @@ class Reconstructor(object) :
 	#kinfit variables
 	kinfit_branches = {}
 	thisdictlist=[kinfit_branches,allBranches]
-	chi2 = AddBranch(writename='chi2',inival=0.0,dictlist=thisdictlist)
+	chi2 = AddBranch(writename='chi2',inival=900.,dictlist=thisdictlist)
 	par_0 = AddBranch(writename='par_0',dictlist=thisdictlist)
 	par_1 = AddBranch(writename='par_1',dictlist=thisdictlist)
 	par_2 = AddBranch(writename='par_2',dictlist=thisdictlist)
@@ -410,9 +413,9 @@ class Reconstructor(object) :
 	par_4 = AddBranch(writename='par_4',dictlist=thisdictlist)
 	par_5 = AddBranch(writename='par_5',dictlist=thisdictlist)
 	nhypotheses = AddBranch(writename='nhypotheses',ttreetype='i',inival=0,dictlist=thisdictlist)
-	ismatchable = AddBranch(writename='ismatchable',ttreetype='i',inival=2,dictlist=thisdictlist)
-	iscorrect = AddBranch(writename='iscorrect',ttreetype='i',inival=2,dictlist=thisdictlist)
-	ismatchedpostfit = AddBranch(writename='ismatchedpostfit',ttreetype='i',inival=2,dictlist=thisdictlist)
+	ismatchable = AddBranch(writename='ismatchable',ttreetype='i',inival=0,dictlist=thisdictlist)
+	iscorrect = AddBranch(writename='iscorrect',ttreetype='i',inival=0,dictlist=thisdictlist)
+	ismatchedpostfit = AddBranch(writename='ismatchedpostfit',ttreetype='i',inival=0,dictlist=thisdictlist)
 	lepWcorprefitM = AddBranch(writename='lepWcorprefitM',dictlist=thisdictlist)
 	leptcorprefitM = AddBranch(writename='leptcorprefitM',dictlist=thisdictlist)
 	hadtcorprefitM = AddBranch(writename='hadtcorprefitM',dictlist=thisdictlist)
@@ -498,6 +501,9 @@ class Reconstructor(object) :
 			#send the hypotheses to the kinematic fit 
 			hypindex, scaledlep, scaledmet, scaledlepb, scaledhadt, scaledhad1, scaledhad2, scaledhad3, fitchi2, finalpars = self.__writeKinfitResults__(hypotheses,topology)
 			#print '		Done.' #DEBUG 
+		else :
+			self.cut_branches['validminimization'].setWriteValue(0)
+			self.cut_branches['fullselection'].setWriteValue(0)
 		#--------------------------------------------------------------------Below here is event selection--------------------------------------------------------------------#
 		#print '	Calculating cut variables...' #DEBUG
 		#FULL SELECTION CRITERIA
@@ -994,14 +1000,18 @@ class Reconstructor(object) :
 			#leading ak4 jets
 			self.docut('ak4jetcuts',(topology==3 or (len(ak4jets)>1 and ak4jets[0].getPt()>150. and ak4jets[1].getPt()>50.)))
 			#MET cuts
-			self.docut('METcuts',((topology==3 and met.E()>40.) or met.E()>30.))
+			self.docut('METcuts',((topology==3 and met.E()>40.) or met.E()>50.))
 			#boosted lepton pT cuts
-			self.docut('lepcuts',(topology==3 or lep.getPt()>55.))
+			self.docut('lepcuts',(topology==3 or lep.getPt()>50.))
 		elif self.lepflavor.getWriteValue()==2 :
 			#trigger
 			trigvals = []
-			for trigName in EL_TRIG_PATHS :
-				trigvals.append(self.triggerBranches[trigName].getWriteValue())
+			if topology==1 or topology==2 :
+				for trigName in EL_TRIG_PATHS_BOOSTED :
+					trigvals.append(self.triggerBranches[trigName].getWriteValue())
+			elif topology==3 :
+				for trigName in EL_TRIG_PATHS_RESOLVED :
+					trigvals.append(self.triggerBranches[trigName].getWriteValue())
 			self.docut('trigger',trigvals.count(1)>0)
 			#isolated lepton
 			self.docut('isolepton',(lep.is2DIso(topology) and (topology<3 or lep.isIso())))
@@ -1015,9 +1025,9 @@ class Reconstructor(object) :
 			#leading ak4 jets
 			self.docut('ak4jetcuts',(topology==3 or (len(ak4jets)>1 and ak4jets[0].getPt()>250. and ak4jets[1].getPt()>70.)))
 			#MET cuts
-			self.docut('METcuts',((topology==3 and met.E()>40.) or met.E()>50.))
+			self.docut('METcuts',((topology==3 and met.E()>40.) or met.E()>100.))
 			#boosted lepton pT cuts
-			self.docut('lepcuts',(topology==3 or lep.getPt()>55.))
+			self.docut('lepcuts',(topology==3 or lep.getPt()>50.))
 		#full selection
 		for cutbranch in self.cut_branches.values() :
 			if cutbranch.getWriteValue()==0 :
@@ -1077,8 +1087,12 @@ class Reconstructor(object) :
 		self.docut('eltrig_mutrigger',trigvals.count(1)>0,self.eltrig_cut_branches)
 		#electron trigger
 		trigvals = []
-		for trigName in EL_TRIG_PATHS :
-			trigvals.append(self.triggerBranches[trigName].getWriteValue())
+		if topology==1 or topology==2 :
+			for trigName in EL_TRIG_PATHS_BOOSTED :
+				trigvals.append(self.triggerBranches[trigName].getWriteValue())
+		elif topology==3 :
+			for trigName in EL_TRIG_PATHS_RESOLVED :
+				trigvals.append(self.triggerBranches[trigName].getWriteValue())
 		self.docut('eltrig_eltrigger',trigvals.count(1)>0,self.eltrig_cut_branches)
 		#find the hardest isolated (if possible) muon and electron and set the "two leptons" variable
 		allisoleps = []
