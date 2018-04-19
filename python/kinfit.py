@@ -236,6 +236,7 @@ def reconstruct(hypotheses,topology,ongrid) :
 			newfit.setBestParValues(newfitinfotuple[2])
 			if newfit.getErrFlag()==0 and newfit.getFitChi2()<bestfitchi2 :
 				bestfitchi2 = newfit.getFitChi2(); bestfitindex = newfit.getIndex(); bestParValues = newfit.getBestParValues()
+			del newfit
 	else :
 		procs = [] #list of tuples of (kinfit object, parent pipe end, multiprocessing process)
 		for i in range(len(hypotheses)) :
