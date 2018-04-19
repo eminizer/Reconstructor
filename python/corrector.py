@@ -63,12 +63,12 @@ class Corrector(object) :
 		self.__ak4JetCorrector, self.__ak4JecUncertainty = setupJECCorrector(onGrid,isdata,'AK4PFchs',runera)
 		self.__ak8JetCorrector, self.__ak8JecUncertainty = setupJECCorrector(onGrid,isdata,'AK8PFchs',runera)
 		#pileup
-		self.__MC_pu_histo, self.__data_pu_histo_nom, self.__data_pu_histo_up, self.__data_pu_histo_down = setupPileupHistos(onGrid,pu_histo)
+		self.__MC_pu_histo, self.__data_pu_histo_nom, self.__data_pu_histo_up, self.__data_pu_histo_down = self.setupPileupHistos(onGrid,pu_histo)
 		#trigger efficiency
 		( self.__muon_trig_eff_boosted_BtoF_vs_pt, self.__muon_trig_eff_boosted_BtoF_vs_eta, 
 			self.__muon_trig_eff_boosted_GH_vs_pt, self.__muon_trig_eff_boosted_GH_vs_eta, 
 			self.__muon_trig_eff_resolved_BtoF_vs_pt, self.__muon_trig_eff_resolved_BtoF_vs_eta, 
-			self.__muon_trig_eff_resolved_GH_vs_pt, self.__muon_trig_eff_resolved_GH_vs_eta ) = setupMuonTriggerHistos(onGrid)
+			self.__muon_trig_eff_resolved_GH_vs_pt, self.__muon_trig_eff_resolved_GH_vs_eta ) = self.setupMuonTriggerHistos(onGrid)
 		self.__muon_trig_b_pt_low  = self.__muon_trig_eff_boosted_BtoF_vs_pt.GetXaxis().GetXmin()
 		self.__muon_trig_b_pt_hi   = self.__muon_trig_eff_boosted_BtoF_vs_pt.GetXaxis().GetXmax()
 		self.__muon_trig_b_eta_low = self.__muon_trig_eff_boosted_BtoF_vs_eta.GetXaxis().GetXmin()
@@ -77,7 +77,7 @@ class Corrector(object) :
 		self.__muon_trig_r_pt_hi   = self.__muon_trig_eff_resolved_BtoF_vs_pt.GetXaxis().GetXmax()
 		self.__muon_trig_r_eta_low = self.__muon_trig_eff_resolved_BtoF_vs_eta.GetXaxis().GetXmin()
 		self.__muon_trig_r_eta_hi  = self.__muon_trig_eff_resolved_BtoF_vs_eta.GetXaxis().GetXmax()
-		self.__ele_trig_eff_boosted, self.__ele_trig_eff_resolved_BtoF, self.__ele_trig_eff_resolved_GH = setupEleTriggerHistos(onGrid)
+		self.__ele_trig_eff_boosted, self.__ele_trig_eff_resolved_BtoF, self.__ele_trig_eff_resolved_GH = self.setupEleTriggerHistos(onGrid)
 		etxa_b = self.__ele_trig_eff_boosted.GetXaxis(); etya_b = self.__ele_trig_eff_boosted.GetYaxis()
 		self.__ele_trig_eff_b_pt_low  = etxa_b.GetXmin(); self.__ele_trig_eff_b_pt_hi  = etxa_b.GetXmax()
 		self.__ele_trig_eff_b_eta_low = etya_b.GetXmin(); self.__ele_trig_eff_eta_hi = etya_b.GetXmax()
@@ -85,7 +85,7 @@ class Corrector(object) :
 		self.__ele_trig_eff_r_pt_low  = etxa_r.GetXmin(); self.__ele_trig_eff_r_pt_hi  = etxa_r.GetXmax()
 		self.__ele_trig_eff_r_eta_low = etya_r.GetXmin(); self.__ele_trig_eff_r_eta_hi = etya_r.GetXmax()
 		#Tracking efficiency
-		self.__muon_trk_eff_vs_eta, self.__muon_trk_eff_vs_pu = setupMuonTrackingGraphs(onGrid)
+		self.__muon_trk_eff_vs_eta, self.__muon_trk_eff_vs_pu = self.setupMuonTrackingGraphs(onGrid)
 		tempx = Double(0.); tempy = Double(0.)
 		self.__muon_trk_eff_vs_eta_nbins = self.__muon_trk_eff_vs_eta.GetN()
 		self.__muon_trk_eff_vs_eta_lowxs = []; self.__muon_trk_eff_vs_eta_hixs = []
@@ -109,12 +109,12 @@ class Corrector(object) :
 			self.__muon_trk_eff_vs_pu_yerrdowns.append(float(self.__muon_trk_eff_vs_pu.GetErrorYlow(i)))
 		#ID efficiency
 		( self.__muon_id_eff_BtoF_abseta_vs_pt, self.__muon_id_eff_BtoF_vs_pu, 
-			self.__muon_id_eff_GH_abseta_vs_pt, self.__muon_id_eff_GH_vs_pu ) = setupMuonIDHistos(onGrid)
+			self.__muon_id_eff_GH_abseta_vs_pt, self.__muon_id_eff_GH_vs_pu ) = self.setupMuonIDHistos(onGrid)
 		mixa = self.__muon_id_eff_BtoF_abseta_vs_pt.GetXaxis(); miya = self.__muon_id_eff_BtoF_abseta_vs_pt.GetYaxis()
 		self.__muon_id_eff_pt_low  = mixa.GetXmin(); 									 self.__muon_id_eff_pt_hi  = mixa.GetXmax()
 		self.__muon_id_eff_eta_low = miya.GetXmin(); 									 self.__muon_id_eff_eta_hi = miya.GetXmax()
 		self.__muon_id_eff_pu_low  = self.__muon_id_eff_BtoF_vs_pu.GetXaxis().GetXmin(); self.__muon_id_eff_pu_hi  = self.__muon_id_eff_BtoF_vs_pu.GetXaxis().GetXmax()
-		self.__ele_id_eff_eta_vs_pt, self.__ele_reco_eff_pt_vs_eta = setupEleIDHistos(onGrid)
+		self.__ele_id_eff_eta_vs_pt, self.__ele_reco_eff_pt_vs_eta = self.setupEleIDHistos(onGrid)
 		idxa = self.__ele_id_eff_eta_vs_pt.GetXaxis(); idya = self.__ele_id_eff_eta_vs_pt.GetYaxis()
 		self.__ele_id_eff_pt_low  = idxa.GetXmin(); self.__ele_id_eff_pt_hi  = idxa.GetXmax()
 		self.__ele_id_eff_eta_low = idya.GetXmin(); self.__ele_id_eff_eta_hi = idya.GetXmax()
@@ -123,13 +123,13 @@ class Corrector(object) :
 		self.__ele_reco_eff_pt_low  = recoya.GetXmin(); self.__ele_reco_eff_pt_hi  = recoya.GetXmax()
 		#Isolation efficiency
 		( self.__muon_iso_eff_BtoF_abseta_vs_pt, self.__muon_iso_eff_BtoF_vs_pu, 
-			self.__muon_iso_eff_GH_abseta_vs_pt, self.__muon_iso_eff_GH_vs_pu ) = setupMuonIsoHistos(onGrid)
+			self.__muon_iso_eff_GH_abseta_vs_pt, self.__muon_iso_eff_GH_vs_pu ) = self.setupMuonIsoHistos(onGrid)
 		misoxa = self.__muon_iso_eff_BtoF_abseta_vs_pt.GetXaxis(); misoya = self.__muon_iso_eff_BtoF_abseta_vs_pt.GetYaxis()
 		self.__muon_iso_eff_pt_low  = misoxa.GetXmin(); self.__muon_iso_eff_pt_hi  = misoxa.GetXmax()
 		self.__muon_iso_eff_eta_low = misoya.GetXmin(); self.__muon_iso_eff_eta_hi = misoya.GetXmax()
 		self.__muon_iso_eff_pu_low  = self.__muon_iso_eff_BtoF_vs_pu.GetXaxis().GetXmin();  self.__muon_iso_eff_pu_hi  = self.__muon_iso_eff_BtoF_vs_pu.GetXaxis().GetXmax()
 		#MiniIsolation efficiency
-		self.__ele_miniiso_eff_abseta_vs_pt = setupEleMiniIsoHistos(onGrid)
+		self.__ele_miniiso_eff_abseta_vs_pt = self.setupEleMiniIsoHistos(onGrid)
 		miniisoxa = self.__ele_miniiso_eff_abseta_vs_pt.GetXaxis(); miniisoya = self.__ele_miniiso_eff_abseta_vs_pt.GetYaxis()
 		self.__ele_miniiso_eff_pt_low  = miniisoxa.GetXmin(); self.__ele_miniiso_eff_pt_hi  = miniisoxa.GetXmax()
 		self.__ele_miniiso_eff_eta_low = miniisoya.GetXmin(); self.__ele_miniiso_eff_eta_hi = miniisoya.GetXmax()
@@ -776,6 +776,110 @@ class Corrector(object) :
 	def __del__(self) :
 		pass
 
+	#-------------------------------- object functions to set up corrector histograms -------------------------------- 
+
+	def setupPileupHistos(self,onGrid,pu_histo) :
+		if pu_histo.Integral() > 0 : pu_histo.Scale(1./pu_histo.Integral())
+		pp = './tardir/' if onGrid == 'yes' else '../other_input_files/'
+		self._data_nom_file  = TFile.Open(pp+DATA_PU_HISTO_NOMINAL_FILENAME)
+		data_nom_histo  = self._data_nom_file.Get('pileup')
+		data_nom_histo.Scale(1./data_nom_histo.Integral())
+		self._data_up_file   = TFile.Open(pp+DATA_PU_HISTO_XS_UP_FILENAME)
+		data_up_histo   = self._data_up_file.Get('pileup')
+		data_up_histo.Scale(1./data_up_histo.Integral())
+		self._data_down_file = TFile.Open(pp+DATA_PU_HISTO_XS_DOWN_FILENAME)
+		data_down_histo = self._data_down_file.Get('pileup')
+		data_down_histo.Scale(1./data_down_histo.Integral())
+		#pu_histo.SetDirectory(0); data_nom_histo.SetDirectory(0); data_up_histo.SetDirectory(0); data_down_histo.SetDirectory(0)
+		#data_nom_file.Close(); data_up_file.Close(); data_down_file.Close()
+		return pu_histo, data_nom_histo, data_up_histo, data_down_histo
+
+	def setupMuonTriggerHistos(self,onGrid) :
+		pp = './tardir/' if onGrid == 'yes' else '../other_input_files/'
+		self._muon_trig_BtoF_file = TFile.Open(pp+MUON_TRIG_EFF_BTOF_ROOT_FILENAME)
+		self._muon_trig_GH_file 	= TFile.Open(pp+MUON_TRIG_EFF_GH_ROOT_FILENAME)
+		BtoF_pt_histo_b  = self._muon_trig_BtoF_file.Get(MUON_TRIG_EFF_BOOSTED_PT_HISTONAME)
+		BtoF_eta_histo_b = self._muon_trig_BtoF_file.Get(MUON_TRIG_EFF_BOOSTED_ETA_HISTONAME)
+		GH_pt_histo_b 	 = self._muon_trig_GH_file.Get(MUON_TRIG_EFF_BOOSTED_PT_HISTONAME)
+		GH_eta_histo_b  = self._muon_trig_GH_file.Get(MUON_TRIG_EFF_BOOSTED_ETA_HISTONAME)
+		BtoF_pt_histo_r  = self._muon_trig_BtoF_file.Get(MUON_TRIG_EFF_RESOLVED_PT_HISTONAME)
+		BtoF_eta_histo_r = self._muon_trig_BtoF_file.Get(MUON_TRIG_EFF_RESOLVED_ETA_HISTONAME)
+		GH_pt_histo_r 	 = self._muon_trig_GH_file.Get(MUON_TRIG_EFF_RESOLVED_PT_HISTONAME)
+		GH_eta_histo_r  = self._muon_trig_GH_file.Get(MUON_TRIG_EFF_RESOLVED_ETA_HISTONAME)
+		#BtoF_pt_histo_b.SetDirectory(0); BtoF_eta_histo_b.SetDirectory(0);
+		#GH_pt_histo_b.SetDirectory(0); GH_eta_histo_b.SetDirectory(0);
+		#BtoF_pt_histo_r.SetDirectory(0); BtoF_eta_histo_r.SetDirectory(0);
+		#GH_pt_histo_r.SetDirectory(0); GH_eta_histo_r.SetDirectory(0);
+		#muon_trig_BtoF_file.Close(); muon_trig_GH_file.Close()
+		return BtoF_pt_histo_b, BtoF_eta_histo_b, GH_pt_histo_b, GH_eta_histo_b, BtoF_pt_histo_r, BtoF_eta_histo_r, GH_pt_histo_r, GH_eta_histo_r
+
+	def setupEleTriggerHistos(self,onGrid) :
+		pp = './tardir/' if onGrid == 'yes' else '../other_input_files/'
+		self._ele_trig_b_file = TFile.Open(pp+ELE_TRIG_EFF_BOOSTED_ROOT_FILENAME)
+		self._ele_trig_r_BtoF_file = TFile.Open(pp+ELE_TRIG_EFF_RESOLVED_BTOF_ROOT_FILENAME)
+		self._ele_trig_r_GH_file = TFile.Open(pp+ELE_TRIG_EFF_RESOLVED_GH_ROOT_FILENAME)
+		histo_b = self._ele_trig_b_file.Get(ELE_TRIG_EFF_BOOSTED_HISTONAME)
+		btof_histo_r = self._ele_trig_r_BtoF_file.Get(ELE_TRIG_EFF_RESOLVED_HISTONAME)
+		gh_histo_r = self._ele_trig_r_GH_file.Get(ELE_TRIG_EFF_RESOLVED_HISTONAME)
+		#histo_b.SetDirectory(0); btof_histo_r.SetDirectory(0); gh_histo_r.SetDirectory(0)
+		#ele_trig_b_file.Close(); ele_trig_r_BtoF_file.Close(); ele_trig_r_GH_file.Close()
+		return histo_b, btof_histo_r, gh_histo_r
+
+	def setupMuonIDHistos(self,onGrid) :
+		pp = './tardir/' if onGrid == 'yes' else '../other_input_files/'
+		self._muon_id_BtoF_file = TFile.Open(pp+MUON_ID_EFF_BTOF_ROOT_FILENAME)
+		self._muon_id_GH_file   = TFile.Open(pp+MUON_ID_EFF_GH_ROOT_FILENAME)
+		BtoF_abseta_vs_pt_histo  = self._muon_id_BtoF_file.Get(MUON_ID_EFF_BTOF_PT_ETA_HISTONAME)
+		BtoF_vs_pu_histo  = self._muon_id_BtoF_file.Get(MUON_ID_EFF_BTOF_PU_HISTONAME)
+		GH_abseta_vs_pt_histo  = self._muon_id_GH_file.Get(MUON_ID_EFF_GH_PT_ETA_HISTONAME)
+		GH_vs_pu_histo  = self._muon_id_GH_file.Get(MUON_ID_EFF_GH_PU_HISTONAME)
+		#BtoF_abseta_vs_pt_histo.SetDirectory(0); BtoF_vs_pu_histo.SetDirectory(0)
+		#GH_abseta_vs_pt_histo.SetDirectory(0); GH_vs_pu_histo.SetDirectory(0)
+		#muon_id_BtoF_file.Close()
+		#muon_id_GH_file.Close()
+		return BtoF_abseta_vs_pt_histo, BtoF_vs_pu_histo, GH_abseta_vs_pt_histo, GH_vs_pu_histo
+
+	def setupEleIDHistos(self,onGrid) :
+		pp = './tardir/' if onGrid == 'yes' else '../other_input_files/'
+		self._ele_id_file = TFile.Open(pp+ELE_ID_EFF_ROOT_FILENAME)
+		self._ele_reco_file   = TFile.Open(pp+ELE_RECO_EFF_ROOT_FILENAME)
+		ele_id_histo = self._ele_id_file.Get(ELE_ID_EFF_2D_HISTONAME)
+		ele_reco_histo = self._ele_reco_file.Get(ELE_RECO_EFF_2D_HISTONAME)
+		#ele_id_histo.SetDirectory(0); ele_reco_histo.SetDirectory(0)
+		#ele_id_file.Close(); ele_reco_file.Close()
+		return ele_id_histo, ele_reco_histo
+
+	def setupMuonIsoHistos(self,onGrid) :
+		pp = './tardir/' if onGrid == 'yes' else '../other_input_files/'
+		self._muon_iso_BtoF_file = TFile.Open(pp+MUON_ISO_EFF_BTOF_ROOT_FILENAME)
+		self._muon_iso_GH_file   = TFile.Open(pp+MUON_ISO_EFF_GH_ROOT_FILENAME)
+		BtoF_abseta_vs_pt_histo  = self._muon_iso_BtoF_file.Get(MUON_ISO_EFF_PT_ETA_HISTONAME)
+		BtoF_vs_pu_histo  = self._muon_iso_BtoF_file.Get(MUON_ISO_EFF_PU_HISTONAME)
+		GH_abseta_vs_pt_histo  = self._muon_iso_GH_file.Get(MUON_ISO_EFF_PT_ETA_HISTONAME)
+		GH_vs_pu_histo  = self._muon_iso_GH_file.Get(MUON_ISO_EFF_PU_HISTONAME)
+		#BtoF_abseta_vs_pt_histo.SetDirectory(0); BtoF_vs_pu_histo.SetDirectory(0)
+		#GH_abseta_vs_pt_histo.SetDirectory(0); GH_vs_pu_histo.SetDirectory(0)
+		#muon_iso_BtoF_file.Close()
+		#muon_iso_GH_file.Close()
+		return BtoF_abseta_vs_pt_histo, BtoF_vs_pu_histo, GH_abseta_vs_pt_histo, GH_vs_pu_histo
+
+	def setupEleMiniIsoHistos(self,onGrid) :
+		pp = './tardir/' if onGrid == 'yes' else '../other_input_files/'
+		self._ele_miniiso_file = TFile.Open(pp+ELE_MINIISO_EFF_ROOT_FILENAME)
+		ele_miniiso_histo = self._ele_miniiso_file.Get(ELE_MINIISO_EFF_2D_HISTONAME)
+		#ele_miniiso_histo.SetDirectory(0)
+		#ele_miniiso_file.Close()
+		return ele_miniiso_histo
+
+	def setupMuonTrackingGraphs(self,onGrid) :
+		pp = './tardir/' if onGrid == 'yes' else '../other_input_files/'
+		self._muon_trk_file = TFile.Open(pp+MUON_TRK_EFF_ROOT_FILENAME)
+		vs_eta_graph  = self._muon_trk_file.Get(MUON_TRK_EFF_ETA_GRAPHNAME)
+		vs_pu_graph   = self._muon_trk_file.Get(MUON_TRK_EFF_PU_GRAPHNAME)
+		#muon_trk_file.Close()
+		return vs_eta_graph, vs_pu_graph
+
+
 def setupJECCorrector(onGrid,isdata,jetType,runera) :
 	#Define the JEC  parameters
 	L1JetPar  = None
@@ -848,107 +952,6 @@ def getJER(jetEta, sysType) :
                 jerSF = scale_nom[iSF]
             break
     return float(jerSF)
-
-def setupPileupHistos(onGrid,pu_histo) :
-	if pu_histo.Integral() > 0 : pu_histo.Scale(1./pu_histo.Integral())
-	pp = './tardir/' if onGrid == 'yes' else '../other_input_files/'
-	data_nom_file  = TFile.Open(pp+DATA_PU_HISTO_NOMINAL_FILENAME)
-	data_nom_histo  = data_nom_file.Get('pileup')
-	data_nom_histo.Scale(1./data_nom_histo.Integral())
-	data_up_file   = TFile.Open(pp+DATA_PU_HISTO_XS_UP_FILENAME)
-	data_up_histo   = data_up_file.Get('pileup')
-	data_up_histo.Scale(1./data_up_histo.Integral())
-	data_down_file = TFile.Open(pp+DATA_PU_HISTO_XS_DOWN_FILENAME)
-	data_down_histo = data_down_file.Get('pileup')
-	data_down_histo.Scale(1./data_down_histo.Integral())
-	pu_histo.SetDirectory(0); data_nom_histo.SetDirectory(0); data_up_histo.SetDirectory(0); data_down_histo.SetDirectory(0)
-	data_nom_file.Close(); data_up_file.Close(); data_down_file.Close()
-	return pu_histo, data_nom_histo, data_up_histo, data_down_histo
-
-def setupMuonTriggerHistos(onGrid) :
-	pp = './tardir/' if onGrid == 'yes' else '../other_input_files/'
-	muon_trig_BtoF_file = TFile.Open(pp+MUON_TRIG_EFF_BTOF_ROOT_FILENAME)
-	muon_trig_GH_file 	= TFile.Open(pp+MUON_TRIG_EFF_GH_ROOT_FILENAME)
-	BtoF_pt_histo_b  = muon_trig_BtoF_file.Get(MUON_TRIG_EFF_BOOSTED_PT_HISTONAME)
-	BtoF_eta_histo_b = muon_trig_BtoF_file.Get(MUON_TRIG_EFF_BOOSTED_ETA_HISTONAME)
-	GH_pt_histo_b 	 = muon_trig_GH_file.Get(MUON_TRIG_EFF_BOOSTED_PT_HISTONAME)
-	GH_eta_histo_b  = muon_trig_GH_file.Get(MUON_TRIG_EFF_BOOSTED_ETA_HISTONAME)
-	BtoF_pt_histo_r  = muon_trig_BtoF_file.Get(MUON_TRIG_EFF_RESOLVED_PT_HISTONAME)
-	BtoF_eta_histo_r = muon_trig_BtoF_file.Get(MUON_TRIG_EFF_RESOLVED_ETA_HISTONAME)
-	GH_pt_histo_r 	 = muon_trig_GH_file.Get(MUON_TRIG_EFF_RESOLVED_PT_HISTONAME)
-	GH_eta_histo_r  = muon_trig_GH_file.Get(MUON_TRIG_EFF_RESOLVED_ETA_HISTONAME)
-	BtoF_pt_histo_b.SetDirectory(0); BtoF_eta_histo_b.SetDirectory(0);
-	GH_pt_histo_b.SetDirectory(0); GH_eta_histo_b.SetDirectory(0);
-	BtoF_pt_histo_r.SetDirectory(0); BtoF_eta_histo_r.SetDirectory(0);
-	GH_pt_histo_r.SetDirectory(0); GH_eta_histo_r.SetDirectory(0);
-	muon_trig_BtoF_file.Close(); muon_trig_GH_file.Close()
-	return BtoF_pt_histo_b, BtoF_eta_histo_b, GH_pt_histo_b, GH_eta_histo_b, BtoF_pt_histo_r, BtoF_eta_histo_r, GH_pt_histo_r, GH_eta_histo_r
-
-def setupEleTriggerHistos(onGrid) :
-	pp = './tardir/' if onGrid == 'yes' else '../other_input_files/'
-	ele_trig_b_file = TFile.Open(pp+ELE_TRIG_EFF_BOOSTED_ROOT_FILENAME)
-	ele_trig_r_BtoF_file = TFile.Open(pp+ELE_TRIG_EFF_RESOLVED_BTOF_ROOT_FILENAME)
-	ele_trig_r_GH_file = TFile.Open(pp+ELE_TRIG_EFF_RESOLVED_GH_ROOT_FILENAME)
-	histo_b = ele_trig_b_file.Get(ELE_TRIG_EFF_BOOSTED_HISTONAME)
-	btof_histo_r = ele_trig_r_BtoF_file.Get(ELE_TRIG_EFF_RESOLVED_HISTONAME)
-	gh_histo_r = ele_trig_r_GH_file.Get(ELE_TRIG_EFF_RESOLVED_HISTONAME)
-	histo_b.SetDirectory(0); btof_histo_r.SetDirectory(0); gh_histo_r.SetDirectory(0)
-	ele_trig_b_file.Close(); ele_trig_r_BtoF_file.Close(); ele_trig_r_GH_file.Close()
-	return histo_b, btof_histo_r, gh_histo_r
-
-def setupMuonIDHistos(onGrid) :
-	pp = './tardir/' if onGrid == 'yes' else '../other_input_files/'
-	muon_id_BtoF_file = TFile.Open(pp+MUON_ID_EFF_BTOF_ROOT_FILENAME)
-	muon_id_GH_file   = TFile.Open(pp+MUON_ID_EFF_GH_ROOT_FILENAME)
-	BtoF_abseta_vs_pt_histo  = muon_id_BtoF_file.Get(MUON_ID_EFF_BTOF_PT_ETA_HISTONAME)
-	BtoF_vs_pu_histo  = muon_id_BtoF_file.Get(MUON_ID_EFF_BTOF_PU_HISTONAME)
-	GH_abseta_vs_pt_histo  = muon_id_GH_file.Get(MUON_ID_EFF_GH_PT_ETA_HISTONAME)
-	GH_vs_pu_histo  = muon_id_GH_file.Get(MUON_ID_EFF_GH_PU_HISTONAME)
-	BtoF_abseta_vs_pt_histo.SetDirectory(0); BtoF_vs_pu_histo.SetDirectory(0)
-	GH_abseta_vs_pt_histo.SetDirectory(0); GH_vs_pu_histo.SetDirectory(0)
-	muon_id_BtoF_file.Close()
-	muon_id_GH_file.Close()
-	return BtoF_abseta_vs_pt_histo, BtoF_vs_pu_histo, GH_abseta_vs_pt_histo, GH_vs_pu_histo
-
-def setupEleIDHistos(onGrid) :
-	pp = './tardir/' if onGrid == 'yes' else '../other_input_files/'
-	ele_id_file = TFile.Open(pp+ELE_ID_EFF_ROOT_FILENAME)
-	ele_reco_file   = TFile.Open(pp+ELE_RECO_EFF_ROOT_FILENAME)
-	ele_id_histo = ele_id_file.Get(ELE_ID_EFF_2D_HISTONAME)
-	ele_reco_histo = ele_reco_file.Get(ELE_RECO_EFF_2D_HISTONAME)
-	ele_id_histo.SetDirectory(0); ele_reco_histo.SetDirectory(0)
-	ele_id_file.Close(); ele_reco_file.Close()
-	return ele_id_histo, ele_reco_histo
-
-def setupMuonIsoHistos(onGrid) :
-	pp = './tardir/' if onGrid == 'yes' else '../other_input_files/'
-	muon_iso_BtoF_file = TFile.Open(pp+MUON_ISO_EFF_BTOF_ROOT_FILENAME)
-	muon_iso_GH_file   = TFile.Open(pp+MUON_ISO_EFF_GH_ROOT_FILENAME)
-	BtoF_abseta_vs_pt_histo  = muon_iso_BtoF_file.Get(MUON_ISO_EFF_PT_ETA_HISTONAME)
-	BtoF_vs_pu_histo  = muon_iso_BtoF_file.Get(MUON_ISO_EFF_PU_HISTONAME)
-	GH_abseta_vs_pt_histo  = muon_iso_GH_file.Get(MUON_ISO_EFF_PT_ETA_HISTONAME)
-	GH_vs_pu_histo  = muon_iso_GH_file.Get(MUON_ISO_EFF_PU_HISTONAME)
-	BtoF_abseta_vs_pt_histo.SetDirectory(0); BtoF_vs_pu_histo.SetDirectory(0)
-	GH_abseta_vs_pt_histo.SetDirectory(0); GH_vs_pu_histo.SetDirectory(0)
-	muon_iso_BtoF_file.Close()
-	muon_iso_GH_file.Close()
-	return BtoF_abseta_vs_pt_histo, BtoF_vs_pu_histo, GH_abseta_vs_pt_histo, GH_vs_pu_histo
-
-def setupEleMiniIsoHistos(onGrid) :
-	pp = './tardir/' if onGrid == 'yes' else '../other_input_files/'
-	ele_miniiso_file = TFile.Open(pp+ELE_MINIISO_EFF_ROOT_FILENAME)
-	ele_miniiso_histo = ele_miniiso_file.Get(ELE_MINIISO_EFF_2D_HISTONAME)
-	ele_miniiso_histo.SetDirectory(0)
-	ele_miniiso_file.Close()
-	return ele_miniiso_histo
-
-def setupMuonTrackingGraphs(onGrid) :
-	pp = './tardir/' if onGrid == 'yes' else '../other_input_files/'
-	muon_trk_file = TFile.Open(pp+MUON_TRK_EFF_ROOT_FILENAME)
-	vs_eta_graph  = muon_trk_file.Get(MUON_TRK_EFF_ETA_GRAPHNAME)
-	vs_pu_graph   = muon_trk_file.Get(MUON_TRK_EFF_PU_GRAPHNAME)
-	muon_trk_file.Close()
-	return vs_eta_graph, vs_pu_graph
 
 def getList(fulldict,pp) :
 	#find all the relevant keys

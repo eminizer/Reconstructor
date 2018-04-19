@@ -387,15 +387,15 @@ class Reconstructor(object) :
 	for cutname in cutnames :
 		AddBranch(writename=cutname,ttreetype='i',inival=0,dictlist=thisdictlist)
 	#cut variables etc. for electron trigger efficiency measurement
-	eltrig_cut_branches = {}
-	thisdictlist = [allBranches,eltrig_cut_branches]
-	cutnames = ['mutrigger','eltrigger','isomu','isoel','twoleptons','opplepcharge','btags','lepWpT','fullselection']
-	for cutname in cutnames :
-		AddBranch(writename='eltrig_'+cutname,ttreetype='i',inival=2,dictlist=thisdictlist)
-	eltrig_themuon_pt = AddBranch(writename='eltrig_themuon_pt',dictlist=[allBranches])
-	eltrig_themuon_eta = AddBranch(writename='eltrig_themuon_eta',dictlist=[allBranches])
-	eltrig_theelectron_pt = AddBranch(writename='eltrig_theelectron_pt',dictlist=[allBranches])
-	eltrig_theelectron_eta = AddBranch(writename='eltrig_theelectron_eta',dictlist=[allBranches])
+	#eltrig_cut_branches = {}
+	#thisdictlist = [allBranches,eltrig_cut_branches]
+	#cutnames = ['mutrigger','eltrigger','isomu','isoel','twoleptons','opplepcharge','btags','lepWpT','fullselection']
+	#for cutname in cutnames :
+	#	AddBranch(writename='eltrig_'+cutname,ttreetype='i',inival=2,dictlist=thisdictlist)
+	#eltrig_themuon_pt = AddBranch(writename='eltrig_themuon_pt',dictlist=[allBranches])
+	#eltrig_themuon_eta = AddBranch(writename='eltrig_themuon_eta',dictlist=[allBranches])
+	#eltrig_theelectron_pt = AddBranch(writename='eltrig_theelectron_pt',dictlist=[allBranches])
+	#eltrig_theelectron_eta = AddBranch(writename='eltrig_theelectron_eta',dictlist=[allBranches])
 	#cut variables for alternate lepton isolation algorithm selections
 	alt_lep_iso_cut_branches = {}
 	thisdictlist = [allBranches,alt_lep_iso_cut_branches]
@@ -516,7 +516,7 @@ class Reconstructor(object) :
 		#QCD sidebands for ABCD method background estimation (pass all cuts but MET and lepton isolation)
 		self.__assignQCDSBSelectionCutVars__()
 		#ELECTRON TRIGGER SAMPLE SELECTIONS
-		self.__assignElectronTriggerCRSelectionCutVars__(muons,electrons,topology,met1_vec,met2_vec)
+		#self.__assignElectronTriggerCRSelectionCutVars__(muons,electrons,topology,met1_vec,met2_vec)
 		#ALTERNATE LEPTON ISOLATION (MiniIsolation) ALGORITHM SELECTIONS
 		self.__assignMiniIsolationFullSelectionCutVars__(lep,muons,electrons)
 		#print '		Done. (fullselection=%d)'%(self.cut_branches['fullselection'].getWriteValue()) #DEBUG
@@ -1076,70 +1076,71 @@ class Reconstructor(object) :
 				self.docut('qcd_C_CR_selection',isolepval==0 and metcutsval==1,self.cr_sb_cut_branches)
 
 	def __assignElectronTriggerCRSelectionCutVars__(self,muons,electrons,topology,met1,met2) :
-		#muon trigger
-		trigvals = []
-		if topology==1 or topology==2 :
-			for trigName in MU_TRIG_PATHS_BOOSTED :
-				trigvals.append(self.triggerBranches[trigName].getWriteValue())
-		elif topology==3 :
-			for trigName in MU_TRIG_PATHS_RESOLVED :
-				trigvals.append(self.triggerBranches[trigName].getWriteValue())
-		self.docut('eltrig_mutrigger',trigvals.count(1)>0,self.eltrig_cut_branches)
-		#electron trigger
-		trigvals = []
-		if topology==1 or topology==2 :
-			for trigName in EL_TRIG_PATHS_BOOSTED :
-				trigvals.append(self.triggerBranches[trigName].getWriteValue())
-		elif topology==3 :
-			for trigName in EL_TRIG_PATHS_RESOLVED :
-				trigvals.append(self.triggerBranches[trigName].getWriteValue())
-		self.docut('eltrig_eltrigger',trigvals.count(1)>0,self.eltrig_cut_branches)
-		#find the hardest isolated (if possible) muon and electron and set the "two leptons" variable
-		allisoleps = []
-		themuon = None; theelectron = None
-		if len(muons)>0 :
-			for m in muons :
-				if m.is2DIso(topology) and (topology<3 or m.isLooseIso()) :
-					allisoleps.append(m)
-					if themuon==None :
-						themuon = m
-						break
-			if themuon==None :
-				themuon = muons[0]
-		if len(electrons)>0 :
-			for e in electrons :
-				if e.is2DIso(topology) and (topology<3 or e.isIso()) :
-					allisoleps.append(e)
-					if theelectron==None :
-						theelectron = e
-						break
-			if theelectron==None :
-				theelectron = electrons[0]
-		if themuon!=None :
-			self.eltrig_themuon_pt.setWriteValue(themuon.getPt())
-			self.eltrig_themuon_eta.setWriteValue(themuon.getEta())
-		if theelectron!=None :
-			self.eltrig_theelectron_pt.setWriteValue(theelectron.getPt())
-			self.eltrig_theelectron_eta.setWriteValue(theelectron.getEta())
-		self.docut('eltrig_twoleptons',themuon!=None and theelectron!=None and len(allisoleps)==2,self.eltrig_cut_branches)
-		#isolated muon
-		self.docut('eltrig_isomu',themuon!=None and themuon.is2DIso(topology) and (topology<3 or themuon.isTightIso()),self.eltrig_cut_branches)
-		#isolated electron
-		self.docut('eltrig_isoel',theelectron!=None and theelectron.is2DIso(topology) and (topology<3 or theelectron.isIso()),self.eltrig_cut_branches)
-		#opposite lepton charge
-		self.docut('eltrig_opplepcharge',themuon!=None and theelectron!=None and themuon.getQ()*theelectron.getQ()<0,self.eltrig_cut_branches)
-		#number of btags
-		self.eltrig_cut_branches['eltrig_btags'].setWriteValue(self.cut_branches['btags'].getWriteValue())
-		#leptonic-side W pT
-		themuonvec = None if themuon==None else themuon.getFourVector()
-		theelectronvec = None if theelectron==None else theelectron.getFourVector()
-		self.docut('eltrig_lepWpT',(themuon!=None and ((themuonvec+met1).Pt()>50. or (themuonvec+met2).Pt()>50.)) or (theelectronvec!=None and ((theelectronvec+met1).Pt()>50. or (theelectronvec+met2).Pt()>50.)),self.eltrig_cut_branches)
-		#full selection
-		self.eltrig_cut_branches['eltrig_fullselection'].setWriteValue(1)
-		for cutkey, cutbranch in self.eltrig_cut_branches.iteritems() :
-			if cutbranch.getWriteValue()==0 :
-				if cutkey!='eltrig_eltrigger' :
-					self.eltrig_cut_branches['eltrig_fullselection'].setWriteValue(0)
+		return
+		##muon trigger
+		#trigvals = []
+		#if topology==1 or topology==2 :
+		#	for trigName in MU_TRIG_PATHS_BOOSTED :
+		#		trigvals.append(self.triggerBranches[trigName].getWriteValue())
+		#elif topology==3 :
+		#	for trigName in MU_TRIG_PATHS_RESOLVED :
+		#		trigvals.append(self.triggerBranches[trigName].getWriteValue())
+		#self.docut('eltrig_mutrigger',trigvals.count(1)>0,self.eltrig_cut_branches)
+		##electron trigger
+		#trigvals = []
+		#if topology==1 or topology==2 :
+		#	for trigName in EL_TRIG_PATHS_BOOSTED :
+		#		trigvals.append(self.triggerBranches[trigName].getWriteValue())
+		#elif topology==3 :
+		#	for trigName in EL_TRIG_PATHS_RESOLVED :
+		#		trigvals.append(self.triggerBranches[trigName].getWriteValue())
+		#self.docut('eltrig_eltrigger',trigvals.count(1)>0,self.eltrig_cut_branches)
+		##find the hardest isolated (if possible) muon and electron and set the "two leptons" variable
+		#allisoleps = []
+		#themuon = None; theelectron = None
+		#if len(muons)>0 :
+		#	for m in muons :
+		#		if m.is2DIso(topology) and (topology<3 or m.isLooseIso()) :
+		#			allisoleps.append(m)
+		#			if themuon==None :
+		#				themuon = m
+		#				break
+		#	if themuon==None :
+		#		themuon = muons[0]
+		#if len(electrons)>0 :
+		#	for e in electrons :
+		#		if e.is2DIso(topology) and (topology<3 or e.isIso()) :
+		#			allisoleps.append(e)
+		#			if theelectron==None :
+		#				theelectron = e
+		#				break
+		#	if theelectron==None :
+		#		theelectron = electrons[0]
+		#if themuon!=None :
+		#	self.eltrig_themuon_pt.setWriteValue(themuon.getPt())
+		#	self.eltrig_themuon_eta.setWriteValue(themuon.getEta())
+		#if theelectron!=None :
+		#	self.eltrig_theelectron_pt.setWriteValue(theelectron.getPt())
+		#	self.eltrig_theelectron_eta.setWriteValue(theelectron.getEta())
+		#self.docut('eltrig_twoleptons',themuon!=None and theelectron!=None and len(allisoleps)==2,self.eltrig_cut_branches)
+		##isolated muon
+		#self.docut('eltrig_isomu',themuon!=None and themuon.is2DIso(topology) and (topology<3 or themuon.isTightIso()),self.eltrig_cut_branches)
+		##isolated electron
+		#self.docut('eltrig_isoel',theelectron!=None and theelectron.is2DIso(topology) and (topology<3 or theelectron.isIso()),self.eltrig_cut_branches)
+		##opposite lepton charge
+		#self.docut('eltrig_opplepcharge',themuon!=None and theelectron!=None and themuon.getQ()*theelectron.getQ()<0,self.eltrig_cut_branches)
+		##number of btags
+		#self.eltrig_cut_branches['eltrig_btags'].setWriteValue(self.cut_branches['btags'].getWriteValue())
+		##leptonic-side W pT
+		#themuonvec = None if themuon==None else themuon.getFourVector()
+		#theelectronvec = None if theelectron==None else theelectron.getFourVector()
+		#self.docut('eltrig_lepWpT',(themuon!=None and ((themuonvec+met1).Pt()>50. or (themuonvec+met2).Pt()>50.)) or (theelectronvec!=None and ((theelectronvec+met1).Pt()>50. or (theelectronvec+met2).Pt()>50.)),self.eltrig_cut_branches)
+		##full selection
+		#self.eltrig_cut_branches['eltrig_fullselection'].setWriteValue(1)
+		#for cutkey, cutbranch in self.eltrig_cut_branches.iteritems() :
+		#	if cutbranch.getWriteValue()==0 :
+		#		if cutkey!='eltrig_eltrigger' :
+		#			self.eltrig_cut_branches['eltrig_fullselection'].setWriteValue(0)
 
 	def __assignMiniIsolationFullSelectionCutVars__(self,lep,muons,electrons) :
 		otherpasscuts = ['metfilters','trigger','btags','ak4jetmult','ak4jetcuts','METcuts','lepcuts','kinfitchi2','recoleptM','validminimization','fullselection']
