@@ -224,39 +224,38 @@ def reconstructParallel(kfo,c_fpt) :
 #reconstruct takes in the list of hypotheses and returns a tuple of best fit information invluded the corrected fourvectors and chi2 value
 def reconstruct(hypotheses,topology,ongrid) :
 	#print '-----------------------------'#DEBUG
-	bestfitchi2 = 1000000.; bestfitindex = -1; bestParValues = None
 	#First declare and set up the kinematic fit objects (they'll be done in parallel in batches)
-	batchsize = 1 #if ongrid=='yes' else 5
-	if batchsize==1 :
-		for i in range(len(hypotheses)) :
-			newfit = KinFit(topology,i,hypotheses[i])
-			newfitinfotuple = newfit.dofit()
-			newfit.setErrFlag(newfitinfotuple[0])
-			newfit.setFitChi2(newfitinfotuple[1])
-			newfit.setBestParValues(newfitinfotuple[2])
-			if newfit.getErrFlag()==0 and newfit.getFitChi2()<bestfitchi2 :
-				bestfitchi2 = newfit.getFitChi2(); bestfitindex = newfit.getIndex(); bestParValues = newfit.getBestParValues()
-			del newfit
-	else :
-		procs = [] #list of tuples of (kinfit object, parent pipe end, multiprocessing process)
-		for i in range(len(hypotheses)) :
-			newfit = KinFit(topology,i,hypotheses[i])
+	allkinfitobjlists = []; allkinfitobjs = []
+	j=-1
+	batchsize = 1 if ongrid=='yes' else 5
+	for i in range(len(hypotheses)) :
+		if i%batchsize==0 :
+			j+=1
+			allkinfitobjlists.append([])
+		newfit = KinFit(topology,i,hypotheses[i])
+		allkinfitobjlists[j].append(newfit)
+		allkinfitobjs.append(newfit)
+	#Now do all the fits in parallel
+	for kinfitobjlist in allkinfitobjlists :
+		procs = []
+		for kfo in kinfitobjlist :
 			p_fpt, c_fpt = multiprocessing.Pipe()
-			p = multiprocessing.Process(target=reconstructParallel,args=(newfit,c_fpt))
+			#kfo.dofit()
+			p = multiprocessing.Process(target=reconstructParallel,args=(kfo,c_fpt))
 			p.start()
-			procs.append((newfit,p_fpt,p))
-			if len(procs)>=batchsize or i==len(hypotheses)-1 :
-				for j in range(len(procs)) :
-					procs[j][2].join()
-					newfitinfotuple = procs[j][1].recv()
-					kfo = procs[j][0]
-					kfo.setErrFlag(newfitinfotuple[0])
-					kfo.setFitChi2(newfitinfotuple[1])
-					kfo.setBestParValues(newfitinfotuple[2])
-					if kfo.getErrFlag()==0 and kfo.getFitChi2()<bestfitchi2 :
-						bestfitchi2 = kfo.getFitChi2(); bestfitindex = kfo.getIndex(); bestParValues = kfo.getBestParValues()
-				procs = []
-	#print 'bestfitindex = %d (out of %d), bestfitchi2 = %.4f'%(bestfitindex,len(hypotheses),bestfitchi2) #DEBUG
+			procs.append(p)
+			newfitinfotuple = p_fpt.recv()
+			kfo.setErrFlag(newfitinfotuple[0])
+			kfo.setFitChi2(newfitinfotuple[1])
+			kfo.setBestParValues(newfitinfotuple[2])
+		for p in procs :
+			p.join()
+	#find the index of the best fit hypothesis
+	bestfitchi2 = 1000000.; bestfitindex = -1; bestParValues = None
+	for kfo in allkinfitobjs :
+		if kfo.getErrFlag()==0 and kfo.getFitChi2()<bestfitchi2 :
+			bestfitchi2 = kfo.getFitChi2(); bestfitindex = kfo.getIndex(); bestParValues = kfo.getBestParValues()
+	#print 'bestfitindex = %d, bestfitchi2 = %.4f'%(bestfitindex,bestfitchi2) #DEBUG
 	#if no fits converged, return garbage
 	if bestfitindex==-1 :
 		return -1, None, None, None, None, None, None, None, 1000000000., []

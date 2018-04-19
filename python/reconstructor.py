@@ -738,7 +738,7 @@ class Reconstructor(object) :
 		manager = multiprocessing.Manager()
 		hypdict = manager.dict() #keys: hypothesis list indices. Values: sumdRdM
 		all_parallel_matching_groups = []; j=-1
-		batchsize = 1 #if self.onGrid=='yes' else 5
+		batchsize = 1 if self.onGrid=='yes' else 5
 		for i in range(len(hypotheses)) :
 			if i%batchsize==0 :
 				j+=1
