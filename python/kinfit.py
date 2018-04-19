@@ -226,7 +226,7 @@ def reconstruct(hypotheses,topology,ongrid) :
 	#print '-----------------------------'#DEBUG
 	bestfitchi2 = 1000000.; bestfitindex = -1; bestParValues = None
 	#First declare and set up the kinematic fit objects (they'll be done in parallel in batches)
-	batchsize = 1 if ongrid=='yes' else 5
+	batchsize = 1 #if ongrid=='yes' else 5
 	if batchsize==1 :
 		for i in range(len(hypotheses)) :
 			newfit = KinFit(topology,i,hypotheses[i])

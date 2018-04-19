@@ -25,6 +25,8 @@ from metHelper import setupMET
 from kinfit import reconstruct
 from angleReconstructor import getObservables, getMCRWs
 from corrector import Corrector
+from memsniffer import checkmem
+import sys
 import gc
 
 ################################   addBranch function  #################################
@@ -482,17 +484,21 @@ class Reconstructor(object) :
 		if canreconstruct :
 			#print '	Reconstructing event...' #DEBUG
 			#build the list of jet assignment hypotheses
-			hypotheses = getHypothesisList(topology,lep,met1_vec,met2_vec,self.nMETs.getWriteValue(),ak4jets,ttags,nbtags)
-			#if there's no valid type-1 hypotheses, try again as type-2
-			if topology==1 and len(hypotheses)==0 :
-				if len(ak4jets)>3 :
+			#checkmem('','before_hypotheses') #DEBUG
+			hypotheses = getHypothesisList(topology,lep,met1_vec,met2_vec,self.nMETs.getWriteValue(),ak4jets[:5],ttags,sum([int(x.isbTagged()) for x in ak4jets[:5]]))
+			#checkmem('',' after_hypotheses') #DEBUG
+			if len(hypotheses)==0 :
+				#if there's no valid type-1 hypotheses, try again as type-2
+				if topology==1 and len(ak4jets)>3 :
 					topology=2
 					self.event_topology.setWriteValue(topology)
-					hypotheses = getHypothesisList(topology,lep,met1_vec,met2_vec,self.nMETs.getWriteValue(),ak4jets,ttags,nbtags)
+					hypotheses = getHypothesisList(topology,lep,met1_vec,met2_vec,self.nMETs.getWriteValue(),ak4jets[:5],ttags,sum([int(x.isbTagged()) for x in ak4jets[:5]]))
+				#otherwise it's not reconstructable
 				else :
 					#print 'event %d invalid; no separated top tagged jets and not enough AK4 jets'%(eventnumber) #DEBUG
 					self.cut_branches['fullselection'].setWriteValue(0)
 					return
+			#print 'size of %d hypotheses = %d, in event %d (topology %d) with %d AK4 jets '%(len(hypotheses),sys.getsizeof(hypotheses),eventnumber,topology,len(ak4jets)) #DEBUG
 			#print '		Will try %d jet assignment hypotheses...'%(len(hypotheses)) #DEBUG
 			self.nhypotheses.setWriteValue(len(hypotheses))
 			#do the monte carlo matching
@@ -732,7 +738,7 @@ class Reconstructor(object) :
 		manager = multiprocessing.Manager()
 		hypdict = manager.dict() #keys: hypothesis list indices. Values: sumdRdM
 		all_parallel_matching_groups = []; j=-1
-		batchsize = 5 if self.onGrid=='yes' else 25
+		batchsize = 1 #if self.onGrid=='yes' else 5
 		for i in range(len(hypotheses)) :
 			if i%batchsize==0 :
 				j+=1
@@ -806,6 +812,7 @@ class Reconstructor(object) :
 		if scaledlep==None : 
 			#print 'EVENT NUMBER '+str(eventnumber)+' NOT VALID; NO KINEMATIC FITS CONVERGED' #DEBUG 
 			self.cut_branches['validminimization'].setWriteValue(0) 
+			#print 'hypotheses = %s'%(hypotheses) #DEBUG
 			hypindex = 0; scaledlep=hypotheses[0][0].getFourVector(); scaledmet=hypotheses[0][1]; scaledlepb=hypotheses[0][2].getFourVector()
 			scaledhadt=hypotheses[0][3][0].getFourVector()
 			if topology>1 :
@@ -1308,4 +1315,6 @@ def getHypothesisList(topology,lep,met1_vec,met2_vec,nMETs,ak4jets,ttags,nbtags)
 								continue
 							#append this hypothesis
 							hypotheses.append([lep,thismet,lepbCandJet,[had1CandJet,had2CandJet,had3CandJet]])
+	if hypotheses==[] : #DEBUG
+		print 'found no hypotheses for a type-%d event with %d MET options, %d AK4 jets, %d btags!'%(topology,nMETs,len(ak4jets),nbtags) #DEBUG
 	return hypotheses
