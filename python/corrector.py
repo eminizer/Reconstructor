@@ -472,6 +472,10 @@ class Corrector(object) :
 			idfac_GH = self.__muon_id_eff_GH_abseta_vs_pt.GetBinContent(self.__muon_id_eff_GH_abseta_vs_pt.GetBin(binx,biny))
 			iderr_up_GH = self.__muon_id_eff_GH_abseta_vs_pt.GetBinErrorUp(binx,biny)
 			iderr_dn_GH = self.__muon_id_eff_GH_abseta_vs_pt.GetBinErrorLow(binx,biny)
+			if idfac_BtoF==0.:
+				idfac_BtoF=0.0000001
+			if idfac_GH==0.:
+				idfac_GH=0.0000001
 			if doubleerr :
 				iderr_up_BtoF*=2; iderr_dn_BtoF*=2; iderr_up_GH*=2; iderr_dn_GH*=2
 			pubin_BtoF 		 = self.__muon_id_eff_BtoF_vs_pu.FindFixBin(pu)
@@ -488,11 +492,12 @@ class Corrector(object) :
 			trkfac, trkerrup, trkerrdown = self.__getTrkEff__(pileup,lepflav,pt,eta)
 			#calculate total factors
 			nomfac_BtoF  = idfac_BtoF*pufac_BtoF*trkfac
+			#print 'idfac_BtoF = %.4f, pufac_BtoF = %.4f, trkfac = %.4f'%(idfac_BtoF,pufac_BtoF,trkfac) #DEBUG
 			upfac_BtoF 	 = nomfac_BtoF*(1.+sqrt((iderr_up_BtoF/idfac_BtoF)**2+(puerr_up_BtoF/pufac_BtoF)**2+(trkerrup/trkfac)**2))
-			downfac_BtoF = nomfac_BtoF*(1.-sqrt((iderr_up_BtoF/idfac_BtoF)**2+(puerr_up_BtoF/pufac_BtoF)**2+(trkerrup/trkfac)**2))
+			downfac_BtoF = nomfac_BtoF*(1.-sqrt((iderr_dn_BtoF/idfac_BtoF)**2+(puerr_down_BtoF/pufac_BtoF)**2+(trkerrdown/trkfac)**2))
 			nomfac_GH  = idfac_GH*pufac_GH*trkfac
 			upfac_GH   = nomfac_GH*(1.+sqrt((iderr_up_GH/idfac_GH)**2+(puerr_up_GH/pufac_GH)**2+(trkerrup/trkfac)**2))
-			downfac_GH = nomfac_GH*(1.-sqrt((iderr_up_GH/idfac_GH)**2+(puerr_up_GH/pufac_GH)**2+(trkerrup/trkfac)**2))
+			downfac_GH = nomfac_GH*(1.-sqrt((iderr_dn_GH/idfac_GH)**2+(puerr_down_GH/pufac_GH)**2+(trkerrdown/trkfac)**2))
 		elif lepflav=='el' : #electrons
 			thiseta=abs(eta); thispt=pt
 			#just need to get two numbers with errors for id and reco efficiency
@@ -599,6 +604,10 @@ class Corrector(object) :
 			isofac_GH = self.__muon_iso_eff_GH_abseta_vs_pt.GetBinContent(self.__muon_iso_eff_GH_abseta_vs_pt.GetBin(binx,biny))
 			isoerr_up_GH = self.__muon_iso_eff_GH_abseta_vs_pt.GetBinErrorUp(binx,biny)
 			isoerr_dn_GH = self.__muon_iso_eff_GH_abseta_vs_pt.GetBinErrorLow(binx,biny)
+			if isofac_BtoF==0.:
+				isofac_BtoF=0.0000001
+			if isofac_GH==0.:
+				isofac_GH=0.0000001
 			if doubleerr :
 				isoerr_up_BtoF*=2; isoerr_dn_BtoF*=2; isoerr_up_GH*=2; isoerr_dn_GH*=2
 			pubin_BtoF 		 = self.__muon_iso_eff_BtoF_vs_pu.FindFixBin(pu)
@@ -616,10 +625,10 @@ class Corrector(object) :
 			#calculate total factors
 			nomfac_BtoF = isofac_BtoF*pufac_BtoF*trkfac
 			upfac_BtoF 	 = nomfac_BtoF*(1.+sqrt((isoerr_up_BtoF/isofac_BtoF)**2+(puerr_up_BtoF/pufac_BtoF)**2+(trkerrup/trkfac)**2))
-			downfac_BtoF = nomfac_BtoF*(1.-sqrt((isoerr_up_BtoF/isofac_BtoF)**2+(puerr_up_BtoF/pufac_BtoF)**2+(trkerrup/trkfac)**2))
+			downfac_BtoF = nomfac_BtoF*(1.-sqrt((isoerr_dn_BtoF/isofac_BtoF)**2+(puerr_down_BtoF/pufac_BtoF)**2+(trkerrdown/trkfac)**2))
 			nomfac_GH = isofac_GH*pufac_GH*trkfac
 			upfac_GH 	 = nomfac_GH*(1.+sqrt((isoerr_up_GH/isofac_GH)**2+(puerr_up_GH/pufac_GH)**2+(trkerrup/trkfac)**2))
-			downfac_GH = nomfac_GH*(1.-sqrt((isoerr_up_GH/isofac_GH)**2+(puerr_up_GH/pufac_GH)**2+(trkerrup/trkfac)**2))
+			downfac_GH = nomfac_GH*(1.-sqrt((isoerr_dn_GH/isofac_GH)**2+(puerr_down_GH/pufac_GH)**2+(trkerrdown/trkfac)**2))
 		elif topology==3 and lepflav=='el' : #electrons
 			#NOT IMPLEMENTED YET!!
 			nomfac_BtoF = 1.; upfac_BtoF = 1.; downfac_BtoF = 1.

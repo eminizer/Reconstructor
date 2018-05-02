@@ -279,6 +279,9 @@ class Reconstructor(object) :
 	sf_pdf_alphas 		 = AddBranch(writename='sf_pdf_alphas',inival=1.,dictlist=thisdictlist)
 	sf_pdf_alphas_low 	 = AddBranch(writename='sf_pdf_alphas_low',inival=1.,dictlist=thisdictlist)
 	sf_pdf_alphas_hi 	 = AddBranch(writename='sf_pdf_alphas_hi',inival=1.,dictlist=thisdictlist)
+	sf_top_pt_rw 		 = AddBranch(writename='sf_top_pt_rw',inival=1.,dictlist=thisdictlist)
+	sf_top_pt_rw_low 	 = AddBranch(writename='sf_top_pt_rw_low',inival=1.,dictlist=thisdictlist)
+	sf_top_pt_rw_hi 	 = AddBranch(writename='sf_top_pt_rw_hi',inival=1.,dictlist=thisdictlist)
 	#physics objects
 	physobjectBranches = {}
 	thisdictlist = [allBranches,physobjectBranches]
@@ -387,7 +390,7 @@ class Reconstructor(object) :
 	thisdictlist = [allBranches,cr_sb_cut_branches]
 	cutnames = ['wjets_cr_selection','qcd_A_SR_selection','qcd_B_SR_selection','qcd_C_SR_selection','qcd_A_CR_selection','qcd_B_CR_selection','qcd_C_CR_selection']
 	for cutname in cutnames :
-		AddBranch(writename=cutname,ttreetype='i',inival=0,dictlist=thisdictlist)
+		AddBranch(writename=cutname,ttreetype='i',inival=2,dictlist=thisdictlist)
 	#cut variables etc. for electron trigger efficiency measurement
 	#eltrig_cut_branches = {}
 	#thisdictlist = [allBranches,eltrig_cut_branches]
@@ -958,7 +961,11 @@ class Reconstructor(object) :
 			self.sf_mu_F.setWriteValue(mu_F_sf); self.sf_mu_F_hi.setWriteValue(mu_F_sf_up); self.sf_mu_F_low.setWriteValue(mu_F_sf_down)
 			self.sf_scale_comb.setWriteValue(scale_comb_sf); self.sf_scale_comb_hi.setWriteValue(scale_comb_sf_up); self.sf_scale_comb_low.setWriteValue(scale_comb_sf_down)
 			self.sf_pdf_alphas.setWriteValue(pdf_alphas_sf); self.sf_pdf_alphas_hi.setWriteValue(pdf_alphas_sf_up); self.sf_pdf_alphas_low.setWriteValue(pdf_alphas_sf_down)
-			self.toppTreweight.setWriteValue(self.toppTreweight.getReadValue()/self.toppTreweightmean)
+			nominal_top_pt_rw_value = self.toppTreweight.getReadValue()/self.toppTreweightmean
+			self.toppTreweight.setWriteValue(nominal_top_pt_rw_value)
+			self.sf_top_pt_rw.setWriteValue(1.)
+			self.sf_top_pt_rw_hi.setWriteValue(nominal_top_pt_rw_value)
+			self.sf_top_pt_rw_low.setWriteValue(1.+(1.-nominal_top_pt_rw_value))
 
 	##################################  selection cut helper functions  ##################################
 
@@ -1046,6 +1053,9 @@ class Reconstructor(object) :
 		#W+Jets control region (fails kinematic fit chi2 cuts OR reconstructed leptonic top mass cuts) for boosted events
 		wjets_cr_pass_cutlist = ['metfilters','trigger','onelepton','isolepton','btags','ak4jetmult','ak4jetcuts','METcuts','lepcuts','validminimization']
 		wjets_cr_fail_cutlist = ['kinfitchi2','recoleptM']
+		#npassedcuts = sum([int(self.cut_branches[cutname].getWriteValue()==1) for cutname in wjets_cr_pass_cutlist]) #DEBUG
+		#nfailedcuts = sum([int(self.cut_branches[cutname].getWriteValue()==0) for cutname in wjets_cr_fail_cutlist]) #DEBUG
+		#print 'WJets CR: passed %d/%d pass cuts; failed %d/%d fail cuts'%(npassedcuts,len(wjets_cr_pass_cutlist),nfailedcuts,len(wjets_cr_fail_cutlist)) #DEBUG
 		for cutname in wjets_cr_pass_cutlist :
 			if not self.cut_branches[cutname].getWriteValue()==1 :
 				self.cr_sb_cut_branches['wjets_cr_selection'].setWriteValue(0)
@@ -1057,6 +1067,8 @@ class Reconstructor(object) :
 					break
 		if self.cr_sb_cut_branches['wjets_cr_selection'].getWriteValue()==2 :
 			self.cr_sb_cut_branches['wjets_cr_selection'].setWriteValue(0)
+		#if npassedcuts==len(wjets_cr_pass_cutlist) and nfailedcuts>0 : #DEBUG
+		#	print 'WJetsCR: selection = %d'%(self.cr_sb_cut_branches['wjets_cr_selection'].getWriteValue()) #DEBUG
 
 	def __assignQCDSBSelectionCutVars__(self) :
 		qcd_sb_pass_cutlist = ['metfilters','trigger','onelepton','btags','ak4jetmult','ak4jetcuts','lepcuts','validminimization']

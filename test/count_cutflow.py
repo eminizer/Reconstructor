@@ -128,6 +128,7 @@ isolepton = 'isolepton==1'
 onelepton = 'onelepton==1'
 btags = 'btags==1'
 jetcuts = 'ak4jetcuts==1'
+lepcuts = 'lepcuts==1'
 validminimization = 'validminimization==1'
 kinfitchi2 = 'kinfitchi2==1'
 recoleptM = 'recoleptM==1'
@@ -155,6 +156,7 @@ if 't1' in topologies :
 	cutnames.append('t1 lepton 2D isolation'); 	  cutstrings.append(isolepton); 		prior_cutstrings.append('weight!=0.')
 	cutnames.append('t1 additional lepton veto'); cutstrings.append(onelepton); 		prior_cutstrings.append('weight!=0.')
 	cutnames.append('t1 nbtags'); 				  cutstrings.append(btags); 			prior_cutstrings.append('weight!=0.')
+	cutnames.append('t1 lep cuts'); 			  cutstrings.append(lepcuts); 			prior_cutstrings.append('weight!=0.')
 	cutnames.append('t1 jet cuts'); 			  cutstrings.append(jetcuts); 			prior_cutstrings.append('weight!=0.')
 	cutnames.append('t1 valid minimization'); 	  cutstrings.append(validminimization); prior_cutstrings.append('weight!=0.')
 	cutnames.append('t1 reco lept mass'); 	  	  cutstrings.append(recoleptM); 		prior_cutstrings.append('weight!=0.')
@@ -170,15 +172,16 @@ if 't2' in topologies :
 	cutnames.append('t2 lepton 2D isolation'); 	  cutstrings.append(isolepton); 		prior_cutstrings.append('weight!=0.')
 	cutnames.append('t2 additional lepton veto'); cutstrings.append(onelepton); 		prior_cutstrings.append('weight!=0.')
 	cutnames.append('t2 nbtags'); 				  cutstrings.append(btags); 			prior_cutstrings.append('weight!=0.')
+	cutnames.append('t2 lep cuts'); 			  cutstrings.append(lepcuts); 			prior_cutstrings.append('weight!=0.')
 	cutnames.append('t2 jet cuts'); 			  cutstrings.append(jetcuts); 			prior_cutstrings.append('weight!=0.')
 	cutnames.append('t2 valid minimization'); 	  cutstrings.append(validminimization); prior_cutstrings.append('weight!=0.')
 	cutnames.append('t2 reco lept mass'); 	  	  cutstrings.append(recoleptM); 		prior_cutstrings.append('weight!=0.')
 	cutnames.append('t2 kinfit chi2'); 	  	  	  cutstrings.append(kinfitchi2); 		prior_cutstrings.append('weight!=0.')
 	cutnames.append('t2 full selection'); 		  cutstrings.append(fullselection); 	prior_cutstrings.append('weight!=0.')
 	cutnames.append('t2 WJets CR selection'); 	  cutstrings.append(wjetscrselection); 	prior_cutstrings.append('weight!=0.')
-	#cutnames.append('t2 QCD A SR selection'); 	  cutstrings.append(qcdASRselection); 	prior_cutstrings.append('weight!=0.')
-	#cutnames.append('t2 QCD B SR selection'); 	  cutstrings.append(qcdBSRselection); 	prior_cutstrings.append('weight!=0.')
-	#cutnames.append('t2 QCD C SR selection'); 	  cutstrings.append(qcdCSRselection); 	prior_cutstrings.append('weight!=0.')
+	cutnames.append('t2 QCD A SR selection'); 	  cutstrings.append(qcdASRselection); 	prior_cutstrings.append('weight!=0.')
+	cutnames.append('t2 QCD B SR selection'); 	  cutstrings.append(qcdBSRselection); 	prior_cutstrings.append('weight!=0.')
+	cutnames.append('t2 QCD C SR selection'); 	  cutstrings.append(qcdCSRselection); 	prior_cutstrings.append('weight!=0.')
 	cutnames.append('t2 QCD A CR selection'); 	  cutstrings.append(qcdACRselection); 	prior_cutstrings.append('weight!=0.')
 	cutnames.append('t2 QCD B CR selection'); 	  cutstrings.append(qcdBCRselection); 	prior_cutstrings.append('weight!=0.')
 	cutnames.append('t2 QCD C CR selection'); 	  cutstrings.append(qcdCCRselection); 	prior_cutstrings.append('weight!=0.')

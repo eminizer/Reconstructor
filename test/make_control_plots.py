@@ -42,6 +42,7 @@ parser.add_option('--skimcut', 	  type='string', action='store',
 						default='def', 
 						dest='skimcut')
 parser.add_option('--use_preskimmed_files', type='string', action='store', default='no', dest='usepreskim')
+parser.add_option('--use_top_pt_reweighting', type='string', action='store', default='no', dest='usetopptrw')
 parser.add_option('--MC_weights', 	  type='string', action='store', 
 						default='def', 
 						dest='MC_weights')
@@ -116,8 +117,15 @@ elif mode in ['qcd_c_cr','qcdccr','qcd_c_cr'] :
 
 if options.skimcut=='def' :
 	options.skimcut='fullselection==1'
+	#options.skimcut='fullselection==1 && lep_Iso!=0.'
+	#options.skimcut='fullselection==1 && ak41_pt>55. && ak42_pt>45.'
 if options.MC_weights=='def' :
 	options.MC_weights='(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF*sf_lep_iso_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH*sf_lep_iso_GH))*weight*sf_pileup*sf_btag_eff*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
+
+if options.usetopptrw=='yes' :
+	if options.outtag!='' :
+		options.outtag+='_'
+	options.outtag+='with_top_pt_rw'
 
 lepstring = ''; shortlepstring = ''
 if leptype=='muons' :
@@ -371,10 +379,13 @@ class Plot(object) :
 			for var in self._varlist :
 				interactivename = self._name+'_'+str(i)+'_'+var.replace('(','').replace(')','')
 				#print '	drawing %s for %s samples...'%(interactivename,shortnames_done[i]) #DEBUG
-				#if self._name.endswith('t3') and shortnames_done[i].find('DYJets')!=-1 :
-				#	treedict[shortnames_done[i].replace(' ','_').replace('#','')].Draw('%s>>%s(%d,%f,%f)'%(var,interactivename,self._nBins,self._low,self._hi),'(%s)*(%s)*(1./5.)'%(self._MC_weights,self._cutstring))
-				#else :
-				treedict[shortnames_done[i].replace(' ','_').replace('#','')].Draw('%s>>%s(%d,%f,%f)'%(var,interactivename,self._nBins,self._low,self._hi),'(%s)*(%s)'%(self._MC_weights,self._cutstring))
+				if shortnames_done[i].find('t#bar{t}')!=-1 :
+					if options.usetopptrw=='yes' :
+						treedict[shortnames_done[i].replace(' ','_').replace('#','')].Draw('%s>>%s(%d,%f,%f)'%(var,interactivename,self._nBins,self._low,self._hi),'(%s)*(%s)*(831.76/730.6)*toppTrw'%(self._MC_weights,self._cutstring))
+					else :
+						treedict[shortnames_done[i].replace(' ','_').replace('#','')].Draw('%s>>%s(%d,%f,%f)'%(var,interactivename,self._nBins,self._low,self._hi),'(%s)*(%s)*(831.76/730.6)'%(self._MC_weights,self._cutstring))
+				else :
+					treedict[shortnames_done[i].replace(' ','_').replace('#','')].Draw('%s>>%s(%d,%f,%f)'%(var,interactivename,self._nBins,self._low,self._hi),'(%s)*(%s)'%(self._MC_weights,self._cutstring))
 				#print '	findobject for name %s returns %s'%(interactivename,gROOT.FindObject(interactivename)) #DEBUG
 				gROOT.FindObject(interactivename).SetTitle(self._title)
 				self._MC_histos[i].Add(gROOT.FindObject(interactivename))
