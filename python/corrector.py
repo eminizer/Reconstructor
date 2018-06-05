@@ -16,7 +16,6 @@ ELE_TRIG_EFF_BOOSTED_HISTONAME 	   = 'EGamma_SF2D'
 ELE_TRIG_EFF_RESOLVED_BTOF_ROOT_FILENAME = 'TriggerSF_Run2016BCDEF_v1.root'
 ELE_TRIG_EFF_RESOLVED_GH_ROOT_FILENAME 	 = 'TriggerSF_Run2016GH_v1.root'
 ELE_TRIG_EFF_RESOLVED_HISTONAME 		 = 'Ele27_WPTight_Gsf'
-
 #Muon tracking efficiency
 MUON_TRK_EFF_ROOT_FILENAME = 'Tracking_EfficienciesAndSF_BCDEFGH_muon_tracking.root'
 MUON_TRK_EFF_ETA_GRAPHNAME = 'ratio_eff_eta3_dr030e030_corr'

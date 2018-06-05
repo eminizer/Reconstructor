@@ -31,7 +31,7 @@ if sample==None :
 if not os.path.isdir('../'+sample) :
 	print 'sample name %s is not valid!'%(sample)
 	exit()
-infileslist = glob('../'+sample+'/aggregated_*.root')
+infileslist = glob('../total_ttree_files/'+sample+'_skim_all.root')
 fullchain = TChain('tree')
 for f in infileslist :
 	fullchain.Add(f)
@@ -45,7 +45,9 @@ outfile = TFile(outname,'recreate')
 
 #skim the chain
 com_cuts = 'fullselection==1 && eventType<2'
+print 'skimming chain...'
 chain = fullchain.CopyTree(com_cuts)
+print 'Done.'
 
 #Define cuts and draw into the histograms
 metfilters = 'metfilters==1'

@@ -40,6 +40,8 @@ def getEventType(branches) :
 		return etype
 	haslepside = branches['MC_lep_pt'].getReadValue()!=-9999.
 	hashadside = branches['MC_hadW_pt'].getReadValue()!=-9999.
+	#if (haslepside==hashadside) : #DEBUG
+	#	print 'haslepside = %s, hashadside = %s'%(haslepside,hashadside) #DEBUG
 	if haslepside : #if it's ttbar background with a leptonic side it's dileptonic
 		return 2
 	elif hashadside : #if it's ttbar background with a hadronic side it's fully hadronic

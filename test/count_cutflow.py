@@ -4,6 +4,20 @@ from math import *
 import os, glob
 from optparse import OptionParser
 
+def float_to_str(f):
+    float_string = repr(f)
+    if 'e' in float_string:  # detect scientific notation
+        digits, exp = float_string.split('e')
+        digits = digits.replace('.', '').replace('-', '')
+        exp = int(exp)
+        zero_padding = '0' * (abs(int(exp)) - 1)  # minus 1 for decimal point in the sci notation
+        sign = '-' if f < 0 else ''
+        if exp > 0:
+            float_string = '{}{}{}.0'.format(sign, digits, zero_padding)
+        else:
+            float_string = '{}0.{}{}'.format(sign, zero_padding, digits)
+    return float_string
+
 parser = OptionParser()
 #Run options
 parser.add_option('--leptype', 	  type='string', action='store', default='all_leptons', dest='leptype',	   	  
@@ -163,6 +177,14 @@ if 't1' in topologies :
 	cutnames.append('t1 kinfit chi2'); 	  	  	  cutstrings.append(kinfitchi2); 		prior_cutstrings.append('weight!=0.')
 	cutnames.append('t1 full selection'); 		  cutstrings.append(fullselection); 	prior_cutstrings.append('weight!=0.')
 	cutnames.append('t1 WJets CR selection'); 	  cutstrings.append(wjetscrselection); 	prior_cutstrings.append('weight!=0.')
+	#if leptype=='electrons' :
+	cutnames.append('t1 QCD A SR selection'); 	  cutstrings.append(qcdASRselection); 	prior_cutstrings.append('weight!=0.')
+	cutnames.append('t1 QCD B SR selection'); 	  cutstrings.append(qcdBSRselection); 	prior_cutstrings.append('weight!=0.')
+	cutnames.append('t1 QCD C SR selection'); 	  cutstrings.append(qcdCSRselection); 	prior_cutstrings.append('weight!=0.')
+	cutnames.append('t1 QCD A CR selection'); 	  cutstrings.append(qcdACRselection); 	prior_cutstrings.append('weight!=0.')
+	cutnames.append('t1 QCD B CR selection'); 	  cutstrings.append(qcdBCRselection); 	prior_cutstrings.append('weight!=0.')
+	cutnames.append('t1 QCD C CR selection'); 	  cutstrings.append(qcdCCRselection); 	prior_cutstrings.append('weight!=0.')
+
 
 if 't2' in topologies :
 	cutnames.append('t2 skim'); 				  cutstrings.append('weight!=0.'); 		prior_cutstrings.append('weight!=0.')
@@ -295,9 +317,9 @@ for i in range(len(cutnames)) :
 		#adjust the values for sig figs
 		if len(str(eff_err).replace('.','').strip('0'))>2 :
 			eff_err_str='('
-			eff_err_digit1 = str(eff_err).replace('.','').strip('0')[0]
-			eff_err_digit2 = str(eff_err).replace('.','').strip('0')[1]
-			eff_err_digit3 = str(eff_err).replace('.','').strip('0')[2]
+			eff_err_digit1 = float_to_str(eff_err).replace('.','').strip('0')[0]
+			eff_err_digit2 = float_to_str(eff_err).replace('.','').strip('0')[1]
+			eff_err_digit3 = float_to_str(eff_err).replace('.','').strip('0')[2]
 			if int(eff_err_digit1)<3 :
 				eff_err_str+=eff_err_digit1
 				if int(eff_err_digit3)<5 or int(eff_err_digit2)==9 :
@@ -310,10 +332,12 @@ for i in range(len(cutnames)) :
 				else :
 					eff_err_str+=str(int(eff_err_digit1)+1)
 			eff_err_str+=')'
-			eff_str_plus_one = str(eff)[:str(eff_err).find(eff_err_digit1)+len(eff_err_str)-1]
+			#print 'str(eff)=%s, str(eff_err).find(eff_err_digit1)=%d, len(eff_err_str)=%d, str(eff_err)=%s, eff_err_digit1=%s, eff_err_digit2=%s'%(str(eff),str(eff_err).find(eff_err_digit1),len(eff_err_str),str(eff_err),eff_err_digit1,eff_err_digit2) #DEBUG
+			eff_str_plus_one = float_to_str(eff)[:float_to_str(eff_err).find(eff_err_digit1)+len(eff_err_str)-1]
 			eff_str = ''
+			#print 'eff_err_str=%s, eff_str_plus_one=%s, eff=%.4f, eff_err=%.4f'%(eff_err_str,eff_str_plus_one,eff,eff_err) #DEBUG
 			if eff_str_plus_one.endswith('.') :
-				if int(str(eff)[:str(eff_err).find(eff_err_digit1)+len(eff_err_str)][-1])<5 or int(eff_str_plus_one[-2])==9 :
+				if int(float_to_str(eff)[:float_to_str(eff_err).find(eff_err_digit1)+len(eff_err_str)][-1])<5 or int(eff_str_plus_one[-2])==9 :
 					eff_str+=eff_str_plus_one[:-1]+eff_err_str
 				else :
 					eff_str+=eff_str_plus_one[:-2]+str(int(eff_str_plus_one[-2])+1)+eff_err_str
@@ -323,7 +347,7 @@ for i in range(len(cutnames)) :
 				else :
 					eff_str+=eff_str_plus_one[:len(eff_str_plus_one)-2]+str(int(eff_str_plus_one[-2])+1)+eff_err_str
 		else :
-			eff_str = str(eff)+'('+str(eff_err)+')'
+			eff_str = float_to_str(eff)+'('+float_to_str(eff_err)+')'
 		#print 'eff_err = %s, d1 = %s, d2 = %s, d3 = %s, eff = %s, eff_str = %s'%(str(eff_err),eff_err_digit1,eff_err_digit2,eff_err_digit3,str(eff),eff_str) #DEBUG
 		#add to the line
 		next_line+=',%.1f,%.4f,%.4f'%(events_at_cut[i][j],eff,eff_err)

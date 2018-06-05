@@ -443,6 +443,8 @@ class Reconstructor(object) :
 		#MC stuff (event type, addTwice, eventweight, MC truth fourvectors for ttbar events)
 		if not self.is_data :
 			mctruthfourvecs = self.__getMCTruthProperties__()
+		#if not self.event_type.getWriteValue()==2 :
+		#	return
 		#print '----------------------- event number %d -------------------------'%(eventnumber) #DEBUG
 		#For the record, trigger information is handled automatically
 		#initial raw MET
@@ -475,6 +477,7 @@ class Reconstructor(object) :
 		canreconstruct = topology==1 or len(ak4jets)>=4
 		#figure out whether the event is muonic or electronic, assign lepton
 		lep = self.__assignLepton__(allleps,topology)
+		#print 'LEP CHARGE = %d'%(int(lep.getQ())) #DEBUG
 		#if not lep.getType()=='mu' : return #DEBUG
 		#if not lep.getType()=='el' : return #DEBUG
 		#Set physics object fourvectors
@@ -521,6 +524,7 @@ class Reconstructor(object) :
 			self.__assignFullSelectionCutVars__(canreconstruct,topology,nbtags,fitchi2,scaledlep+scaledmet+scaledlepb,lep,electrons,muons,ak4jets,scaledmet)
 		else :
 			self.__assignFullSelectionCutVars__(canreconstruct,topology,nbtags,1000000.,None,lep,electrons,muons,ak4jets,met)
+		#print 'FULL SELECTION = %d'%self.cut_branches['fullselection'].getWriteValue() #DEBUG
 		#W+Jets Control Region Selections
 		self.__assignWJetsCRSelectionCutVars__()
 		#QCD sidebands for ABCD method background estimation (pass all cuts but MET and lepton isolation)
@@ -598,20 +602,41 @@ class Reconstructor(object) :
 	def __makeLeptonLists__(self) :
 		#muons
 		#print '	Handling Muons (%d total)...'%(self.mu_size.getReadValue()) #DEBUG
+		#allmuons = [] #DEBUG
 		muons = []
 		for i in range(self.mu_size.getReadValue()) :
 			newmuon=Muon(self.muonBranches,i,self.run_era)
+		#	allmuons.append(newmuon) #DEBUG
 			if newmuon.isValid() :
 				muons.append(newmuon)
 		#print '		Added %d Muons.'%(len(muons)) #DEBUG
 		#electrons
 		#print '	Handling Electrons (%d total)...'%(self.el_size.getReadValue()) #DEBUG
+		#allelectrons = [] #DEBUG
 		electrons = []
 		for i in range(self.el_size.getReadValue()) :
 			newele = Electron(self.electronBranches,i)
+		#	allelectrons.append(newele) #DEBUG
 			if newele.isValid() :
 				electrons.append(newele)
 		#print '		Added %d Electrons.'%(len(electrons)) #DEBUG
+		#print '-----------------------------------------------------' #DEBUG
+		#es = 'all eles: ' #DEBUG
+		#for e in allelectrons : #DEBUG
+		#	es+='(%.2f,%d) '%(e.getPt(),e.getQ()) #DEBUG
+		#print es #DEBUG
+		#es = 'selected eles: ' #DEBUG
+		#for e in electrons : #DEBUG
+		#	es+='(%.2f,%d) '%(e.getPt(),e.getQ()) #DEBUG
+		#print es #DEBUG
+		#ms = 'all mus: ' #DEBUG
+		#for m in allmuons : #DEBUG
+		#	ms+='(%.2f,%d) '%(m.getPt(),m.getQ()) #DEBUG
+		#print ms #DEBUG
+		#ms = 'selected mus: ' #DEBUG
+		#for m in muons : #DEBUG
+		#	ms+='(%.2f,%d) '%(m.getPt(),m.getQ()) #DEBUG
+		#print ms #DEBUG
 		return muons,electrons
 
 	def __makeJetLists__(self,met,leplist) :
