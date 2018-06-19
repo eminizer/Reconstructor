@@ -42,10 +42,10 @@ weights = []
 filenames.append('powheg_TT');					shortnames.append('powheg semilep')
 filenames.append('powheg_TT');					shortnames.append('powheg dilep')
 filenames.append('powheg_TT');					shortnames.append('powheg hadronic')
-##MCATNLO TT
-#filenames.append('mcatnlo_TT');					shortnames.append('mcatnlo semilep')
-#filenames.append('mcatnlo_TT');					shortnames.append('mcatnlo dilep')
-#filenames.append('mcatnlo_TT');					shortnames.append('mcatnlo hadronic')
+#MCATNLO TT
+filenames.append('mcatnlo_TT');					shortnames.append('mcatnlo semilep')
+filenames.append('mcatnlo_TT');					shortnames.append('mcatnlo dilep')
+filenames.append('mcatnlo_TT');					shortnames.append('mcatnlo hadronic')
 #Single top
 filenames.append('ST_s-c');						shortnames.append('Single T')
 filenames.append('ST_t-c_top');					shortnames.append('Single T')
@@ -311,15 +311,16 @@ for i in range(len(cutnames)) :
 		#calculate the efficiency for this sample type
 		eff=900.; eff_err=900.
 		if events_at_prior_cut[i][j]!=0. :
-			eff = events_at_cut[i][j]/events_at_prior_cut[i][j]
+			eff = abs(events_at_cut[i][j]/events_at_prior_cut[i][j])
 			if events_at_cut[i][j]!=0. :
-				eff_err = eff*sqrt(1./events_at_cut[i][j]+1./events_at_prior_cut[i][j])
+				eff_err = abs(eff*sqrt(abs(1./events_at_cut[i][j]+1./events_at_prior_cut[i][j])))
 		#adjust the values for sig figs
 		if len(str(eff_err).replace('.','').strip('0'))>2 :
 			eff_err_str='('
 			eff_err_digit1 = float_to_str(eff_err).replace('.','').strip('0')[0]
 			eff_err_digit2 = float_to_str(eff_err).replace('.','').strip('0')[1]
 			eff_err_digit3 = float_to_str(eff_err).replace('.','').strip('0')[2]
+			#print 'eff = %s, eff_err = %s, dig1 = %s, dig2 = %s, dig3 = %s'%(str(eff),str(eff_err),str(eff_err_digit1),str(eff_err_digit2),str(eff_err_digit3)) #DEBUG
 			if int(eff_err_digit1)<3 :
 				eff_err_str+=eff_err_digit1
 				if int(eff_err_digit3)<5 or int(eff_err_digit2)==9 :

@@ -15,9 +15,6 @@ parser.add_option('--input', 	  type='string', action='store', default='input', 
 output_filename = 'qq_gg_comparison_plots.root'
 outputfile = TFile(output_filename,'recreate')
 
-#directory name
-inputdir = '/eos/uscms/store/user/eminizer/B2GTTress_Mar16/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/B2GAnaFW_80X_V2p4_PR66_Mar16_RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/170316_154342/0000'
-
 #list of input files
 inputfileslist = options.input
 if not options.input.endswith('.txt') :
