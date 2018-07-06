@@ -8,12 +8,21 @@ from optparse import OptionParser
 import multiprocessing
 import copy
 
+def_weights  = '(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF*sf_lep_iso_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH*sf_lep_iso_GH))*weight*sf_pileup*sf_btag_eff*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
+qcda_weights = '(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH))*weight*sf_pileup*sf_btag_eff*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
+qcdb_weights = def_weights
+qcdc_weights = '(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH))*weight*sf_pileup*sf_btag_eff*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
+
 gROOT.SetBatch()
 
 #treeskimmer helper function
-def treeskimmer(thischain,thisname,thiscuts,lock) :
+def treeskimmer(thischain,thisname,thiscuts,lock,qcdsb=False) :
 	print 'Skimming chains for '+thisname+' samples'
-	skimmedtreefile = TFile(outname+'_'+thisname.replace(' ','_').replace('#','')+'_skimmed_tree.root','recreate')
+	if qcdsb :
+		skimmedtreefile = TFile(outname+'_'+thisname.replace(' ','_').replace('#','')+'_qcd_sb_skimmed_tree.root','recreate')
+	else :	
+		skimmedtreefile = TFile(outname+'_'+thisname.replace(' ','_').replace('#','')+'_sr_skimmed_tree.root','recreate')
+	#print 'thischain = %s, thiscuts = %s'%(thischain,thiscuts) #DEBUG
 	newtree = thischain.CopyTree(thiscuts)
 	lock.acquire()
 	skimmedtreefile.cd()
@@ -36,7 +45,7 @@ parser.add_option('--leptype', 	  type='string', action='store', default='all_le
 parser.add_option('--ttbar_generator', 	  type='string', action='store', default='powheg', dest='ttbar_generator',	   	  
 	help='Use "powheg" or "mcatnlo" ttbar MC?')
 parser.add_option('--mode', 	  type='string', action='store', default='', dest='mode')
-parser.add_option('--n_threads', 	  type='int', action='store', default=5, dest='n_threads')
+parser.add_option('--n_threads', 	  type='int', action='store', default=7, dest='n_threads')
 parser.add_option('--outtag', 	  type='string', action='store', default='', dest='outtag')
 parser.add_option('--skimcut', 	  type='string', action='store', 
 						default='def', 
@@ -51,17 +60,7 @@ parser.add_option('--MC_weights', 	  type='string', action='store',
 leptype=options.leptype.lower()
 generator = options.ttbar_generator.lower()
 mode = options.mode.lower()
-if mode in ['trig','trigger','t'] :
-	mode = 't'
-	leptype='electrons'
-	if options.outtag=='' :
-		options.outtag='el_trig_eff'
-	else :
-		options.outtag=options.outtag+'_el_trig_eff'
-	options.MC_weights = '((19690.184+16226.452)*(lepflavor==1)+(19171.010+16214.862)*(lepflavor==2))*weight*sf_pileup*sf_btag_eff*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
-	options.skimcut = 'eltrig_fullselection==1'
-	#options.skimcut = 'eltrig_mutrigger==1 && eltrig_isomu==1 && eltrig_isoel==1 && eltrig_twoleptons==1 && eltrig_opplepcharge==1 && eltrig_btags==1 && eltrig_lepWpT==1'
-elif mode in ['wjets_cr','wjcr','wjetscr'] :
+if mode in ['wjets_cr','wjcr','wjetscr'] :
 	mode = 'wjetscr'
 	if options.outtag=='' :
 		options.outtag='wjets_cr'
@@ -75,7 +74,7 @@ elif mode in ['qcd_a_sr','qcdasr','qcd_a_sr'] :
 	else :
 		options.outtag=options.outtag+'_qcd_a_sr_sb'
 	options.skimcut='qcd_A_SR_selection==1'
-	options.MC_weights = '(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH))*weight*sf_pileup*sf_btag_eff*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
+	options.MC_weights = qcda_weights
 elif mode in ['qcd_b_sr','qcdbsr','qcd_b_sr'] :
 	mode = 'qcd_b_sr'
 	if options.outtag=='' :
@@ -90,7 +89,7 @@ elif mode in ['qcd_c_sr','qcdcsr','qcd_c_sr'] :
 	else :
 		options.outtag=options.outtag+'_qcd_c_sr_sb'
 	options.skimcut='qcd_C_SR_selection==1'
-	options.MC_weights = '(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH))*weight*sf_pileup*sf_btag_eff*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
+	options.MC_weights = qcdc_weights
 elif mode in ['qcd_a_cr','qcdacr','qcd_a_cr'] :
 	mode = 'qcd_a_cr'
 	if options.outtag=='' :
@@ -98,7 +97,7 @@ elif mode in ['qcd_a_cr','qcdacr','qcd_a_cr'] :
 	else :
 		options.outtag=options.outtag+'_qcd_a_cr_sb'
 	options.skimcut='qcd_A_CR_selection==1'
-	options.MC_weights = '(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH))*weight*sf_pileup*sf_btag_eff*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
+	options.MC_weights = qcda_weights
 elif mode in ['qcd_b_cr','qcdbcr','qcd_b_cr'] :
 	mode = 'qcd_b_cr'
 	if options.outtag=='' :
@@ -113,7 +112,9 @@ elif mode in ['qcd_c_cr','qcdccr','qcd_c_cr'] :
 	else :
 		options.outtag=options.outtag+'_qcd_c_cr_sb'
 	options.skimcut='qcd_C_CR_selection==1'
-	options.MC_weights = '(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH))*weight*sf_pileup*sf_btag_eff*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
+	options.MC_weights = qcdc_weights
+
+estimate_qcd = (options.skimcut=='def' and options.MC_weights=='def') or mode in ['wjets_cr','wjcr','wjetscr']
 
 if options.skimcut=='def' :
 	options.skimcut='fullselection==1'
@@ -121,7 +122,7 @@ if options.skimcut=='def' :
 	#options.skimcut='fullselection==1 && lep_Iso!=0.'
 	#options.skimcut='fullselection==1 && ak41_pt>55. && ak42_pt>45.'
 if options.MC_weights=='def' :
-	options.MC_weights='(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF*sf_lep_iso_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH*sf_lep_iso_GH))*weight*sf_pileup*sf_btag_eff*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
+	options.MC_weights=def_weights
 
 if options.usetopptrw=='yes' :
 	if options.outtag!='' :
@@ -137,52 +138,30 @@ elif leptype=='electrons' :
 samplenames = []
 shortnames = []
 weights = []
-if mode!='t' :
-	if mode.startswith('qcd') :
-		##QCD
-		#samplenames.append('QCD_HT-100to200'); 			 shortnames.append('QCD')
-		#samplenames.append('QCD_HT-200to300'); 			 shortnames.append('QCD')
-		#samplenames.append('QCD_HT-300to500'); 			 shortnames.append('QCD')
-		#samplenames.append('QCD_HT-500to700'); 			 shortnames.append('QCD')
-		#samplenames.append('QCD_HT-700to1000'); 		 shortnames.append('QCD')
-		#samplenames.append('QCD_HT-1000to1500'); 		 shortnames.append('QCD')
-		#samplenames.append('QCD_HT-1500to2000'); 		 shortnames.append('QCD')
-		#samplenames.append('QCD_HT-2000toInf'); 		 shortnames.append('QCD')
-		##Multiboson
-		#samplenames.append('WW_to_L_Nu_2Q'); 			 shortnames.append('Multiboson')
-		#samplenames.append('WW_to_2L_2Nu'); 			 shortnames.append('Multiboson')
-		#samplenames.append('WZ_to_L_Nu_2Q'); 			 shortnames.append('Multiboson')
-		#samplenames.append('WZ_to_L_3Nu'); 				 shortnames.append('Multiboson')
-		#samplenames.append('WZ_to_2L_2Q'); 				 shortnames.append('Multiboson')
-		#samplenames.append('WZ_to_3L_Nu'); 				 shortnames.append('Multiboson')
-		#samplenames.append('ZZ_to_2L_2Nu'); 			 shortnames.append('Multiboson')
-		#samplenames.append('ZZ_to_2L_2Q'); 				 shortnames.append('Multiboson')
-		#samplenames.append('ZZ_to_4L'); 				 shortnames.append('Multiboson')
-		print 'skipping adding qcd and Multiboson'
-	#WJets
-	samplenames.append('WJets_HT-70to100'); 		 shortnames.append('WJets')
-	samplenames.append('WJets_HT-100to200'); 		 shortnames.append('WJets')
-	samplenames.append('WJets_HT-200to400'); 		 shortnames.append('WJets')
-	samplenames.append('WJets_HT-400to600'); 		 shortnames.append('WJets')
-	samplenames.append('WJets_HT-600to800'); 		 shortnames.append('WJets')
-	samplenames.append('WJets_HT-800to1200'); 		 shortnames.append('WJets')
-	samplenames.append('WJets_HT-1200to2500'); 		 shortnames.append('WJets')
-	samplenames.append('WJets_HT-2500toInf'); 		 shortnames.append('WJets')
-	#DYJets
-	samplenames.append('DYJets_M-50_HT-70to100'); 	 shortnames.append('DYJets')
-	samplenames.append('DYJets_M-50_HT-100to200'); 	 shortnames.append('DYJets')
-	samplenames.append('DYJets_M-50_HT-200to400'); 	 shortnames.append('DYJets')
-	samplenames.append('DYJets_M-50_HT-400to600'); 	 shortnames.append('DYJets')
-	samplenames.append('DYJets_M-50_HT-600to800'); 	 shortnames.append('DYJets')
-	samplenames.append('DYJets_M-50_HT-800to1200');  shortnames.append('DYJets')
-	samplenames.append('DYJets_M-50_HT-1200to2500'); shortnames.append('DYJets')
-	samplenames.append('DYJets_M-50_HT-2500toInf');  shortnames.append('DYJets')
-	#Single top
-	samplenames.append('ST_s-c'); 					 shortnames.append('Single top')
-	samplenames.append('ST_t-c_top'); 				 shortnames.append('Single top')
-	samplenames.append('ST_t-c_antitop'); 			 shortnames.append('Single top')
-	samplenames.append('ST_tW-c_top'); 				 shortnames.append('Single top')
-	samplenames.append('ST_tW-c_antitop'); 			 shortnames.append('Single top')
+#WJets
+samplenames.append('WJets_HT-70to100'); 		 shortnames.append('WJets')
+samplenames.append('WJets_HT-100to200'); 		 shortnames.append('WJets')
+samplenames.append('WJets_HT-200to400'); 		 shortnames.append('WJets')
+samplenames.append('WJets_HT-400to600'); 		 shortnames.append('WJets')
+samplenames.append('WJets_HT-600to800'); 		 shortnames.append('WJets')
+samplenames.append('WJets_HT-800to1200'); 		 shortnames.append('WJets')
+samplenames.append('WJets_HT-1200to2500'); 		 shortnames.append('WJets')
+samplenames.append('WJets_HT-2500toInf'); 		 shortnames.append('WJets')
+#DYJets
+samplenames.append('DYJets_M-50_HT-70to100'); 	 shortnames.append('DYJets')
+samplenames.append('DYJets_M-50_HT-100to200'); 	 shortnames.append('DYJets')
+samplenames.append('DYJets_M-50_HT-200to400'); 	 shortnames.append('DYJets')
+samplenames.append('DYJets_M-50_HT-400to600'); 	 shortnames.append('DYJets')
+samplenames.append('DYJets_M-50_HT-600to800'); 	 shortnames.append('DYJets')
+samplenames.append('DYJets_M-50_HT-800to1200');  shortnames.append('DYJets')
+samplenames.append('DYJets_M-50_HT-1200to2500'); shortnames.append('DYJets')
+samplenames.append('DYJets_M-50_HT-2500toInf');  shortnames.append('DYJets')
+#Single top
+samplenames.append('ST_s-c'); 					 shortnames.append('Single top')
+samplenames.append('ST_t-c_top'); 				 shortnames.append('Single top')
+samplenames.append('ST_t-c_antitop'); 			 shortnames.append('Single top')
+samplenames.append('ST_tW-c_top'); 				 shortnames.append('Single top')
+samplenames.append('ST_tW-c_antitop'); 			 shortnames.append('Single top')
 #POWHEG TT
 if generator == 'powheg' :
 	samplenames.append('powheg_TT'); 			 shortnames.append('t#bar{t} dilep')
@@ -238,11 +217,14 @@ garbageFile = TFile(garbageFileName,'recreate')
 #Chain up the files
 MC_chains = []
 data_chain = TChain('tree')
+MC_chains_qcd_sb = []
+data_chain_qcd_sb = TChain('tree')
 shortnames_done = []
 for i in range(len(samplenames)) :
 	index = 0
 	if shortnames[i] not in shortnames_done :
 		MC_chains.append(TChain('tree'))
+		MC_chains_qcd_sb.append(TChain('tree'))
 		index = len(MC_chains)-1
 		shortnames_done.append(shortnames[i])
 	else :
@@ -255,6 +237,7 @@ for i in range(len(samplenames)) :
 		if filename.find('JES')==-1 and filename.find('JER')==-1 :
 		#if filename.find('JES_up')!=-1 :
 			MC_chains[index].Add(filename)
+			MC_chains_qcd_sb[index].Add(filename)
 			print 'adding %s to chain for shortname %s'%(filename,shortnames[i]) #DEBUG
 #print 'MC_chains = %s'%(MC_chains) #DEBUG
 for data_samplename in data_samplenames :
@@ -264,6 +247,7 @@ for data_samplename in data_samplenames :
 		filenamelist = glob('../total_ttree_files/'+data_samplename+'_skim_all.root')
 	for filename in filenamelist :
 		data_chain.Add(filename)
+		data_chain_qcd_sb.Add(filename)
 		print 'adding %s to data chain'%(filename) #DEBUG
 
 #skim the chains into reduced trees and save the reduced trees in the garbage file
@@ -277,7 +261,7 @@ elif leptype=='electrons' :
 print 'Skim cuts: %s'%(com_cuts)
 procs = []
 for i in range(len(MC_chains)) :
-	if len(procs)>=5 :
+	if len(procs)>=options.n_threads :
 		for p in procs :
 			p.join()
 		procs = []
@@ -297,10 +281,113 @@ procs.append(newp)
 for p in procs :
 	p.join()
 
+#skim sideband chains and get the QCD transfer factors per topology
+QCD_transfer_factors = {'t1':0.,'t2':0.,'t3':0.}
+if estimate_qcd :
+	print 'SKIMMING CHAINS FOR QCD ESTIMATE'
+	if mode in ['wjets_cr','wjcr','wjetscr'] :
+		com_cuts = '(qcd_A_CR_selection==1 || qcd_B_CR_selection==1 || qcd_C_CR_selection==1)'
+	else :
+		com_cuts = '(qcd_A_SR_selection==1 || qcd_B_SR_selection==1 || qcd_C_SR_selection==1)'
+	if leptype=='muons' :
+		com_cuts+=' && lepflavor==1'
+	elif leptype=='electrons' :
+		com_cuts+=' && lepflavor==2'
+	print 'Skim cuts: %s'%(com_cuts)
+	procs = []
+	for i in range(len(MC_chains)) :
+		if len(procs)>=options.n_threads :
+			for p in procs :
+				p.join()
+			procs = []
+		realcuts = '('+com_cuts+')'
+		if shortnames_done[i].find('semilep')!=-1 :
+			realcuts = '(('+com_cuts+') && eventType<2)'
+		elif shortnames_done[i].find('dilep')!=-1 :
+			realcuts = '(('+com_cuts+') && eventType==2)'
+		elif shortnames_done[i].find('hadronic')!=-1 :
+			realcuts = '(('+com_cuts+') && eventType==3)'
+		p = multiprocessing.Process(target=treeskimmer, args=(MC_chains_qcd_sb[i],shortnames_done[i],realcuts,lock,True))
+		p.start()
+		procs.append(p)
+	newp = multiprocessing.Process(target=treeskimmer, args=(data_chain_qcd_sb,'DATA',com_cuts,lock,True))
+	newp.start()
+	procs.append(newp)
+	for p in procs :
+		p.join()
+	print 'DONE SKIMMING CHAINS FOR QCD ESTIMATE'
+	#draw chains into histograms
+	qcd_a_sb_t1_histo = TH1D('qcd_a_sb_t1_histo','',20,-1.,1.)
+	qcd_b_sb_t1_histo = TH1D('qcd_b_sb_t1_histo','',20,-1.,1.)
+	qcd_a_sb_t2_histo = TH1D('qcd_a_sb_t2_histo','',20,-1.,1.)
+	qcd_b_sb_t2_histo = TH1D('qcd_b_sb_t2_histo','',20,-1.,1.)
+	qcd_a_sb_t3_histo = TH1D('qcd_a_sb_t3_histo','',20,-1.,1.)
+	qcd_b_sb_t3_histo = TH1D('qcd_b_sb_t3_histo','',20,-1.,1.)
+	qcd_a_cut = 'qcd_A_SR_selection==1'
+	qcd_b_cut = 'qcd_B_SR_selection==1'
+	qcd_c_cut = 'qcd_C_SR_selection==1'
+	if mode in ['wjets_cr','wjcr','wjetscr'] :
+		qcd_a_cut = 'qcd_A_CR_selection==1'
+		qcd_b_cut = 'qcd_B_CR_selection==1'
+		qcd_c_cut = 'qcd_C_CR_selection==1'
+	if leptype=='muons' :
+		qcd_a_cut+=' && lepflavor==1'
+		qcd_b_cut+=' && lepflavor==1'
+	elif leptype=='electrons' :
+		qcd_a_cut+=' && lepflavor==2'
+		qcd_b_cut+=' && lepflavor==2'
+	data_chain_qcd_sb.Draw('cstar>>data_qcd_a_sb_t1(20,-1.,1.)','('+qcd_a_cut+' && eventTopology==1)')
+	qcd_a_sb_t1_histo.Add(gROOT.FindObject('data_qcd_a_sb_t1'))
+	data_chain_qcd_sb.Draw('cstar>>data_qcd_b_sb_t1(20,-1.,1.)','('+qcd_b_cut+' && eventTopology==1)')
+	qcd_b_sb_t1_histo.Add(gROOT.FindObject('data_qcd_b_sb_t1'))
+	data_chain_qcd_sb.Draw('cstar>>data_qcd_a_sb_t2(20,-1.,1.)','('+qcd_a_cut+' && eventTopology==2)')
+	qcd_a_sb_t2_histo.Add(gROOT.FindObject('data_qcd_a_sb_t2'))
+	data_chain_qcd_sb.Draw('cstar>>data_qcd_b_sb_t2(20,-1.,1.)','('+qcd_b_cut+' && eventTopology==2)')
+	qcd_b_sb_t2_histo.Add(gROOT.FindObject('data_qcd_b_sb_t2'))
+	data_chain_qcd_sb.Draw('cstar>>data_qcd_a_sb_t3(20,-1.,1.)','('+qcd_a_cut+' && eventTopology==3)')
+	qcd_a_sb_t3_histo.Add(gROOT.FindObject('data_qcd_a_sb_t3'))
+	data_chain_qcd_sb.Draw('cstar>>data_qcd_b_sb_t3(20,-1.,1.)','('+qcd_b_cut+' && eventTopology==3)')
+	qcd_b_sb_t3_histo.Add(gROOT.FindObject('data_qcd_b_sb_t3'))
+	print 'qcd sb numbers after adding data: type-1 A=%.2f, B=%.2f; type-2 A=%.2f, B=%.2f; type-3 A=%.2f, B=%.2f'%(qcd_a_sb_t1_histo.Integral(),qcd_b_sb_t1_histo.Integral(),qcd_a_sb_t2_histo.Integral(),qcd_b_sb_t2_histo.Integral(),qcd_a_sb_t3_histo.Integral(),qcd_b_sb_t3_histo.Integral()) #DEBUG
+	for i in range(len(MC_chains)) :
+		mc_qcd_a_cut = qcd_a_cut
+		mc_qcd_b_cut = qcd_b_cut
+		if shortnames_done[i].find('semilep')!=-1 :
+			mc_qcd_a_cut+=' && eventType<2'
+			mc_qcd_b_cut+=' && eventType<2'
+		elif shortnames_done[i].find('dilep')!=-1 :
+			mc_qcd_a_cut+=' && eventType==2'
+			mc_qcd_b_cut+=' && eventType==2'
+		elif shortnames_done[i].find('hadronic')!=-1 :
+			mc_qcd_a_cut+=' && eventType==3'
+			mc_qcd_b_cut+=' && eventType==3'
+		mc_qcda_weights = qcda_weights
+		mc_qcdb_weights = qcdb_weights
+		if shortnames_done[i].find('t#bar{t}')!=-1 and options.usetopptrw=='yes' :
+			mc_qcda_weights+='*toppTrw'
+			mc_qcdb_weights+='*toppTrw'
+		MC_chains_qcd_sb[i].Draw('cstar>>mc_'+str(i)+'_a_sb_t1(20,-1.,1.)','('+mc_qcd_a_cut+' && eventTopology==1)*('+qcda_weights+')*(-1.)')
+		qcd_a_sb_t1_histo.Add(gROOT.FindObject('mc_'+str(i)+'_a_sb_t1'))
+		MC_chains_qcd_sb[i].Draw('cstar>>mc_'+str(i)+'_b_sb_t1(20,-1.,1.)','('+mc_qcd_b_cut+' && eventTopology==1)*('+qcdb_weights+')*(-1.)')
+		qcd_b_sb_t1_histo.Add(gROOT.FindObject('mc_'+str(i)+'_b_sb_t1'))
+		MC_chains_qcd_sb[i].Draw('cstar>>mc_'+str(i)+'_a_sb_t2(20,-1.,1.)','('+mc_qcd_a_cut+' && eventTopology==2)*('+qcda_weights+')*(-1.)')
+		qcd_a_sb_t2_histo.Add(gROOT.FindObject('mc_'+str(i)+'_a_sb_t2'))
+		MC_chains_qcd_sb[i].Draw('cstar>>mc_'+str(i)+'_b_sb_t2(20,-1.,1.)','('+mc_qcd_b_cut+' && eventTopology==2)*('+qcdb_weights+')*(-1.)')
+		qcd_b_sb_t2_histo.Add(gROOT.FindObject('mc_'+str(i)+'_b_sb_t2'))
+		MC_chains_qcd_sb[i].Draw('cstar>>mc_'+str(i)+'_a_sb_t3(20,-1.,1.)','('+mc_qcd_a_cut+' && eventTopology==3)*('+qcda_weights+')*(-1.)')
+		qcd_a_sb_t3_histo.Add(gROOT.FindObject('mc_'+str(i)+'_a_sb_t3'))
+		MC_chains_qcd_sb[i].Draw('cstar>>mc_'+str(i)+'_b_sb_t3(20,-1.,1.)','('+mc_qcd_b_cut+' && eventTopology==3)*('+qcdb_weights+')*(-1.)')
+		qcd_b_sb_t3_histo.Add(gROOT.FindObject('mc_'+str(i)+'_b_sb_t3'))
+		print 'qcd sb numbers after subtracting %s MC: type-1 A=%.2f, B=%.2f, type-2 A=%.2f, B=%.2f, type-3 A=%.2f, B=%.2f'%(shortnames_done[i],qcd_a_sb_t1_histo.Integral(),qcd_b_sb_t1_histo.Integral(),qcd_a_sb_t2_histo.Integral(),qcd_b_sb_t2_histo.Integral(),qcd_a_sb_t3_histo.Integral(),qcd_b_sb_t3_histo.Integral()) #DEBUG
+	QCD_transfer_factors['t1']=qcd_a_sb_t1_histo.Integral()/qcd_b_sb_t1_histo.Integral() if qcd_a_sb_t1_histo.Integral()!=0. else 0.
+	QCD_transfer_factors['t2']=qcd_a_sb_t2_histo.Integral()/qcd_b_sb_t2_histo.Integral() if qcd_a_sb_t2_histo.Integral()!=0. else 0.
+	QCD_transfer_factors['t3']=qcd_a_sb_t3_histo.Integral()/qcd_b_sb_t3_histo.Integral() if qcd_a_sb_t3_histo.Integral()!=0. else 0.
+	print 'FINAL QCD TRANSFER FACTORS = %s'%(QCD_transfer_factors)
+
 #plot class
 class Plot(object) :
 
-	def __init__(self,name,varlist,title,nBins,low,hi,MC_weights=options.MC_weights,addl_cuts='',iPos=11,lPos=3,logy=False) :
+	def __init__(self,name,varlist,title,nBins,low,hi,MC_weights=options.MC_weights,addl_cuts='',iPos=11,lPos=3,logy=False,suppress_QCD=False) :
 		#save init info
 		self._name = name
 		self._varlist = varlist
@@ -325,6 +412,8 @@ class Plot(object) :
 		self._lPos = lPos #1=left, 2=middle, 3=right (default)
 		#whether to put the y-axis on a log scale
 		self._logy = logy
+		#whether to explicitly omit the data-driven QCD ackground estimate
+		self._suppress_QCD = suppress_QCD
 
 	def plot(self,treedict,outfilep) :
 		outfilep.cd()
@@ -332,6 +421,9 @@ class Plot(object) :
 		self._data_histo = TH1D(self._name+'_data',self._title,self._nBins,self._low,self._hi)
 		self._MC_histos = []
 		#print 'shortnames_done = %s'%(shortnames_done) #DEBUG
+		#add the QCD histogram (it's not listed as a MC sample)
+		if estimate_qcd and not self._suppress_QCD :
+			self._MC_histos.append(TH1D(self._name+'_QCD',self._title,self._nBins,self._low,self._hi))
 		for i in range(len(shortnames_done)) :
 			self._MC_histos.append(TH1D(self._name+'_'+str(i),self._title,self._nBins,self._low,self._hi))
 		#declare the MC histo stack
@@ -354,8 +446,17 @@ class Plot(object) :
 		self._MC_err_histo.SetFillStyle(3013); self._MC_err_resid.SetFillStyle(3013)
 		self._MC_err_histo.SetFillColor(kBlack); self._MC_err_resid.SetFillColor(kBlack)
 		self._MC_err_resid.SetTitle(';%s;Data/MC'%(self._MC_err_resid.GetXaxis().GetTitle()))
+		if estimate_qcd and not self._suppress_QCD :
+			MC_histo = self._MC_histos[0]
+			color = MC_sample_color_table['QCD']
+			MC_histo.SetMarkerStyle(21)
+			MC_histo.SetMarkerColor(color)
+			MC_histo.SetLineColor(color)
+			MC_histo.SetFillColor(color)
+			MC_histo.GetXaxis().SetLabelSize(0.)
+			self._MC_stack.Add(MC_histo,'hist')
 		for i in range(len(shortnames_done)) :
-			MC_histo = self._MC_histos[i]
+			MC_histo = self._MC_histos[i+1] if (estimate_qcd and not self._suppress_QCD) else self._MC_histos[i]
 			color = MC_sample_color_table[shortnames_done[i]]
 			MC_histo.SetMarkerStyle(21)
 			MC_histo.SetMarkerColor(color)
@@ -371,25 +472,56 @@ class Plot(object) :
 		for var in self._varlist :
 			interactivename = self._name+'_data_'+var.replace('(','').replace(')','')
 			#print '	drawing %s...'%(interactivename) #DEBUG
-			treedict['DATA'].Draw('%s>>%s(%d,%f,%f)'%(var,interactivename,self._nBins,self._low,self._hi),'(%s)'%(self._cutstring))
+			treedict['DATA_SR'].Draw('%s>>%s(%d,%f,%f)'%(var,interactivename,self._nBins,self._low,self._hi),'(%s)'%(self._cutstring))
 			gROOT.FindObject(interactivename).SetTitle(self._title)
 			self._data_histo.Add(gROOT.FindObject(interactivename))
 		self._data_histo.SetTitle(self._title)
+		#plot and get the QCD histograms
+		if estimate_qcd and not self._suppress_QCD :
+			for var in self._varlist :
+				interactivename = self._name+'_data_qcd_c_sb_'+var.replace('(','').replace(')','')
+				#print '	drawing %s...'%(interactivename) #DEBUG
+				treedict['DATA_QCD_SB'].Draw('%s>>%s(%d,%f,%f)'%(var,interactivename,self._nBins,self._low,self._hi),'('+qcd_c_cut+' && '+self._cutstring+')*('+str(QCD_transfer_factors[self._name.split('_')[-1]])+')')
+				gROOT.FindObject(interactivename).SetTitle(self._title)
+				self._MC_histos[0].Add(gROOT.FindObject(interactivename))
+			for i in range(len(shortnames_done)) :
+				if not treedict[shortnames_done[i].replace(' ','_').replace('#','')+'_QCD_SB'].GetEntries()>0 :
+					continue
+				for var in self._varlist :
+					interactivename = self._name+'_mc_qcd_c_sb_'+str(i)+'_'+var.replace('(','').replace(')','')
+					#print '	drawing %s for %s samples...'%(interactivename,shortnames_done[i]) #DEBUG
+					if shortnames_done[i].find('t#bar{t}')!=-1 and options.usetopptrw=='yes' :
+						treedict[shortnames_done[i].replace(' ','_').replace('#','')+'_QCD_SB'].Draw('%s>>%s(%d,%f,%f)'%(var,interactivename,self._nBins,self._low,self._hi),'('+self._MC_weights+')*('+qcd_c_cut+' && '+self._cutstring+')*(-1.*'+str(QCD_transfer_factors[self._name.split('_')[-1]])+')*toppTrw')
+					else :
+						treedict[shortnames_done[i].replace(' ','_').replace('#','')+'_QCD_SB'].Draw('%s>>%s(%d,%f,%f)'%(var,interactivename,self._nBins,self._low,self._hi),'('+self._MC_weights+')*('+qcd_c_cut+' && '+self._cutstring+')*(-1.*'+str(QCD_transfer_factors[self._name.split('_')[-1]])+')')
+					#print '	findobject for name %s returns %s'%(interactivename,gROOT.FindObject(interactivename)) #DEBUG
+					gROOT.FindObject(interactivename).SetTitle(self._title)
+					self._MC_histos[0].Add(gROOT.FindObject(interactivename))
+				self._MC_histos[0].SetTitle(self._title)
+			for i in range(1,self._nBins+1) :
+				if self._MC_histos[0].GetBinContent(i)<=0. :
+					self._MC_histos[0].SetBinContent(i,0.)
 		#plot and get the MC histograms
 		for i in range(len(shortnames_done)) :
-			if not treedict[shortnames_done[i].replace(' ','_').replace('#','')].GetEntries()>0 :
+			if not treedict[shortnames_done[i].replace(' ','_').replace('#','')+'_SR'].GetEntries()>0 :
 				continue
 			for var in self._varlist :
 				interactivename = self._name+'_'+str(i)+'_'+var.replace('(','').replace(')','')
 				#print '	drawing %s for %s samples...'%(interactivename,shortnames_done[i]) #DEBUG
 				if shortnames_done[i].find('t#bar{t}')!=-1 and options.usetopptrw=='yes' :
-					treedict[shortnames_done[i].replace(' ','_').replace('#','')].Draw('%s>>%s(%d,%f,%f)'%(var,interactivename,self._nBins,self._low,self._hi),'(%s)*(%s)*toppTrw'%(self._MC_weights,self._cutstring))
+					treedict[shortnames_done[i].replace(' ','_').replace('#','')+'_SR'].Draw('%s>>%s(%d,%f,%f)'%(var,interactivename,self._nBins,self._low,self._hi),'(%s)*(%s)*toppTrw'%(self._MC_weights,self._cutstring))
 				else :
-					treedict[shortnames_done[i].replace(' ','_').replace('#','')].Draw('%s>>%s(%d,%f,%f)'%(var,interactivename,self._nBins,self._low,self._hi),'(%s)*(%s)'%(self._MC_weights,self._cutstring))
+					treedict[shortnames_done[i].replace(' ','_').replace('#','')+'_SR'].Draw('%s>>%s(%d,%f,%f)'%(var,interactivename,self._nBins,self._low,self._hi),'(%s)*(%s)'%(self._MC_weights,self._cutstring))
 				#print '	findobject for name %s returns %s'%(interactivename,gROOT.FindObject(interactivename)) #DEBUG
 				gROOT.FindObject(interactivename).SetTitle(self._title)
-				self._MC_histos[i].Add(gROOT.FindObject(interactivename))
-			self._MC_histos[i].SetTitle(self._title)
+				if estimate_qcd and not self._suppress_QCD :
+					self._MC_histos[i+1].Add(gROOT.FindObject(interactivename))
+				else :
+					self._MC_histos[i].Add(gROOT.FindObject(interactivename))
+			if estimate_qcd and not self._suppress_QCD :
+				self._MC_histos[i+1].SetTitle(self._title)
+			else :
+				self._MC_histos[i].SetTitle(self._title)
 		#set the contents and errors for the MC uncertainty histograms
 		for i in range(1,self._nBins+1) :
 			content = self._MC_stack.GetStack().Last().GetBinContent(i)
@@ -430,7 +562,13 @@ class Plot(object) :
 		self._leg.AddEntry(self._data_histo,'DATA ('+str(self._data_histo.GetEntries())+' entries)','PE')
 		for i in reversed(range(len(self._MC_histos))) :
 			entries = self._MC_histos[i].GetEntries()
-			self._leg.AddEntry(self._MC_histos[i],shortnames_done[i]+' ('+str(entries)+' entries)','F')
+			if i==0 and estimate_qcd and not self._suppress_QCD :
+				self._leg.AddEntry(self._MC_histos[i],'data-driven QCD ('+str(entries)+' entries)','F')
+			else :
+				if estimate_qcd and not self._suppress_QCD :
+					self._leg.AddEntry(self._MC_histos[i],shortnames_done[i-1]+' ('+str(entries)+' entries)','F')
+				else :
+					self._leg.AddEntry(self._MC_histos[i],shortnames_done[i]+' ('+str(entries)+' entries)','F')
 		self._leg.AddEntry(self._MC_err_histo,'MC uncertainty','F')
 		#build the final plot
 		self._canv.cd()
@@ -695,29 +833,6 @@ if mode=='' or mode=='wjetscr' or mode.startswith('qcd') :
 		all_plots.append(Plot('ak44eta_t3',['ak44_eta'],'; AK4 jet4 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==3',lPos=0))
 		all_plots.append(Plot('ak44csv_t3',['ak44_csvv2'],'; AK4 jet4 CSVv2; Events/0.025',40,0.0,1.0,addl_cuts='eventTopology==3',lPos=0,logy=True))
 		all_plots.append(Plot('ak8tau21_t3',['ak81_tau21'],'; AK8 jet1 #tau_{21}; Events/0.05 GeV',20,0.,1.,addl_cuts='eventTopology==3'))
-#electron efficiency measurement plots
-#trigger 
-if mode=='t' :
-	#type-1/2
-	all_plots.append(Plot('eltrig_mupt_t12',['eltrig_themuon_pt'],'; #mu p_{T} [GeV]; Events/10 GeV',40,0.,400.,addl_cuts='eventTopology<3',iPos=33,lPos=2))
-	all_plots.append(Plot('eltrig_mueta_t12',['eltrig_themuon_eta'],'; #mu #eta; Events/0.1',30,-3.,3.,addl_cuts='eventTopology<3',lPos=0))
-	all_plots.append(Plot('eltrig_elpt_t12',['eltrig_theelectron_pt'],'; electron p_{T} [GeV]; Events/10 GeV',40,0.,400.,addl_cuts='eventTopology<3',iPos=33,lPos=2))
-	all_plots.append(Plot('eltrig_eleta_t12',['eltrig_theelectron_eta'],'; electron #eta; Events/0.1',30,-3.,3.,addl_cuts='eventTopology<3',lPos=0))
-	all_plots.append(Plot('ak41pT_t12',['ak41_pt'],'; AK4 jet1 p_{T} [GeV]; Events/20 GeV',40,0.,800.,addl_cuts='eventTopology<3'))
-	all_plots.append(Plot('ak41eta_t12',['ak41_eta'],'; AK4 jet1 #eta; Events/0.1',30,-3.0,3.0,addl_cuts='eventTopology<3',lPos=0))
-	all_plots.append(Plot('ak42pT_t12',['ak42_pt'],'; AK4 jet2 p_{T} [GeV]; Events/20 GeV',40,0.,800.,addl_cuts='eventTopology<3',iPos=33,lPos=2))
-	all_plots.append(Plot('ak42eta_t12',['ak42_eta'],'; AK4 jet2 #eta; Events/0.1',30,-3.0,3.0,addl_cuts='eventTopology<3',lPos=0))
-	all_plots.append(Plot('nbtags_t12',['nbTags'],'; # b-tagged AK4 jets; Events/bin',11,-0.5,10.5,addl_cuts='eventTopology<3',iPos=33,lPos=2))
-	#type-3
-	all_plots.append(Plot('eltrig_mupt_t3',['eltrig_themuon_pt'],'; #mu p_{T} [GeV]; Events/10 GeV',40,0.,400.,addl_cuts='eventTopology==3',iPos=33,lPos=2))
-	all_plots.append(Plot('eltrig_mueta_t3',['eltrig_themuon_eta'],'; #mu #eta; Events/0.1',30,-3.,3.,addl_cuts='eventTopology==3',lPos=0))
-	all_plots.append(Plot('eltrig_elpt_t3',['eltrig_theelectron_pt'],'; electron p_{T} [GeV]; Events/10 GeV',40,0.,400.,addl_cuts='eventTopology==3',iPos=33,lPos=2))
-	all_plots.append(Plot('eltrig_eleta_t3',['eltrig_theelectron_eta'],'; electron #eta; Events/0.1',30,-3.,3.,addl_cuts='eventTopology==3',lPos=0))
-	all_plots.append(Plot('ak41pT_t3',['ak41_pt'],'; AK4 jet1 p_{T} [GeV]; Events/20 GeV',40,0.,800.,addl_cuts='eventTopology==3',iPos=33,lPos=2))
-	all_plots.append(Plot('ak41eta_t3',['ak41_eta'],'; AK4 jet1 #eta; Events/0.1',30,-3.0,3.0,addl_cuts='eventTopology==3',lPos=0))
-	all_plots.append(Plot('ak42pT_t3',['ak42_pt'],'; AK4 jet2 p_{T} [GeV]; Events/20 GeV',40,0.,800.,addl_cuts='eventTopology==3',iPos=33,lPos=2))
-	all_plots.append(Plot('ak42eta_t3',['ak42_eta'],'; AK4 jet2 #eta; Events/0.1',30,-3.0,3.0,addl_cuts='eventTopology==3',lPos=0))
-	all_plots.append(Plot('nbtags_t3',['nbTags'],'; # b-tagged AK4 jets; Events/bin',11,-0.5,10.5,addl_cuts='eventTopology==3',iPos=33,lPos=2))
 
 #plot plots on canvases in parallel 
 def plotparallel(thisplotlist,outfilenames,i) :
@@ -726,12 +841,20 @@ def plotparallel(thisplotlist,outfilenames,i) :
 	#open tree files and add to dictionary
 	fileps = []
 	for sn in shortnames_done :
-		thisfilep = TFile(outname+'_'+sn.replace(' ','_').replace('#','')+'_skimmed_tree.root')
-		thistreedict[sn.replace(' ','_').replace('#','')] = thisfilep.Get('tree')
-		fileps.append(thisfilep)
-	datafilep = TFile(outname+'_DATA_skimmed_tree.root')
-	thistreedict['DATA'] = datafilep.Get('tree')
-	fileps.append(datafilep)
+		thisfilep_SR = TFile(outname+'_'+sn.replace(' ','_').replace('#','')+'_sr_skimmed_tree.root')
+		thistreedict[sn.replace(' ','_').replace('#','')+'_SR'] = thisfilep_SR.Get('tree')
+		fileps.append(thisfilep_SR)
+	datafilep_SR = TFile(outname+'_DATA_sr_skimmed_tree.root')
+	thistreedict['DATA_SR'] = datafilep_SR.Get('tree')
+	fileps.append(datafilep_SR)
+	if estimate_qcd :
+		for sn in shortnames_done :
+			thisfilep_QCD_SB = TFile(outname+'_'+sn.replace(' ','_').replace('#','')+'_qcd_sb_skimmed_tree.root')
+			thistreedict[sn.replace(' ','_').replace('#','')+'_QCD_SB'] = thisfilep_QCD_SB.Get('tree')
+			fileps.append(thisfilep_QCD_SB)
+		datafilep_QCD_SB = TFile(outname+'_DATA_qcd_sb_skimmed_tree.root')
+		thistreedict['DATA_QCD_SB'] = datafilep_QCD_SB.Get('tree')
+		fileps.append(datafilep_QCD_SB)
 	#start a new file for this subset of the plots
 	thisoutfilename = outname+'_'+str(i)+'.root'
 	outfilenames.append(thisoutfilename)
@@ -777,6 +900,6 @@ if not os.path.isdir(outname+'_pdfs') :
 	os.system('mkdir '+outname+'_pdfs')
 os.system('mv *_canv.pdf '+outname+'_pdfs')
 for sn in shortnames_done :
-	os.system('rm -rf '+outname+'_'+sn.replace(' ','_').replace('#','')+'_skimmed_tree.root')
-os.system('rm -rf '+outname+'_DATA_skimmed_tree.root')
+	os.system('rm -rf '+outname+'_'+sn.replace(' ','_').replace('#','')+'_*_skimmed_tree.root')
+os.system('rm -rf '+outname+'_DATA_*_skimmed_tree.root')
 os.system('rm -rf '+garbageFileName)
