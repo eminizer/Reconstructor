@@ -117,6 +117,7 @@ elif mode in ['qcd_c_cr','qcdccr','qcd_c_cr'] :
 
 if options.skimcut=='def' :
 	options.skimcut='fullselection==1'
+	#options.skimcut='fullselection==1 && tt_pt<100.'
 	#options.skimcut='fullselection==1 && lep_Iso!=0.'
 	#options.skimcut='fullselection==1 && ak41_pt>55. && ak42_pt>45.'
 if options.MC_weights=='def' :
