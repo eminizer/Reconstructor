@@ -48,16 +48,29 @@ class Reconstructor(object) :
 	allBranches = {}
 	ak4JetBranches = {}
 	ak8JetBranches = {}
+	genUncBranches = {}
+	triggerBranches = {}
+	mcGenEventBranches = {}
+	vtxBranches = {}
+	filterBranches = {}
+	metBranches = {}
+	muonBranches = {}
 	#GenWeight info
 	genWeight = AddBranch('evt_Gen_Weight','genWeight','F',1.0,'1',[allBranches])
 	rho 	  = AddBranch('evt_rho','rho','D',1.0,'1',[allBranches,ak4JetBranches,ak8JetBranches])
-	#pileup
-	npv 	 = AddBranch('pu_NtrueInt','npv','I',-1,'1',[allBranches,ak4JetBranches,ak8JetBranches])
+	#pileup information
+	ntrueint = AddBranch('pu_NtrueInt','ntrueint','I',-1,'1',[allBranches,ak4JetBranches,ak8JetBranches])
+	npv 	 = AddBranch('vtx_npv','npv','I',-1,'1',[allBranches,ak4JetBranches,ak8JetBranches])
 	ngoodvtx = AddBranch('evt_NGoodVtx','ngoodvtx','I',-1,'1',[allBranches,ak4JetBranches,ak8JetBranches])
 	#top pT reweighting
 	toppTreweight = AddBranch('evt_top_pt_rw','toppTrw','F',1.0,'1',[allBranches])
+	#vertex information
+	thisdictlist=[allBranches,vtxBranches]
+	vtx_size = AddBranch(readname='vtx_size',ttreetype='i',dictlist=thisdictlist)
+	vtx_ndof = AddBranch(readname='vtx_ndof',ttreetype='I',size='vtx_size',dictlist=thisdictlist)
+	vtx_z = AddBranch(readname='vtx_z',size='vtx_size',dictlist=thisdictlist)
+	vtx_rho = AddBranch(readname='vtx_rho',size='vtx_size',dictlist=thisdictlist)
 	#Scale, PDF, and alpha_s weights
-	genUncBranches = {}
 	thisdictlist=[allBranches,genUncBranches]
 	scale_size = AddBranch(readname='scale_size',ttreetype='i',dictlist=thisdictlist)
 	scale_weights = AddBranch(readname='scale_Weights',ttreetype='F',size='scale_size',dictlist=thisdictlist)
@@ -66,7 +79,6 @@ class Reconstructor(object) :
 	alphas_size = AddBranch(readname='alphas_size',ttreetype='i',dictlist=thisdictlist)
 	alphas_weights = AddBranch(readname='alphas_Weights',ttreetype='F',size='alphas_size',dictlist=thisdictlist)
 	#MC GenEvent info
-	mcGenEventBranches = {}
 	thisdictlist = [allBranches,mcGenEventBranches]
 	MC_part1_factor = AddBranch(readname='MC_part1_factor',dictlist=thisdictlist)
 	MC_part1_ID 	= AddBranch(readname='MC_part1_ID',dictlist=thisdictlist)
@@ -83,7 +95,6 @@ class Reconstructor(object) :
 		AddBranch(readname='MC_'+n+'_phi',dictlist=thisdictlist)
 		AddBranch(readname='MC_'+n+'_E',dictlist=thisdictlist)
 	#Trigger Information
-	triggerBranches = {}
 	thisdictlist = [allBranches,triggerBranches]
 	for trigName in MU_TRIG_PATHS_BOOSTED :
 		AddBranch(trigName,trigName,'I',-1,'1',thisdictlist)
@@ -94,7 +105,6 @@ class Reconstructor(object) :
 	for trigName in EL_TRIG_PATHS_RESOLVED :
 		AddBranch(trigName,trigName,'I',-1,'1',thisdictlist)
 	#MET Filter information
-	filterBranches = {}
 	thisdictlist = [allBranches,filterBranches]
 	noise 				= AddBranch('Flag_HBHENoiseFilter','noisefilter','I',-1,'1',thisdictlist)
 	noiseIso 			= AddBranch('Flag_HBHENoiseIsoFilter','noiseIsofilter','I',-1,'1',thisdictlist)
@@ -105,13 +115,11 @@ class Reconstructor(object) :
 	badpfmuon 			= AddBranch('Flag_BadPFMuonFilter','badpfmuonfilter','I',-1,'1',thisdictlist)
 	badchargedcandidate = AddBranch('Flag_BadChargedCandidateFilter','badchargedcandidatefilter','I',-1,'1',thisdictlist)
 	#MET
-	metBranches = {}
 	thisdictlist = [allBranches,metBranches]
 	met_size 	= AddBranch(readname='met_size',ttreetype='i',dictlist=thisdictlist)
 	met_pts 	= AddBranch(readname='met_Pt',size='met_size',dictlist=thisdictlist)
 	met_phis 	= AddBranch(readname='met_Phi',size='met_size',dictlist=thisdictlist)
 	#muons
-	muonBranches = {}
 	thisdictlist = [allBranches,muonBranches]
 	mu_size 	  = AddBranch(readname='mu_size',ttreetype='i',dictlist=thisdictlist)
 	mu_pts 		  = AddBranch(readname='mu_Pt',size='mu_size',dictlist=thisdictlist)
@@ -382,7 +390,7 @@ class Reconstructor(object) :
 	#cut variables for full selection
 	cut_branches = {}
 	thisdictlist = [allBranches,cut_branches]
-	cutnames = ['metfilters','trigger','onelepton','isolepton','btags','ak4jetmult','ak4jetcuts','METcuts','lepcuts','kinfitchi2','recoleptM','validminimization','fullselection']
+	cutnames = ['goodpv','metfilters','trigger','onelepton','isolepton','btags','ak4jetmult','ak4jetcuts','METcuts','lepcuts','kinfitchi2','recoleptM','validminimization','fullselection']
 	for cutname in cutnames :
 		AddBranch(writename=cutname,ttreetype='i',inival=2,dictlist=thisdictlist)
 	#cut variables for various control regions and sideband selections
@@ -955,7 +963,7 @@ class Reconstructor(object) :
 			self.wegc.setWriteValue(wegc) 
 		#scale factor and reweighting calculations
 		#Pileup reweighting
-		pu_sf, pu_sf_up, pu_sf_down = self.corrector.getPileupReweight(self.allBranches['npv'].getReadValue())
+		pu_sf, pu_sf_up, pu_sf_down = self.corrector.getPileupReweight(self.allBranches['ntrueint'].getReadValue())
 		self.sf_pileup.setWriteValue(pu_sf); self.sf_pileup_hi.setWriteValue(pu_sf_up); self.sf_pileup_low.setWriteValue(pu_sf_down)
 		#Trigger efficiency reweighting
 		( trig_eff_BtoF_sf, trig_eff_BtoF_sf_up, trig_eff_BtoF_sf_down, 
@@ -1002,6 +1010,8 @@ class Reconstructor(object) :
 	def __assignFullSelectionCutVars__(self,canreconstruct,topology,nbtags,fitchi2,scaledlept,lep,electrons,muons,ak4jets,met) :
 		#number of AK4 jets
 		self.docut('ak4jetmult',canreconstruct)
+		#good primary vertex
+		self.docut('goodpv',(self.vtxBranches['vtx_ndof'].getReadValue()>=4 and abs(self.vtxBranches['vtx_z'].getReadValue())<24. and abs(self.vtxBranches['vtx_rho'].getReadValue())<2.))
 		#met filtering
 		metfiltercuts = []
 		for branch in self.filterBranches.values() :
@@ -1076,7 +1086,7 @@ class Reconstructor(object) :
 
 	def __assignWJetsCRSelectionCutVars__(self) :
 		#W+Jets control region (fails kinematic fit chi2 cuts OR reconstructed leptonic top mass cuts) for boosted events
-		wjets_cr_pass_cutlist = ['metfilters','trigger','onelepton','isolepton','btags','ak4jetmult','ak4jetcuts','METcuts','lepcuts','validminimization']
+		wjets_cr_pass_cutlist = ['goodpv','metfilters','trigger','onelepton','isolepton','btags','ak4jetmult','ak4jetcuts','METcuts','lepcuts','validminimization']
 		wjets_cr_fail_cutlist = ['kinfitchi2','recoleptM']
 		#npassedcuts = sum([int(self.cut_branches[cutname].getWriteValue()==1) for cutname in wjets_cr_pass_cutlist]) #DEBUG
 		#nfailedcuts = sum([int(self.cut_branches[cutname].getWriteValue()==0) for cutname in wjets_cr_fail_cutlist]) #DEBUG
@@ -1096,7 +1106,7 @@ class Reconstructor(object) :
 		#	print 'WJetsCR: selection = %d'%(self.cr_sb_cut_branches['wjets_cr_selection'].getWriteValue()) #DEBUG
 
 	def __assignQCDSBSelectionCutVars__(self) :
-		qcd_sb_pass_cutlist = ['metfilters','trigger','onelepton','btags','ak4jetmult','ak4jetcuts','lepcuts','validminimization']
+		qcd_sb_pass_cutlist = ['goodpv','metfilters','trigger','onelepton','btags','ak4jetmult','ak4jetcuts','lepcuts','validminimization']
 		for cutname in qcd_sb_pass_cutlist :
 			if not self.cut_branches[cutname].getWriteValue()==1 :
 				self.cr_sb_cut_branches['qcd_A_SR_selection'].setWriteValue(0)
@@ -1188,7 +1198,7 @@ class Reconstructor(object) :
 		#			self.eltrig_cut_branches['eltrig_fullselection'].setWriteValue(0)
 
 	def __assignMiniIsolationFullSelectionCutVars__(self,lep,muons,electrons) :
-		otherpasscuts = ['metfilters','trigger','btags','ak4jetmult','ak4jetcuts','METcuts','lepcuts','kinfitchi2','recoleptM','validminimization','fullselection']
+		otherpasscuts = ['goodpv','metfilters','trigger','btags','ak4jetmult','ak4jetcuts','METcuts','lepcuts','kinfitchi2','recoleptM','validminimization','fullselection']
 		#start with lepton flavor-specific cuts
 		other_leps = []
 		if self.lepflavor.getWriteValue()==1 :

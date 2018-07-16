@@ -8,6 +8,7 @@ MAX_AK8_SUBJET_ARRAY_LENGTH = 25
 MAX_SCALE_ARRAY_LENGTH = 6
 MAX_PDF_ARRAY_LENGTH = 100
 MAX_ALPHAS_ARRAY_LENGTH = 2
+MAX_VERTEX_ARRAY_LENGTH = 100
 
 #Imports
 from array import array
@@ -119,5 +120,7 @@ def get_array_length(size) :
 		return MAX_PDF_ARRAY_LENGTH
 	elif size=='alphas_size' :
 		return MAX_ALPHAS_ARRAY_LENGTH
+	elif size=='vtx_size' :
+		return MAX_VERTEX_ARRAY_LENGTH
 	else :
 		return None

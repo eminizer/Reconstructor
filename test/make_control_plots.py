@@ -117,7 +117,8 @@ elif mode in ['qcd_c_cr','qcdccr','qcd_c_cr'] :
 estimate_qcd = (options.skimcut=='def' and options.MC_weights=='def') or mode in ['wjets_cr','wjcr','wjetscr']
 
 if options.skimcut=='def' :
-	options.skimcut='fullselection==1'
+	#options.skimcut='fullselection==1'
+	options.skimcut='fullselection==1 && ((ak41_csvv2>0.8484 && (ak42_csvv2>0.8484 || ak43_csvv2>0.8484 || ak44_csvv2>0.8484)) || (ak42_csvv2>0.8484 && (ak43_csvv2>0.8484 || ak44_csvv2>0.8484 || ak41_csvv2>0.8484)) || (ak43_csvv2>0.8484 && (ak44_csvv2>0.8484 || ak41_csvv2>0.8484 || ak42_csvv2>0.8484)) || (ak44_csvv2>0.8484 && (ak41_csvv2>0.8484 || ak42_csvv2>0.8484 || ak43_csvv2>0.8484)))'
 	#options.skimcut='fullselection==1 && tt_pt<100.'
 	#options.skimcut='fullselection==1 && lep_Iso!=0.'
 	#options.skimcut='fullselection==1 && ak41_pt>55. && ak42_pt>45.'
@@ -283,12 +284,15 @@ for p in procs :
 
 #skim sideband chains and get the QCD transfer factors per topology
 QCD_transfer_factors = {'t1':0.,'t2':0.,'t3':0.}
+QCD_transfer_factors_up = {'t1':0.,'t2':0.,'t3':0.}
 if estimate_qcd :
 	print 'SKIMMING CHAINS FOR QCD ESTIMATE'
 	if mode in ['wjets_cr','wjcr','wjetscr'] :
 		com_cuts = '(qcd_A_CR_selection==1 || qcd_B_CR_selection==1 || qcd_C_CR_selection==1)'
+		com_cuts+=' && ((ak41_csvv2>0.8484 && (ak42_csvv2>0.8484 || ak43_csvv2>0.8484 || ak44_csvv2>0.8484)) || (ak42_csvv2>0.8484 && (ak43_csvv2>0.8484 || ak44_csvv2>0.8484 || ak41_csvv2>0.8484)) || (ak43_csvv2>0.8484 && (ak44_csvv2>0.8484 || ak41_csvv2>0.8484 || ak42_csvv2>0.8484)) || (ak44_csvv2>0.8484 && (ak41_csvv2>0.8484 || ak42_csvv2>0.8484 || ak43_csvv2>0.8484)))'
 	else :
 		com_cuts = '(qcd_A_SR_selection==1 || qcd_B_SR_selection==1 || qcd_C_SR_selection==1)'
+		com_cuts+=' && ((ak41_csvv2>0.8484 && (ak42_csvv2>0.8484 || ak43_csvv2>0.8484 || ak44_csvv2>0.8484)) || (ak42_csvv2>0.8484 && (ak43_csvv2>0.8484 || ak44_csvv2>0.8484 || ak41_csvv2>0.8484)) || (ak43_csvv2>0.8484 && (ak44_csvv2>0.8484 || ak41_csvv2>0.8484 || ak42_csvv2>0.8484)) || (ak44_csvv2>0.8484 && (ak41_csvv2>0.8484 || ak42_csvv2>0.8484 || ak43_csvv2>0.8484)))'
 	if leptype=='muons' :
 		com_cuts+=' && lepflavor==1'
 	elif leptype=='electrons' :
@@ -323,9 +327,9 @@ if estimate_qcd :
 	qcd_b_sb_t2_histo = TH1D('qcd_b_sb_t2_histo','',20,-1.,1.)
 	qcd_a_sb_t3_histo = TH1D('qcd_a_sb_t3_histo','',20,-1.,1.)
 	qcd_b_sb_t3_histo = TH1D('qcd_b_sb_t3_histo','',20,-1.,1.)
-	qcd_a_cut = 'qcd_A_SR_selection==1'
-	qcd_b_cut = 'qcd_B_SR_selection==1'
-	qcd_c_cut = 'qcd_C_SR_selection==1'
+	qcd_a_cut = 'qcd_A_SR_selection==1 && ((ak41_csvv2>0.8484 && (ak42_csvv2>0.8484 || ak43_csvv2>0.8484 || ak44_csvv2>0.8484)) || (ak42_csvv2>0.8484 && (ak43_csvv2>0.8484 || ak44_csvv2>0.8484 || ak41_csvv2>0.8484)) || (ak43_csvv2>0.8484 && (ak44_csvv2>0.8484 || ak41_csvv2>0.8484 || ak42_csvv2>0.8484)) || (ak44_csvv2>0.8484 && (ak41_csvv2>0.8484 || ak42_csvv2>0.8484 || ak43_csvv2>0.8484)))'
+	qcd_b_cut = 'qcd_B_SR_selection==1 && ((ak41_csvv2>0.8484 && (ak42_csvv2>0.8484 || ak43_csvv2>0.8484 || ak44_csvv2>0.8484)) || (ak42_csvv2>0.8484 && (ak43_csvv2>0.8484 || ak44_csvv2>0.8484 || ak41_csvv2>0.8484)) || (ak43_csvv2>0.8484 && (ak44_csvv2>0.8484 || ak41_csvv2>0.8484 || ak42_csvv2>0.8484)) || (ak44_csvv2>0.8484 && (ak41_csvv2>0.8484 || ak42_csvv2>0.8484 || ak43_csvv2>0.8484)))'
+	qcd_c_cut = 'qcd_C_SR_selection==1 && ((ak41_csvv2>0.8484 && (ak42_csvv2>0.8484 || ak43_csvv2>0.8484 || ak44_csvv2>0.8484)) || (ak42_csvv2>0.8484 && (ak43_csvv2>0.8484 || ak44_csvv2>0.8484 || ak41_csvv2>0.8484)) || (ak43_csvv2>0.8484 && (ak44_csvv2>0.8484 || ak41_csvv2>0.8484 || ak42_csvv2>0.8484)) || (ak44_csvv2>0.8484 && (ak41_csvv2>0.8484 || ak42_csvv2>0.8484 || ak43_csvv2>0.8484)))'
 	if mode in ['wjets_cr','wjcr','wjetscr'] :
 		qcd_a_cut = 'qcd_A_CR_selection==1'
 		qcd_b_cut = 'qcd_B_CR_selection==1'
@@ -379,9 +383,19 @@ if estimate_qcd :
 		MC_chains_qcd_sb[i].Draw('cstar>>mc_'+str(i)+'_b_sb_t3(20,-1.,1.)','('+mc_qcd_b_cut+' && eventTopology==3)*('+qcdb_weights+')*(-1.)')
 		qcd_b_sb_t3_histo.Add(gROOT.FindObject('mc_'+str(i)+'_b_sb_t3'))
 		print 'qcd sb numbers after subtracting %s MC: type-1 A=%.2f, B=%.2f, type-2 A=%.2f, B=%.2f, type-3 A=%.2f, B=%.2f'%(shortnames_done[i],qcd_a_sb_t1_histo.Integral(),qcd_b_sb_t1_histo.Integral(),qcd_a_sb_t2_histo.Integral(),qcd_b_sb_t2_histo.Integral(),qcd_a_sb_t3_histo.Integral(),qcd_b_sb_t3_histo.Integral()) #DEBUG
+	for i in range(1,21) :
+		if qcd_a_sb_t1_histo.GetBinContent(i)<=0. : qcd_a_sb_t1_histo.SetBinContent(i,0.)
+		if qcd_b_sb_t1_histo.GetBinContent(i)<=0. : qcd_b_sb_t1_histo.SetBinContent(i,0.)
+		if qcd_a_sb_t2_histo.GetBinContent(i)<=0. : qcd_a_sb_t2_histo.SetBinContent(i,0.)
+		if qcd_b_sb_t2_histo.GetBinContent(i)<=0. : qcd_b_sb_t2_histo.SetBinContent(i,0.)
+		if qcd_a_sb_t3_histo.GetBinContent(i)<=0. : qcd_a_sb_t3_histo.SetBinContent(i,0.)
+		if qcd_b_sb_t3_histo.GetBinContent(i)<=0. : qcd_b_sb_t3_histo.SetBinContent(i,0.)
 	QCD_transfer_factors['t1']=qcd_a_sb_t1_histo.Integral()/qcd_b_sb_t1_histo.Integral() if qcd_a_sb_t1_histo.Integral()!=0. else 0.
 	QCD_transfer_factors['t2']=qcd_a_sb_t2_histo.Integral()/qcd_b_sb_t2_histo.Integral() if qcd_a_sb_t2_histo.Integral()!=0. else 0.
 	QCD_transfer_factors['t3']=qcd_a_sb_t3_histo.Integral()/qcd_b_sb_t3_histo.Integral() if qcd_a_sb_t3_histo.Integral()!=0. else 0.
+	QCD_transfer_factors_up['t1']=QCD_transfer_factors['t1']*(1.+sqrt(1./qcd_a_sb_t1_histo.Integral()+1./qcd_b_sb_t1_histo.Integral())) if qcd_a_sb_t1_histo.Integral()!=0. and qcd_b_sb_t1_histo.Integral()!=0. else 0.
+	QCD_transfer_factors_up['t2']=QCD_transfer_factors['t2']*(1.+sqrt(1./qcd_a_sb_t2_histo.Integral()+1./qcd_b_sb_t2_histo.Integral())) if qcd_a_sb_t2_histo.Integral()!=0. and qcd_b_sb_t2_histo.Integral()!=0. else 0.
+	QCD_transfer_factors_up['t3']=QCD_transfer_factors['t3']*(1.+sqrt(1./qcd_a_sb_t3_histo.Integral()+1./qcd_b_sb_t3_histo.Integral())) if qcd_a_sb_t3_histo.Integral()!=0. and qcd_b_sb_t3_histo.Integral()!=0. else 0.
 	print 'FINAL QCD TRANSFER FACTORS = %s'%(QCD_transfer_factors)
 
 #plot class
@@ -478,12 +492,15 @@ class Plot(object) :
 		self._data_histo.SetTitle(self._title)
 		#plot and get the QCD histograms
 		if estimate_qcd and not self._suppress_QCD :
+			dummy_qcd_up_histo=TH1D(self._name+'_QCD_up',self._title,self._nBins,self._low,self._hi)
 			for var in self._varlist :
 				interactivename = self._name+'_data_qcd_c_sb_'+var.replace('(','').replace(')','')
 				#print '	drawing %s...'%(interactivename) #DEBUG
 				treedict['DATA_QCD_SB'].Draw('%s>>%s(%d,%f,%f)'%(var,interactivename,self._nBins,self._low,self._hi),'('+qcd_c_cut+' && '+self._cutstring+')*('+str(QCD_transfer_factors[self._name.split('_')[-1]])+')')
+				treedict['DATA_QCD_SB'].Draw('%s>>%s(%d,%f,%f)'%(var,interactivename+'_up',self._nBins,self._low,self._hi),'('+qcd_c_cut+' && '+self._cutstring+')*('+str(QCD_transfer_factors_up[self._name.split('_')[-1]])+')')
 				gROOT.FindObject(interactivename).SetTitle(self._title)
 				self._MC_histos[0].Add(gROOT.FindObject(interactivename))
+				dummy_qcd_up_histo.Add(gROOT.FindObject(interactivename+'_up'))
 			for i in range(len(shortnames_done)) :
 				if not treedict[shortnames_done[i].replace(' ','_').replace('#','')+'_QCD_SB'].GetEntries()>0 :
 					continue
@@ -492,15 +509,20 @@ class Plot(object) :
 					#print '	drawing %s for %s samples...'%(interactivename,shortnames_done[i]) #DEBUG
 					if shortnames_done[i].find('t#bar{t}')!=-1 and options.usetopptrw=='yes' :
 						treedict[shortnames_done[i].replace(' ','_').replace('#','')+'_QCD_SB'].Draw('%s>>%s(%d,%f,%f)'%(var,interactivename,self._nBins,self._low,self._hi),'('+self._MC_weights+')*('+qcd_c_cut+' && '+self._cutstring+')*(-1.*'+str(QCD_transfer_factors[self._name.split('_')[-1]])+')*toppTrw')
+						treedict[shortnames_done[i].replace(' ','_').replace('#','')+'_QCD_SB'].Draw('%s>>%s(%d,%f,%f)'%(var,interactivename+'_up',self._nBins,self._low,self._hi),'('+self._MC_weights+')*('+qcd_c_cut+' && '+self._cutstring+')*(-1.*'+str(QCD_transfer_factors_up[self._name.split('_')[-1]])+')*toppTrw')
 					else :
 						treedict[shortnames_done[i].replace(' ','_').replace('#','')+'_QCD_SB'].Draw('%s>>%s(%d,%f,%f)'%(var,interactivename,self._nBins,self._low,self._hi),'('+self._MC_weights+')*('+qcd_c_cut+' && '+self._cutstring+')*(-1.*'+str(QCD_transfer_factors[self._name.split('_')[-1]])+')')
+						treedict[shortnames_done[i].replace(' ','_').replace('#','')+'_QCD_SB'].Draw('%s>>%s(%d,%f,%f)'%(var,interactivename+'_up',self._nBins,self._low,self._hi),'('+self._MC_weights+')*('+qcd_c_cut+' && '+self._cutstring+')*(-1.*'+str(QCD_transfer_factors_up[self._name.split('_')[-1]])+')')
 					#print '	findobject for name %s returns %s'%(interactivename,gROOT.FindObject(interactivename)) #DEBUG
 					gROOT.FindObject(interactivename).SetTitle(self._title)
 					self._MC_histos[0].Add(gROOT.FindObject(interactivename))
+					dummy_qcd_up_histo.Add(gROOT.FindObject(interactivename+'_up'))
 				self._MC_histos[0].SetTitle(self._title)
 			for i in range(1,self._nBins+1) :
 				if self._MC_histos[0].GetBinContent(i)<=0. :
 					self._MC_histos[0].SetBinContent(i,0.)
+				binerr = sqrt((dummy_qcd_up_histo.GetBinContent(i)-self._MC_histos[0].GetBinContent(i))**2+self._MC_histos[0].GetBinContent(i))
+				self._MC_histos[0].SetBinError(i,binerr)
 		#plot and get the MC histograms
 		for i in range(len(shortnames_done)) :
 			if not treedict[shortnames_done[i].replace(' ','_').replace('#','')+'_SR'].GetEntries()>0 :
@@ -529,9 +551,9 @@ class Plot(object) :
 			for hist in self._MC_histos :
 				entries = hist.GetEffectiveEntries()
 				integral = hist.Integral(0,self._nBins+1)
-				thishistcontent = hist.GetBinContent(i)
+				thishisterr = max(hist.GetBinError(i),sqrt(abs(hist.GetBinContent(i))))
 				if entries!=0. :
-					err2+=abs(thishistcontent)*(integral/abs(entries))
+					err2+=(thishisterr**2)#*(integral/abs(entries))
 			err = sqrt(abs(err2)) if err2!=0. else 0.
 			self._MC_err_histo.SetBinContent(i,content)
 			self._MC_err_histo.SetBinError(i,err)
@@ -666,14 +688,14 @@ if mode=='' or mode=='wjetscr' or mode.startswith('qcd') :
 	all_plots.append(Plot('lsf_t1',['par_1'],'; #lambda_{1}; Events/0.001',40,0.97,1.01,addl_cuts='eventTopology==1',lPos=2))
 	all_plots.append(Plot('leppT_t1',['lep_pt'],';'+lepstring+' p_{T} [GeV]; Events/10 GeV',40,50.,450.,addl_cuts='eventTopology==1',iPos=33,lPos=2))
 	all_plots.append(Plot('lepeta_t1',['lep_eta'],';'+lepstring+' #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==1',lPos=0))
-	all_plots.append(Plot('leprelpT_t1',['lep_relPt'],'; p_{T}^{rel}('+shortlepstring+', jet) [GeV]; Events/10 GeV',40,0.,400.,addl_cuts='eventTopology==1',iPos=33,lPos=2))
-	all_plots.append(Plot('lepdR_t1',['lep_dR'],'; #Delta R('+shortlepstring+', jet); Events/0.1',30,0.,3.,addl_cuts='eventTopology==1',iPos=33,lPos=2))
+	all_plots.append(Plot('leprelpT_t1',['lep_relPt'],'; p_{T}^{rel}('+shortlepstring+', jet) [GeV]; Events/10 GeV',40,0.,400.,addl_cuts='eventTopology==1',iPos=33,lPos=2,suppress_QCD=True))
+	all_plots.append(Plot('lepdR_t1',['lep_dR'],'; #Delta R('+shortlepstring+', jet); Events/0.1',30,0.,3.,addl_cuts='eventTopology==1',iPos=33,lPos=2,suppress_QCD=True))
 	if leptype=='muons' :
-		all_plots.append(Plot('lepIso_t1',['lep_Iso'],'; '+lepstring+' PF relative isolation; Events/0.005',30,0.,0.15,addl_cuts='eventTopology==1',iPos=33,lPos=2,logy=True))
+		all_plots.append(Plot('lepIso_t1',['lep_Iso'],'; '+lepstring+' PF relative isolation; Events/0.005',30,0.,0.15,addl_cuts='eventTopology==1',iPos=33,lPos=2,logy=True,suppress_QCD=True))
 		all_plots.append(Plot('ak41pT_t1',['ak41_pt'],'; AK4 jet1 p_{T} [GeV]; Events/20 GeV',40,150.,950.,addl_cuts='eventTopology==1'))
 		all_plots.append(Plot('ak42pT_t1',['ak42_pt'],'; AK4 jet2 p_{T} [GeV]; Events/20 GeV',40,50.,850.,addl_cuts='eventTopology==1',iPos=33,lPos=2))
 	elif leptype=='electrons' :
-		all_plots.append(Plot('lepIso_t1',['lep_Iso'],'; '+lepstring+' PF relative isolation; Events/0.002',30,0.,0.06,addl_cuts='eventTopology==1',iPos=33,lPos=2,logy=True))
+		all_plots.append(Plot('lepIso_t1',['lep_Iso'],'; '+lepstring+' PF relative isolation; Events/0.002',30,0.,0.06,addl_cuts='eventTopology==1',iPos=33,lPos=2,logy=True,suppress_QCD=True))
 		all_plots.append(Plot('ak41pT_t1',['ak41_pt'],'; AK4 jet1 p_{T} [GeV]; Events/20 GeV',40,250.,1050.,addl_cuts='eventTopology==1'))
 		all_plots.append(Plot('ak42pT_t1',['ak42_pt'],'; AK4 jet2 p_{T} [GeV]; Events/20 GeV',40,70.,870.,addl_cuts='eventTopology==1',iPos=33,lPos=2))
 	all_plots.append(Plot('ak41eta_t1',['ak41_eta'],'; AK4 jet1 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==1',lPos=0))
@@ -690,8 +712,8 @@ if mode=='' or mode=='wjetscr' or mode.startswith('qcd') :
 	elif leptype=='electrons' :
 		all_plots.append(Plot('MET_t1',['met_E'],'; MET [GeV]; Events/20 GeV',40,100.,900.,addl_cuts='eventTopology==1',iPos=33,lPos=2))
 	all_plots.append(Plot('METphi_t1',['met_phi'],'; MET #phi; Events/0.2',31,-3.2,3.2,addl_cuts='eventTopology==1',lPos=0))
-	all_plots.append(Plot('lepWHT_t1',['met_E+lep_pt'],'; p_{T}^{lep}+MET [GeV]; Events/20',25,0.,500.,addl_cuts='eventTopology==1',lPos=0))
-	all_plots.append(Plot('nak4_t1',['nak4jets'],'; # AK4 jets; Events/bin',16,-0.5,15.5,addl_cuts='eventTopology==1',iPos=33,lPos=2))
+	all_plots.append(Plot('lepWHT_t1',['met_E+lep_pt'],'; p_{T}^{lep}+MET [GeV]; Events/20',50,0.,1000.,addl_cuts='eventTopology==1',lPos=0))
+	all_plots.append(Plot('nak4_t1',['nak4jets'],'; # AK4 jets; Events/bin',16,-0.5,15.5,addl_cuts='eventTopology==1',iPos=33,lPos=0))
 	all_plots.append(Plot('nak8_t1',['nak8jets'],'; # AK8 jets; Events/bin',11,-0.5,10.5,addl_cuts='eventTopology==1',iPos=33,lPos=2))
 	all_plots.append(Plot('nttags_t1',['ntTags'],'; # top-tagged AK8 jets; Events/bin',11,-0.5,10.5,addl_cuts='eventTopology==1',iPos=33,lPos=2))
 	all_plots.append(Plot('nbtags_t1',['nbTags'],'; # b-tagged AK4 jets; Events/bin',10,0.5,10.5,addl_cuts='eventTopology==1',iPos=33,lPos=2))
@@ -730,14 +752,14 @@ if mode=='' or mode=='wjetscr' or mode.startswith('qcd') :
 	all_plots.append(Plot('lsf_t2',['par_1'],'; #lambda_{1}; Events/0.001',40,0.97,1.01,addl_cuts='eventTopology==2',lPos=2))
 	all_plots.append(Plot('leppT_t2',['lep_pt'],';'+lepstring+' p_{T} [GeV]; Events/10 GeV',40,50.,450.,addl_cuts='eventTopology==2',iPos=33,lPos=2))
 	all_plots.append(Plot('lepeta_t2',['lep_eta'],';'+lepstring+' #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==2',lPos=0))
-	all_plots.append(Plot('leprelpT_t2',['lep_relPt'],'; p_{T}^{rel}('+shortlepstring+', jet) [GeV]; Events/10 GeV',40,0.,400.,addl_cuts='eventTopology==2',iPos=33,lPos=2))
-	all_plots.append(Plot('lepdR_t2',['lep_dR'],'; #Delta R('+shortlepstring+', jet); Events/0.1',30,0.,3.,addl_cuts='eventTopology==2',iPos=33,lPos=0))
+	all_plots.append(Plot('leprelpT_t2',['lep_relPt'],'; p_{T}^{rel}('+shortlepstring+', jet) [GeV]; Events/10 GeV',40,0.,400.,addl_cuts='eventTopology==2',iPos=33,lPos=2,suppress_QCD=True))
+	all_plots.append(Plot('lepdR_t2',['lep_dR'],'; #Delta R('+shortlepstring+', jet); Events/0.1',30,0.,3.,addl_cuts='eventTopology==2',iPos=33,lPos=0,suppress_QCD=True))
 	if leptype=='muons' :
-		all_plots.append(Plot('lepIso_t2',['lep_Iso'],'; '+lepstring+' PF relative isolation; Events/0.005',30,0.,0.15,addl_cuts='eventTopology==2',iPos=33,lPos=2,logy=True))
+		all_plots.append(Plot('lepIso_t2',['lep_Iso'],'; '+lepstring+' PF relative isolation; Events/0.005',30,0.,0.15,addl_cuts='eventTopology==2',iPos=33,lPos=2,logy=True,suppress_QCD=True))
 		all_plots.append(Plot('ak41pT_t2',['ak41_pt'],'; AK4 jet1 p_{T} [GeV]; Events/20 GeV',40,150.,950.,addl_cuts='eventTopology==2'))
 		all_plots.append(Plot('ak42pT_t2',['ak42_pt'],'; AK4 jet2 p_{T} [GeV]; Events/20 GeV',40,50.,850.,addl_cuts='eventTopology==2',iPos=33,lPos=2))
 	elif leptype=='electrons' :
-		all_plots.append(Plot('lepIso_t2',['lep_Iso'],'; '+lepstring+' PF relative isolation; Events/0.002',30,0.,0.06,addl_cuts='eventTopology==2',iPos=33,lPos=2,logy=True))
+		all_plots.append(Plot('lepIso_t2',['lep_Iso'],'; '+lepstring+' PF relative isolation; Events/0.002',30,0.,0.06,addl_cuts='eventTopology==2',iPos=33,lPos=2,logy=True,suppress_QCD=True))
 		all_plots.append(Plot('ak41pT_t2',['ak41_pt'],'; AK4 jet1 p_{T} [GeV]; Events/20 GeV',40,250.,1050.,addl_cuts='eventTopology==2'))
 		all_plots.append(Plot('ak42pT_t2',['ak42_pt'],'; AK4 jet2 p_{T} [GeV]; Events/20 GeV',40,70.,870.,addl_cuts='eventTopology==2',iPos=33,lPos=2))
 	all_plots.append(Plot('ak41eta_t2',['ak41_eta'],'; AK4 jet1 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==2',lPos=0))
@@ -754,8 +776,8 @@ if mode=='' or mode=='wjetscr' or mode.startswith('qcd') :
 	elif leptype=='electrons' :
 		all_plots.append(Plot('MET_t2',['met_E'],'; MET [GeV]; Events/20 GeV',40,100.,900.,addl_cuts='eventTopology==2',iPos=33,lPos=2))
 	all_plots.append(Plot('METphi_t2',['met_phi'],'; MET #phi; Events/0.2',31,-3.2,3.2,addl_cuts='eventTopology==2',lPos=0))
-	all_plots.append(Plot('lepWHT_t2',['met_E+lep_pt'],'; p_{T}^{lep}+MET [GeV]; Events/20',25,0.,500.,addl_cuts='eventTopology==2',lPos=0))
-	all_plots.append(Plot('nak4_t2',['nak4jets'],'; # AK4 jets; Events/bin',16,-0.5,15.5,addl_cuts='eventTopology==2',iPos=33,lPos=2))
+	all_plots.append(Plot('lepWHT_t2',['met_E+lep_pt'],'; p_{T}^{lep}+MET [GeV]; Events/20',50,0.,1000.,addl_cuts='eventTopology==2',lPos=0))
+	all_plots.append(Plot('nak4_t2',['nak4jets'],'; # AK4 jets; Events/bin',16,-0.5,15.5,addl_cuts='eventTopology==2',iPos=33,lPos=0))
 	all_plots.append(Plot('nak8_t2',['nak8jets'],'; # AK8 jets; Events/bin',11,-0.5,10.5,addl_cuts='eventTopology==2',iPos=33,lPos=2))
 	all_plots.append(Plot('nttags_t2',['ntTags'],'; # top-tagged AK8 jets; Events/bin',10,0.5,10.5,addl_cuts='eventTopology==2',iPos=33,lPos=2))
 	all_plots.append(Plot('nbtags_t2',['nbTags'],'; # b-tagged AK4 jets; Events/bin',10,0.5,10.5,addl_cuts='eventTopology==2',iPos=33,lPos=2))
@@ -789,12 +811,12 @@ if mode=='' or mode=='wjetscr' or mode.startswith('qcd') :
 		all_plots.append(Plot('chi2_t3',['chi2'],'; #chi^{2}; Events/5',40,-50.,150.,addl_cuts='eventTopology==3',iPos=33,lPos=2,logy=True))
 		all_plots.append(Plot('leppT_t3',['lep_pt'],';'+lepstring+' p_{T} [GeV]; Events/10 GeV',30,30.,330.,addl_cuts='eventTopology==3',iPos=33,lPos=2))
 		all_plots.append(Plot('lepeta_t3',['lep_eta'],';'+lepstring+' #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==3',lPos=0))
-		all_plots.append(Plot('leprelpT_t3',['lep_relPt'],'; p_{T}^{rel}('+shortlepstring+', jet) [GeV]; Events/10 GeV',40,0.,400.,addl_cuts='eventTopology==3',iPos=33,lPos=2))
-		all_plots.append(Plot('lepdR_t3',['lep_dR'],'; #Delta R('+shortlepstring+', jet); Events/0.1',30,0.,3.,addl_cuts='eventTopology==3',iPos=33,lPos=0))
+		all_plots.append(Plot('leprelpT_t3',['lep_relPt'],'; p_{T}^{rel}('+shortlepstring+', jet) [GeV]; Events/10 GeV',40,0.,400.,addl_cuts='eventTopology==3',iPos=33,lPos=2,suppress_QCD=True))
+		all_plots.append(Plot('lepdR_t3',['lep_dR'],'; #Delta R('+shortlepstring+', jet); Events/0.1',30,0.,3.,addl_cuts='eventTopology==3',iPos=33,lPos=0,suppress_QCD=True))
 		if leptype=='muons' :
-			all_plots.append(Plot('lepIso_t3',['lep_Iso'],'; '+lepstring+' PF relative isolation; Events/0.005',30,0.,0.15,addl_cuts='eventTopology==3',iPos=33,lPos=2,logy=True))
+			all_plots.append(Plot('lepIso_t3',['lep_Iso'],'; '+lepstring+' PF relative isolation; Events/0.005',30,0.,0.15,addl_cuts='eventTopology==3',iPos=33,lPos=2,logy=True,suppress_QCD=True))
 		elif leptype=='electrons' :
-			all_plots.append(Plot('lepIso_t3',['lep_Iso'],'; '+lepstring+' PF relative isolation; Events/0.002',30,0.,0.06,addl_cuts='eventTopology==3',iPos=33,lPos=2,logy=True))
+			all_plots.append(Plot('lepIso_t3',['lep_Iso'],'; '+lepstring+' PF relative isolation; Events/0.002',30,0.,0.06,addl_cuts='eventTopology==3',iPos=33,lPos=2,logy=True,suppress_QCD=True))
 		all_plots.append(Plot('ak41pT_t3',['ak41_pt'],'; AK4 jet1 p_{T} [GeV]; Events/10 GeV',30,30.,330.,addl_cuts='eventTopology==3'))
 		all_plots.append(Plot('ak41eta_t3',['ak41_eta'],'; AK4 jet1 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==3',lPos=0))
 		all_plots.append(Plot('ak41csv_t3',['ak41_csvv2'],'; AK4 jet1 CSVv2; Events/0.025',40,0.0,1.0,addl_cuts='eventTopology==3',lPos=0,logy=True))
@@ -808,8 +830,8 @@ if mode=='' or mode=='wjetscr' or mode.startswith('qcd') :
 		#all_plots.append(Plot('ak8SDM_t3',['ak81_SDM'],'; AK8 jet1 softdrop mass [GeV]; Events/10 GeV',40,0.,400.,addl_cuts='eventTopology==3'))
 		all_plots.append(Plot('MET_t3',['met_E'],'; MET [GeV]; Events/10 GeV',40,40.,440.,addl_cuts='eventTopology==3',iPos=33,lPos=2))
 		all_plots.append(Plot('METphi_t3',['met_phi'],'; MET #phi; Events/0.2',31,-3.2,3.2,addl_cuts='eventTopology==3',lPos=0))
-		all_plots.append(Plot('lepWHT_t3',['met_E+lep_pt'],'; p_{T}^{lep}+MET [GeV]; Events/20',25,0.,500.,addl_cuts='eventTopology==3',lPos=0))
-		all_plots.append(Plot('nak4_t3',['nak4jets'],'; # AK4 jets; Events/bin',16,-0.5,15.5,addl_cuts='eventTopology==3',iPos=33,lPos=2))
+		all_plots.append(Plot('lepWHT_t3',['met_E+lep_pt'],'; p_{T}^{lep}+MET [GeV]; Events/20',50,0.,1000.,addl_cuts='eventTopology==3',lPos=0))
+		all_plots.append(Plot('nak4_t3',['nak4jets'],'; # AK4 jets; Events/bin',16,-0.5,15.5,addl_cuts='eventTopology==3',iPos=33,lPos=0))
 		#all_plots.append(Plot('nak8_t3',['nak8jets'],'; # AK8 jets; Events/bin',11,-0.5,10.5,addl_cuts='eventTopology==3',iPos=33,lPos=2))
 		all_plots.append(Plot('nttags_t3',['ntTags'],'; # top-tagged AK8 jets; Events/bin',1,-0.5,0.5,addl_cuts='eventTopology==3',iPos=33,lPos=0,logy=True))
 		all_plots.append(Plot('nbtags_t3',['nbTags'],'; # b-tagged AK4 jets; Events/bin',9,1.5,10.5,addl_cuts='eventTopology==3',iPos=33,lPos=2,logy=True))
@@ -832,7 +854,7 @@ if mode=='' or mode=='wjetscr' or mode.startswith('qcd') :
 		all_plots.append(Plot('ak44pT_t3',['ak44_pt'],'; AK4 jet4 p_{T} [GeV]; Events/5 GeV',20,30.,130.,addl_cuts='eventTopology==3',iPos=33,lPos=2))
 		all_plots.append(Plot('ak44eta_t3',['ak44_eta'],'; AK4 jet4 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==3',lPos=0))
 		all_plots.append(Plot('ak44csv_t3',['ak44_csvv2'],'; AK4 jet4 CSVv2; Events/0.025',40,0.0,1.0,addl_cuts='eventTopology==3',lPos=0,logy=True))
-		all_plots.append(Plot('ak8tau21_t3',['ak81_tau21'],'; AK8 jet1 #tau_{21}; Events/0.05 GeV',20,0.,1.,addl_cuts='eventTopology==3'))
+		#all_plots.append(Plot('ak8tau21_t3',['ak81_tau21'],'; AK8 jet1 #tau_{21}; Events/0.05 GeV',20,0.,1.,addl_cuts='eventTopology==3'))
 
 #plot plots on canvases in parallel 
 def plotparallel(thisplotlist,outfilenames,i) :
