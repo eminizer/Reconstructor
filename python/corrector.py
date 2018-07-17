@@ -143,10 +143,13 @@ class Corrector(object) :
 		pp = './tardir/' if onGrid == 'yes' else '../other_input_files/'
 		#Get the MC eff file histograms and limits
 		btag_MC_eff_file = TFile.Open(pp+BTAGGING_MC_ROOT_FILENAME)
-		self.__btag_MC_eff_bjet_histo  = btag_MC_eff_file.Get(BTAGGING_MC_B_RATIO_HISTONAME)
-		self.__btag_MC_eff_cjet_histo  = btag_MC_eff_file.Get(BTAGGING_MC_C_RATIO_HISTONAME)
-		self.__btag_MC_eff_udsg_histo  = btag_MC_eff_file.Get(BTAGGING_MC_UDSG_RATIO_HISTONAME)
-		xaxis = self.__btag_MC_eff_bjet_histo.GetXaxis(); yaxis = self.__btag_MC_eff_bjet_histo.GetYaxis()
+		self.__btag_MC_eff_bjet_histo_l  = btag_MC_eff_file.Get(BTAGGING_MC_B_RATIO_HISTONAME+'_loose')
+		self.__btag_MC_eff_cjet_histo_l  = btag_MC_eff_file.Get(BTAGGING_MC_C_RATIO_HISTONAME+'_loose')
+		self.__btag_MC_eff_udsg_histo_l  = btag_MC_eff_file.Get(BTAGGING_MC_UDSG_RATIO_HISTONAME+'_loose')
+		self.__btag_MC_eff_bjet_histo_m  = btag_MC_eff_file.Get(BTAGGING_MC_B_RATIO_HISTONAME+'_medium')
+		self.__btag_MC_eff_cjet_histo_m  = btag_MC_eff_file.Get(BTAGGING_MC_C_RATIO_HISTONAME+'_medium')
+		self.__btag_MC_eff_udsg_histo_m  = btag_MC_eff_file.Get(BTAGGING_MC_UDSG_RATIO_HISTONAME+'_medium')
+		xaxis = self.__btag_MC_eff_bjet_histo_l.GetXaxis(); yaxis = self.__btag_MC_eff_bjet_histo_l.GetYaxis()
 		self.__btag_MC_eff_eta_low = xaxis.GetXmax()
 		self.__btag_MC_eff_eta_hi  = xaxis.GetXmax()
 		self.__btag_MC_eff_pt_low = yaxis.GetXmax()
@@ -167,14 +170,18 @@ class Corrector(object) :
 		v_sys.push_back('up')
 		v_sys.push_back('down')
 		# make a reader instance and load the sf data
-		self.__reader = BTagCalibrationReader(0, 		 # 0 is for loose op, 1: medium, 2: tight, 3: discr. reshaping
+		self.__reader_l = BTagCalibrationReader(0, 		 # 0 is for loose op, 1: medium, 2: tight, 3: discr. reshaping
 		    								  "central", # central systematic type
 		    								  v_sys) 	 # vector of other sys. types    
-		self.__reader.load(calib, 
+		self.__reader_l.load(calib, 
 						   0, 	   # 0 is for b flavour, 1: FLAV_C, 2: FLAV_UDSG 
 						   "comb") # measurement type
-		self.__reader.load(calib,1,"comb")
-		self.__reader.load(calib,2,"incl")
+		self.__reader_l.load(calib,1,"comb")
+		self.__reader_l.load(calib,2,"incl")
+		self.__reader_m = BTagCalibrationReader(1,"central",v_sys) #1: medium
+		self.__reader_m.load(calib,0,"comb")
+		self.__reader_m.load(calib,1,"comb")
+		self.__reader_m.load(calib,2,"incl")
 
 	def __getTrkEff__(self,pileup,lepflav_or_lep,pt=-111.,eta=-111.) :
 		nomfac = 1.; uperr = 1.; downerr = 1.
@@ -676,8 +683,18 @@ class Corrector(object) :
 		#return reweighting factors
 		return nomfac,upfac,downfac
 
-	def getBTagEff(self,jets) :
+	def getBTagEff(self,topology,jets) :
 		nomfac = 1.; upfac = 0.; downfac = 0.
+		#set the histograms and reader to use based on topology (loose or medium b-tags?)
+		udsg_histo = self.__btag_MC_eff_udsg_histo_l
+		cjet_histo = self.__btag_MC_eff_cjet_histo_l
+		bjet_histo = self.__btag_MC_eff_bjet_histo_l
+		reader = self.__reader_l
+		if topology==3 :
+			udsg_histo = self.__btag_MC_eff_udsg_histo_m
+			cjet_histo = self.__btag_MC_eff_cjet_histo_m
+			bjet_histo = self.__btag_MC_eff_bjet_histo_m
+			reader = self.__reader_m
 		#loop over all the jets
 		for jet in jets :
 			#get the MC btagging efficiency and scalefactors https://twiki.cern.ch/twiki/bin/viewauth/CMS/BTagCalibration
@@ -686,35 +703,37 @@ class Corrector(object) :
 			apt = max(min(pt,self.__btag_MC_eff_pt_hi),self.__btag_MC_eff_pt_low)
 			eta = jet.getEta()
 			aeta = max(min(abs(eta),self.__btag_MC_eff_eta_hi),self.__btag_MC_eff_eta_low)
+			jetistagged = jet.isMbTagged() if topology==3 else jet.isLbTagged()
 			mc_eff = 1.; sf=1.; sfup=1.; sfdown=1.;
 			if flav==0 :
-				mc_eff = self.__btag_MC_eff_udsg_histo.GetBinContent(self.__btag_MC_eff_udsg_histo.FindFixBin(aeta,apt))
-				sf = self.__reader.eval_auto_bounds('central', # systematic (here also 'up'/'down' possible)
+				mc_eff = udsg_histo.GetBinContent(udsg_histo.FindFixBin(aeta,apt))
+				if mc_eff==0. : mc_eff=udsg_histo.GetMaximum()
+				sf = reader.eval_auto_bounds('central', # systematic (here also 'up'/'down' possible)
 												2, 	   # jet flavor
 												eta, 	   # eta
 												pt) 	   # pt
-				sfup = self.__reader.eval_auto_bounds('up',2,eta,pt)
-				sfdown = self.__reader.eval_auto_bounds('down',2,eta,pt)
+				sfup = reader.eval_auto_bounds('up',2,eta,pt)
+				sfdown = reader.eval_auto_bounds('down',2,eta,pt)
 			elif flav==4 :
-				mc_eff = self.__btag_MC_eff_cjet_histo.GetBinContent(self.__btag_MC_eff_cjet_histo.FindFixBin(aeta,apt))
-				sf = self.__reader.eval_auto_bounds('central', # systematic (here also 'up'/'down' possible)
+				mc_eff = cjet_histo.GetBinContent(cjet_histo.FindFixBin(aeta,apt))
+				if mc_eff==0. : mc_eff=cjet_histo.GetMaximum()
+				sf = reader.eval_auto_bounds('central', # systematic (here also 'up'/'down' possible)
 												1, 	   # jet flavor
 												eta, 	   # eta
 												pt) 	   # pt
-				sfup = self.__reader.eval_auto_bounds('up',1,eta,pt)
-				sfdown = self.__reader.eval_auto_bounds('down',1,eta,pt)
+				sfup = reader.eval_auto_bounds('up',1,eta,pt)
+				sfdown = reader.eval_auto_bounds('down',1,eta,pt)
 			elif flav==5 :
-				mc_eff = self.__btag_MC_eff_bjet_histo.GetBinContent(self.__btag_MC_eff_bjet_histo.FindFixBin(aeta,apt))
-				sf = self.__reader.eval_auto_bounds('central', # systematic (here also 'up'/'down' possible)
+				mc_eff = bjet_histo.GetBinContent(bjet_histo.FindFixBin(aeta,apt))
+				if mc_eff==0. : mc_eff=bjet_histo.GetMaximum()
+				sf = reader.eval_auto_bounds('central', # systematic (here also 'up'/'down' possible)
 												0, 	   # jet flavor
 												eta, 	   # eta
 												pt) 	   # pt
-				sfup = self.__reader.eval_auto_bounds('up',0,eta,pt)
-				sfdown = self.__reader.eval_auto_bounds('down',0,eta,pt)
-			if mc_eff==0. :
-				mc_eff = self.__btag_MC_eff_udsg_histo.GetMaximum()
+				sfup = reader.eval_auto_bounds('up',0,eta,pt)
+				sfdown = reader.eval_auto_bounds('down',0,eta,pt)
 			#if the jet is b-tagged
-			if jet.isbTagged() :
+			if jetistagged :
 				#multiply weights just by the sf
 				nomfac*=sf; 
 				#up/down fractional errors add in quadrature

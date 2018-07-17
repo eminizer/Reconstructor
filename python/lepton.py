@@ -100,7 +100,7 @@ class Electron(Lepton) :
 		self.__scEta = branches['el_SCEta'].getReadValue(index)
 		self.setIso(branches['el_Iso03'].getReadValue(index))
 		self.setMiniIso(branches['el_MiniIso'].getReadValue(index))
-		self.setIsValid(self.getPt()>30. and abs(self.__scEta)<2.4 and self.getID()==1)
+		self.setIsValid(self.getPt()>30. and abs(self.__scEta)<2.4 and self.getID()==1 and self.getIPcuts(branches,index))
 
 	def getEtaSC(self) :
 		return self.__scEta
@@ -121,6 +121,11 @@ class Electron(Lepton) :
 			return self.getDR()>0.4 or self.getRelPt()>30.
 		elif eventtopology==3 :
 			return self.getDR()>0.4 or self.getRelPt()>20.
+	def getIPcuts(self,branches,index) :
+		if abs(self.__scEta)>1.479 :
+			return abs(branches['el_Dxy'].getReadValue(index))<0.10 and abs(branches['el_Dz'].getReadValue(index))<0.20
+		else : 
+			return abs(branches['el_Dxy'].getReadValue(index))<0.05 and abs(branches['el_Dz'].getReadValue(index))<0.10
 
 def findNearestJet(lepvec,jets) :
 	closestJet = jets[0]

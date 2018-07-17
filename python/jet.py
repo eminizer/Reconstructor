@@ -13,7 +13,8 @@ class Jet(object) :
 		self.__eta = self.__fourvec.Eta() if self.__fourvec!=None else -900
 		self.__isIDed = self.__checkID__(branches,index,pp)
 		self.__csvv2 = branches[pp+'_CSVv2'].getReadValue(index)
-		self.__isbtagged = self.__csvv2>0.5426 #loose working point https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation80XReReco
+		self.__isbtaggedL = self.__csvv2>0.5426 #loose working point https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation80XReReco
+		self.__isbtaggedM = self.__csvv2>0.8484 #medium working point https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation80XReReco
 
 	def __checkID__(self,branches,index,pp) :
 		if self.__eta==None :
@@ -59,8 +60,10 @@ class Jet(object) :
 		return self.__isValid
 	def getCSVv2(self) :
 		return self.__csvv2
-	def isbTagged(self) :
-		return self.__isbtagged
+	def isLbTagged(self) :
+		return self.__isbtaggedL
+	def isMbTagged(self) :
+		return self.__isbtaggedM
 	def getListOfCleanedLeptons(self) :
 		return self.__cleanedLeptons
 

@@ -55,6 +55,7 @@ class Reconstructor(object) :
 	filterBranches = {}
 	metBranches = {}
 	muonBranches = {}
+	electronBranches = {}
 	#GenWeight info
 	genWeight = AddBranch('evt_Gen_Weight','genWeight','F',1.0,'1',[allBranches])
 	rho 	  = AddBranch('evt_rho','rho','D',1.0,'1',[allBranches,ak4JetBranches,ak8JetBranches])
@@ -133,7 +134,6 @@ class Reconstructor(object) :
 	mus_isMed2016 = AddBranch(readname='mu_IsMediumMuon2016',size='mu_size',dictlist=thisdictlist)
 	mu_Keys 	  = AddBranch(readname='mu_Key',size='mu_size',dictlist=thisdictlist)
 	#electrons
-	electronBranches = {}
 	thisdictlist = [allBranches,electronBranches]
 	el_size 	  = AddBranch(readname='el_size',ttreetype='i',dictlist=thisdictlist)
 	el_pts 		  = AddBranch(readname='el_Pt',size='el_size',dictlist=thisdictlist)
@@ -144,6 +144,8 @@ class Reconstructor(object) :
 	el_charges 	  = AddBranch(readname='el_Charge',size='el_size',dictlist=thisdictlist)
 	el_isos 	  = AddBranch(readname='el_Iso03',size='el_size',dictlist=thisdictlist)
 	el_miniIsos   = AddBranch(readname='el_MiniIso',size='el_size',dictlist=thisdictlist)
+	el_Dxys 	  = AddBranch(readname='el_Dxy',size='el_size',dictlist=thisdictlist)
+	el_Dzs 		  = AddBranch(readname='el_Dz',size='el_size',dictlist=thisdictlist)
 	el_id 		  = AddBranch(readname='el_IDMedium_NoIso',ttreetype='I',size='el_size',dictlist=thisdictlist)
 	el_id_tight   = AddBranch(readname='el_IDTight_NoIso',ttreetype='I',size='el_size',dictlist=thisdictlist)
 	el_Keys 	  = AddBranch(readname='el_Key',size='el_size',dictlist=thisdictlist)
@@ -221,8 +223,15 @@ class Reconstructor(object) :
 	subjak8_chargedEmEnergyFrac 	= AddBranch(readname='subjetAK8CHS_chargedEmEnergyFrac',size='subjetAK8CHS_size',dictlist=thisdictlist)
 	subjak8_chargedMultiplicity 	= AddBranch(readname='subjetAK8CHS_chargedMultiplicity',size='subjetAK8CHS_size',dictlist=thisdictlist)
 	#PRODUCES
-	#Weights
 	weightBranches = {}
+	scalefactorBranches = {}
+	physobjectBranches = {}
+	observableBranches = {}
+	mctruthBranches = {}
+	cut_branches = {}
+	cr_sb_cut_branches = {}
+	kinfit_branches = {}
+	#Weights
 	thisdictlist = [allBranches,weightBranches]
 	weight 	 = AddBranch(writename='weight',inival=1.,dictlist=thisdictlist)
 	wg1 	 = AddBranch(writename='wg1',inival=1.,dictlist=thisdictlist)
@@ -246,7 +255,6 @@ class Reconstructor(object) :
 	wega 	 = AddBranch(writename='wega',inival=1.,dictlist=thisdictlist)
 	wegc 	 = AddBranch(writename='wegc',inival=1.,dictlist=thisdictlist)
 	#scalefactors
-	scalefactorBranches = {}
 	thisdictlist = [allBranches,scalefactorBranches]
 	sf_pileup 			 = AddBranch(writename='sf_pileup',inival=1.,dictlist=thisdictlist)
 	sf_pileup_low 		 = AddBranch(writename='sf_pileup_low',inival=1.,dictlist=thisdictlist)
@@ -291,7 +299,6 @@ class Reconstructor(object) :
 	sf_top_pt_rw_low 	 = AddBranch(writename='sf_top_pt_rw_low',inival=1.,dictlist=thisdictlist)
 	sf_top_pt_rw_hi 	 = AddBranch(writename='sf_top_pt_rw_hi',inival=1.,dictlist=thisdictlist)
 	#physics objects
-	physobjectBranches = {}
 	thisdictlist = [allBranches,physobjectBranches]
 	#fourvectors
 	fourvectornames = ['muon1','muon2','ele1','ele2','lep','met','ak41','ak42','ak43','ak44','ak81','ak82']
@@ -343,8 +350,9 @@ class Reconstructor(object) :
 	ntTags = AddBranch(writename='ntTags',ttreetype='I',inival=0,dictlist=thisdictlist)
 	#number of W-tagged AK8 jets in the event
 	nWTags = AddBranch(writename='nWTags',ttreetype='I',inival=0,dictlist=thisdictlist)
-	#number of b-tagged AK4 jets in the event
-	nbTags = AddBranch(writename='nbTags',ttreetype='I',inival=0,dictlist=thisdictlist)
+	#number of loose/medium b-tagged AK4 jets in the event
+	nLbTags = AddBranch(writename='nLbTags',ttreetype='I',inival=0,dictlist=thisdictlist)
+	nMbTags = AddBranch(writename='nMbTags',ttreetype='I',inival=0,dictlist=thisdictlist)
 	#number of b-tagged AK4 jets used in the chosen jet assignment hypothesis
 	nbTagsUsed = AddBranch(writename='nbTagsUsed',ttreetype='I',inival=0,dictlist=thisdictlist)
 	#number of AK4 jets
@@ -360,7 +368,6 @@ class Reconstructor(object) :
 	#top pair pT
 	tt_pt = AddBranch(writename='tt_pt',dictlist=thisdictlist)
 	#Obervables
-	observableBranches = {}
 	thisdictlist = [allBranches,observableBranches]
 	#cosine(theta)
 	cstar 			= AddBranch(writename='cstar',dictlist=thisdictlist)
@@ -375,7 +382,6 @@ class Reconstructor(object) :
 	M_prefit 	= AddBranch(writename='M_prefit',dictlist=thisdictlist)
 	M_corprefit = AddBranch(writename='M_corprefit',dictlist=thisdictlist)
 	#initial quark vector
-	mctruthBranches = {}
 	thisdictlist = [allBranches,mctruthBranches]
 	mctruthfourvectornames = ['q','qbar','MCt','MCtbar','MClep','MCv','MClepb','MChadb','MChadW']	
 	for fourvecname in mctruthfourvectornames :
@@ -388,13 +394,11 @@ class Reconstructor(object) :
 	x_F_MC 	 = AddBranch(writename='x_F_MC',dictlist=thisdictlist)
 	M_MC 	 = AddBranch(writename='M_MC',dictlist=thisdictlist)
 	#cut variables for full selection
-	cut_branches = {}
 	thisdictlist = [allBranches,cut_branches]
-	cutnames = ['goodpv','metfilters','trigger','onelepton','isolepton','btags','ak4jetmult','ak4jetcuts','METcuts','lepcuts','kinfitchi2','recoleptM','validminimization','fullselection']
+	cutnames = ['goodpv','metfilters','trigger','onelepton','isolepton','btags','ak4jetmult','jetcuts','METcuts','lepcuts','kinfitchi2','recoleptM','validminimization','fullselection']
 	for cutname in cutnames :
 		AddBranch(writename=cutname,ttreetype='i',inival=2,dictlist=thisdictlist)
 	#cut variables for various control regions and sideband selections
-	cr_sb_cut_branches = {}
 	thisdictlist = [allBranches,cr_sb_cut_branches]
 	cutnames = ['wjets_cr_selection','qcd_A_SR_selection','qcd_B_SR_selection','qcd_C_SR_selection','qcd_A_CR_selection','qcd_B_CR_selection','qcd_C_CR_selection']
 	for cutname in cutnames :
@@ -416,7 +420,6 @@ class Reconstructor(object) :
 	for cutname in cutnames :
 		AddBranch(writename=cutname,ttreetype='i',inival=2,dictlist=thisdictlist)
 	#kinfit variables
-	kinfit_branches = {}
 	thisdictlist=[kinfit_branches,allBranches]
 	chi2 = AddBranch(writename='chi2',inival=900.,dictlist=thisdictlist)
 	par_0 = AddBranch(writename='par_0',dictlist=thisdictlist)
@@ -466,7 +469,7 @@ class Reconstructor(object) :
 			#print 'EVENT NUMBER %d NOT VALID; MISSING LEPTONS (# muons = %d, # electrons = %d)'%(eventnumber,len(muons),len(electrons)) #DEBUG
 			return
 		#jets (adjusting met and counting btagged AK4 jets also)
-		ak4jets, ak4jetsforisocalc, ak8jets, newmet, nbtags = self.__makeJetLists__(met,allleps)
+		ak4jets, ak4jetsforisocalc, ak8jets, newmet, nLbtags, nMbtags = self.__makeJetLists__(met,allleps)
 		met.SetPtEtaPhiM(newmet.Pt(),newmet.Eta(),newmet.Phi(),newmet.M())
 		#if the lepton cleaning got rid of too many jets toss the event
 		if not len(ak4jets)>0 :
@@ -499,14 +502,14 @@ class Reconstructor(object) :
 			#print '	Reconstructing event...' #DEBUG
 			#build the list of jet assignment hypotheses
 			#checkmem('','before_hypotheses') #DEBUG
-			hypotheses = getHypothesisList(topology,lep,met1_vec,met2_vec,self.nMETs.getWriteValue(),ak4jets[:5],ttags,sum([int(x.isbTagged()) for x in ak4jets[:5]]))
+			hypotheses = getHypothesisList(topology,lep,met1_vec,met2_vec,self.nMETs.getWriteValue(),ak4jets[:5],ttags)
 			#checkmem('',' after_hypotheses') #DEBUG
 			if len(hypotheses)==0 :
 				#if there's no valid type-1 hypotheses, try again as type-2
 				if topology==1 and len(ak4jets)>3 :
 					topology=2
 					self.event_topology.setWriteValue(topology)
-					hypotheses = getHypothesisList(topology,lep,met1_vec,met2_vec,self.nMETs.getWriteValue(),ak4jets[:5],ttags,sum([int(x.isbTagged()) for x in ak4jets[:5]]))
+					hypotheses = getHypothesisList(topology,lep,met1_vec,met2_vec,self.nMETs.getWriteValue(),ak4jets[:5],ttags)
 				#otherwise it's not reconstructable
 				else :
 					#print 'event %d invalid; no separated top tagged jets and not enough AK4 jets'%(eventnumber) #DEBUG
@@ -529,9 +532,9 @@ class Reconstructor(object) :
 		#print '	Calculating cut variables...' #DEBUG
 		#FULL SELECTION CRITERIA
 		if canreconstruct :
-			self.__assignFullSelectionCutVars__(canreconstruct,topology,nbtags,fitchi2,scaledlep+scaledmet+scaledlepb,lep,electrons,muons,ak4jets,scaledmet)
+			self.__assignFullSelectionCutVars__(canreconstruct,topology,nLbtags,nMbtags,fitchi2,scaledlep+scaledmet+scaledlepb,lep,electrons,muons,ak4jets,ak8jets,scaledmet)
 		else :
-			self.__assignFullSelectionCutVars__(canreconstruct,topology,nbtags,1000000.,None,lep,electrons,muons,ak4jets,met)
+			self.__assignFullSelectionCutVars__(canreconstruct,topology,nLbtags,nMbtags,1000000.,None,lep,electrons,muons,ak4jets,ak8jets,met)
 		#print 'FULL SELECTION = %d'%self.cut_branches['fullselection'].getWriteValue() #DEBUG
 		#W+Jets Control Region Selections
 		self.__assignWJetsCRSelectionCutVars__()
@@ -658,13 +661,16 @@ class Reconstructor(object) :
 			if newJet.isValid() :
 				ak4jets.append(newJet)
 		#print '		Added %d AK4 Jets (%d for the isolation calcuations).'%(len(ak4jets),len(ak4jetsforisocalc)) #DEBUG
-		#count the number of valid b-tagged AK4 jets
-		nbtags = 0
+		#count the number of valid loose/medium b-tagged AK4 jets
+		nLbtags = 0; nMbtags = 0
 		for ak4jet in ak4jets :
-			if ak4jet.isbTagged() :
-				nbtags+=1
-		#print '		%d of the AK4 jets are b-tagged.'%(nbtags) #DEBUG
-		self.nbTags.setWriteValue(nbtags)
+			if ak4jet.isLbTagged() :
+				nLbtags+=1
+			if ak4jet.isMbTagged() :
+				nMbtags+=1
+		#print '		%d of the AK4 jets are loosely b-tagged.'%(nLbtags) #DEBUG
+		self.nLbTags.setWriteValue(nLbtags)
+		self.nMbTags.setWriteValue(nMbtags)
 		#print '	Adding AK8 jets (%d total)...'%(self.ak8_size.getReadValue())#DEBUG
 		for i in range(self.ak8_size.getReadValue()) :
 			newJet = AK8Jet(self.ak8JetBranches,i,self.JES,self.JER,leplist,self.corrector,self.is_data)
@@ -687,7 +693,7 @@ class Reconstructor(object) :
 		self.__setFourVectorBranchValues__('met',met)
 		self.metE.setWriteValue(met.E())
 		#return the stuff I'll need later
-		return ak4jets,ak4jetsforisocalc,ak8jets,met,nbtags
+		return ak4jets,ak4jetsforisocalc,ak8jets,met,nLbtags,nMbtags
 
 	def __setEventTopology__(self,ak8jets) :
 		#find top- and W-tags
@@ -858,9 +864,9 @@ class Reconstructor(object) :
 			self.cut_branches['validminimization'].setWriteValue(1) 
 		#set the number of bTags used 
 		nusedbtags=0 
-		if hypotheses[hypindex][2].isbTagged() : nusedbtags+=1 #leptonic side b-jet 
+		if (topology<3 and hypotheses[hypindex][2].isLbTagged()) or hypotheses[hypindex][2].isMbTagged() : nusedbtags+=1 #leptonic side b-jet 
 		for thisjet in hypotheses[hypindex][3] : #hadronic side jets 
-			if thisjet.isbTagged() : nusedbtags+=1 
+			if (topology<3 and thisjet.isLbTagged()) or thisjet.isMbTagged() : nusedbtags+=1 
 		self.nbTagsUsed.setWriteValue(nusedbtags) 
 		#Set the scaled MET energy
 		self.metE.setWriteValue(scaledmet.E())
@@ -984,7 +990,7 @@ class Reconstructor(object) :
 		lep_mini_iso_sf, lep_mini_iso_sf_up, lep_mini_iso_sf_down = self.corrector.getMiniIsoEff(self.allBranches['npv'].getReadValue(),lep)
 		self.sf_lep_mini_iso.setWriteValue(lep_mini_iso_sf); self.sf_lep_mini_iso_hi.setWriteValue(lep_mini_iso_sf_up); self.sf_lep_mini_iso_low.setWriteValue(lep_mini_iso_sf_down)
 		#b-tagging efficiency reweighting
-		btag_eff_sf, btag_eff_sf_up, btag_eff_sf_down = self.corrector.getBTagEff(ak4jets)
+		btag_eff_sf, btag_eff_sf_up, btag_eff_sf_down = self.corrector.getBTagEff(topology,ak4jets)
 		self.sf_btag_eff.setWriteValue(btag_eff_sf); self.sf_btag_eff_hi.setWriteValue(btag_eff_sf_up); self.sf_btag_eff_low.setWriteValue(btag_eff_sf_down)
 		#Scale, pdf/alpha_s, and top pT reweights (ttbar only)
 		if self.event_type.getWriteValue()<4 :
@@ -1007,7 +1013,7 @@ class Reconstructor(object) :
 			cutdict=self.cut_branches
 		cutdict[cutname].setWriteValue(1) if cutbool else cutdict[cutname].setWriteValue(0)
 
-	def __assignFullSelectionCutVars__(self,canreconstruct,topology,nbtags,fitchi2,scaledlept,lep,electrons,muons,ak4jets,met) :
+	def __assignFullSelectionCutVars__(self,canreconstruct,topology,nLbtags,nMbtags,fitchi2,scaledlept,lep,electrons,muons,ak4jets,ak8jets,met) :
 		#number of AK4 jets
 		self.docut('ak4jetmult',canreconstruct)
 		#good primary vertex
@@ -1021,7 +1027,7 @@ class Reconstructor(object) :
 				metfiltercuts.append(False)
 		self.docut('metfilters',metfiltercuts.count(False)==0)
 		#number of btags
-		self.docut('btags',((topology<3 and nbtags>0) or (topology==3 and nbtags>1)))
+		self.docut('btags',((topology<3 and nLbtags>0) or (topology==3 and nMbtags>1)))
 		#kinematic fit chi2
 		self.docut('kinfitchi2',(canreconstruct and (topology==3 or fitchi2<-15)))
 		#reconstructed leptonic top mass for boosted events
@@ -1048,7 +1054,7 @@ class Reconstructor(object) :
 					break
 			self.docut('onelepton',noOtherLeps)
 			#leading ak4 jets
-			self.docut('ak4jetcuts',(topology==3 or (len(ak4jets)>1 and ak4jets[0].getPt()>150. and ak4jets[1].getPt()>50.)))
+			self.docut('jetcuts',(topology==3 or ((len(ak4jets)>1 and ak4jets[0].getPt()>150. and ak4jets[1].getPt()>50.) and (topology==1 or ak8jets[0].getSDM()>40.))))
 			#MET cuts
 			self.docut('METcuts',((topology==3 and met.E()>40.) or met.E()>50.))
 			#boosted lepton pT cuts
@@ -1073,7 +1079,7 @@ class Reconstructor(object) :
 					break
 			self.docut('onelepton',noOtherLeps)
 			#leading ak4 jets
-			self.docut('ak4jetcuts',(topology==3 or (len(ak4jets)>1 and ak4jets[0].getPt()>250. and ak4jets[1].getPt()>70.)))
+			self.docut('jetcuts',(topology==3 or ((len(ak4jets)>1 and ak4jets[0].getPt()>250. and ak4jets[1].getPt()>70.) and (topology==1 or ak8jets[0].getSDM()>40.))))
 			#MET cuts
 			self.docut('METcuts',((topology==3 and met.E()>40.) or met.E()>100.))
 			#boosted lepton pT cuts
@@ -1086,7 +1092,7 @@ class Reconstructor(object) :
 
 	def __assignWJetsCRSelectionCutVars__(self) :
 		#W+Jets control region (fails kinematic fit chi2 cuts OR reconstructed leptonic top mass cuts) for boosted events
-		wjets_cr_pass_cutlist = ['goodpv','metfilters','trigger','onelepton','isolepton','btags','ak4jetmult','ak4jetcuts','METcuts','lepcuts','validminimization']
+		wjets_cr_pass_cutlist = ['goodpv','metfilters','trigger','onelepton','isolepton','btags','ak4jetmult','jetcuts','METcuts','lepcuts','validminimization']
 		wjets_cr_fail_cutlist = ['kinfitchi2','recoleptM']
 		#npassedcuts = sum([int(self.cut_branches[cutname].getWriteValue()==1) for cutname in wjets_cr_pass_cutlist]) #DEBUG
 		#nfailedcuts = sum([int(self.cut_branches[cutname].getWriteValue()==0) for cutname in wjets_cr_fail_cutlist]) #DEBUG
@@ -1106,7 +1112,7 @@ class Reconstructor(object) :
 		#	print 'WJetsCR: selection = %d'%(self.cr_sb_cut_branches['wjets_cr_selection'].getWriteValue()) #DEBUG
 
 	def __assignQCDSBSelectionCutVars__(self) :
-		qcd_sb_pass_cutlist = ['goodpv','metfilters','trigger','onelepton','btags','ak4jetmult','ak4jetcuts','lepcuts','validminimization']
+		qcd_sb_pass_cutlist = ['goodpv','metfilters','trigger','onelepton','btags','ak4jetmult','jetcuts','lepcuts','validminimization']
 		for cutname in qcd_sb_pass_cutlist :
 			if not self.cut_branches[cutname].getWriteValue()==1 :
 				self.cr_sb_cut_branches['qcd_A_SR_selection'].setWriteValue(0)
@@ -1198,7 +1204,7 @@ class Reconstructor(object) :
 		#			self.eltrig_cut_branches['eltrig_fullselection'].setWriteValue(0)
 
 	def __assignMiniIsolationFullSelectionCutVars__(self,lep,muons,electrons) :
-		otherpasscuts = ['goodpv','metfilters','trigger','btags','ak4jetmult','ak4jetcuts','METcuts','lepcuts','kinfitchi2','recoleptM','validminimization','fullselection']
+		otherpasscuts = ['goodpv','metfilters','trigger','btags','ak4jetmult','jetcuts','METcuts','lepcuts','kinfitchi2','recoleptM','validminimization','fullselection']
 		#start with lepton flavor-specific cuts
 		other_leps = []
 		if self.lepflavor.getWriteValue()==1 :
@@ -1302,7 +1308,9 @@ class Reconstructor(object) :
 		self.outfile.Write()
 		self.outfile.Close()
 
-def getHypothesisList(topology,lep,met1_vec,met2_vec,nMETs,ak4jets,ttags,nbtags) :
+def getHypothesisList(topology,lep,met1_vec,met2_vec,nMETs,ak4jets,ttags) :
+	#first figure out how many btags there are in this event
+	nbtags = sum([x.isLbTagged() for x in ak4jets]) if topology<3 else sum([x.isMbTagged() for x in ak4jets])
 	hypotheses = []
 	met_options = [met1_vec,met2_vec]
 	for i in range(nMETs) :
@@ -1312,7 +1320,7 @@ def getHypothesisList(topology,lep,met1_vec,met2_vec,nMETs,ak4jets,ttags,nbtags)
 		#for any choice of leptonic-side b-jet
 		for j in range(len(ak4jets)) :
 			lepbCandJet = ak4jets[j]
-			lepbistagged = lepbCandJet.isbTagged()
+			lepbistagged = lepbCandJet.isLbTagged() if topology<3 else lepbCandJet.isMbTagged()
 			#the rest is topology-dependent
 			#FULLY-MERGED EVENTS: 
 			#the hadronic top candidate is the AK8 jet
@@ -1337,21 +1345,21 @@ def getHypothesisList(topology,lep,met1_vec,met2_vec,nMETs,ak4jets,ttags,nbtags)
 				if j==k :
 					continue
 				had1CandJet = ak4jets[k]
-				had1istagged = had1CandJet.isbTagged()
+				had1istagged = had1CandJet.isLbTagged() if topology<3 else had1CandJet.isMbTagged()
 				hadsidehasbtag = had1istagged					
 				#loop over the remaining AK4 jets for a second hadronic-side jet
 				for m in range(k+1,len(ak4jets)) :
 					if j==m :
 						continue
 					had2CandJet = ak4jets[m]
-					had2istagged = had2CandJet.isbTagged()
+					had2istagged = had2CandJet.isLbTagged() if topology<3 else had2CandJet.isMbTagged()
 					hadsidehasbtag = had1istagged or had2istagged
 					#loop one last time over the remaining AK4 jets for a third and final hadronic-side jet
 					for n in range(m+1,len(ak4jets)) :
 						if j==n :
 							continue
 						had3CandJet = ak4jets[n]
-						had3istagged = had3CandJet.isbTagged()
+						had3istagged = had3CandJet.isLbTagged() if topology<3 else had3CandJet.isMbTagged()
 						hadsidehasbtag = had1istagged or had2istagged or had3istagged
 						#BOOSTED UNTAGGED WITH THREE HADRONIC SIDE JETS, AND FULLY RESOLVED
 						#the hadronic side of the decay has three jets 

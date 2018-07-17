@@ -675,11 +675,13 @@ if mode=='' or mode=='wjetscr' or mode.startswith('qcd') :
 	#if not (mode.startswith('qcd') and leptype=='muons') :
 	#type-1
 	if mode=='wjetscr' :
+		all_plots.append(Plot('npv_t1',['npv'],'; # primary vertices; Events/bin',61,-0.5,60.5,addl_cuts='eventTopology==1'))
 		all_plots.append(Plot('ngv_t1',['ngoodvtx'],'; # good vertices; Events/bin',61,-0.5,60.5,addl_cuts='eventTopology==1'))
 		all_plots.append(Plot('lbsf_t1',['par_2'],'; #lambda_{2}; Events/0.05',20,0.2,1.2,addl_cuts='eventTopology==1'))
 		all_plots.append(Plot('hsfs_t1',['par_3','par_4'],'; #lambda_{3/4}; Events/0.05',20,0.2,1.2,addl_cuts='eventTopology==1',iPos=33,lPos=1))
 		all_plots.append(Plot('chi2_t1',['chi2'],'; #chi^{2}; Events/5',50,-65.,185.,addl_cuts='eventTopology==1',iPos=33,lPos=0))
 	else :
+		all_plots.append(Plot('npv_t1',['npv'],'; # primary vertices; Events/bin',61,-0.5,60.5,addl_cuts='eventTopology==1',iPos=33,lPos=2))
 		all_plots.append(Plot('ngv_t1',['ngoodvtx'],'; # good vertices; Events/bin',61,-0.5,60.5,addl_cuts='eventTopology==1',iPos=33,lPos=2))
 		all_plots.append(Plot('lbsf_t1',['par_2'],'; #lambda_{2}; Events/0.02',30,0.6,1.2,addl_cuts='eventTopology==1',iPos=33,lPos=1))
 		all_plots.append(Plot('hsfs_t1',['par_3','par_4'],'; #lambda_{3/4}; Events/0.02',30,0.6,1.2,addl_cuts='eventTopology==1',lPos=2))
@@ -739,11 +741,13 @@ if mode=='' or mode=='wjetscr' or mode.startswith('qcd') :
 	all_plots.append(Plot('ak8tau21_t1',['ak81_tau21'],'; top-tagged AK8 jet #tau_{21}; Events/0.05',20,0.,1.,addl_cuts='eventTopology==1',lPos=0))
 	#type-2
 	if mode=='wjetscr' :
+		all_plots.append(Plot('npv_t2',['npv'],'; # primary vertices; Events/bin',61,-0.5,60.5,addl_cuts='eventTopology==2'))
 		all_plots.append(Plot('ngv_t2',['ngoodvtx'],'; # good vertices; Events/bin',61,-0.5,60.5,addl_cuts='eventTopology==2'))
 		all_plots.append(Plot('lbsf_t2',['par_2'],'; #lambda_{2}; Events/0.05',20,0.2,1.2,addl_cuts='eventTopology==2',iPos=33,lPos=1))
 		all_plots.append(Plot('hsfs_t2',['par_3','par_4','par_5'],'; #lambda_{3/4/5}; Events/0.05',20,0.2,1.2,addl_cuts='eventTopology==2',iPos=33,lPos=1))
 		all_plots.append(Plot('chi2_t2',['chi2'],'; #chi^{2}; Events/5',50,-65.,185.,addl_cuts='eventTopology==2'))
 	else :
+		all_plots.append(Plot('npv_t2',['npv'],'; # primary vertices; Events/bin',61,-0.5,60.5,addl_cuts='eventTopology==2',iPos=33,lPos=2))
 		all_plots.append(Plot('ngv_t2',['ngoodvtx'],'; # good vertices; Events/bin',61,-0.5,60.5,addl_cuts='eventTopology==2',iPos=33,lPos=2))
 		all_plots.append(Plot('lbsf_t2',['par_2'],'; #lambda_{2}; Events/0.02',30,0.6,1.2,addl_cuts='eventTopology==2',iPos=33,lPos=1))
 		all_plots.append(Plot('hsfs_t2',['par_3','par_4','par_5'],'; #lambda_{3/4/5}; Events/0.02',30,0.6,1.2,addl_cuts='eventTopology==2',iPos=33,lPos=1))
@@ -803,6 +807,7 @@ if mode=='' or mode=='wjetscr' or mode.startswith('qcd') :
 	all_plots.append(Plot('ak8tau21_t2',['ak81_tau21'],'; AK8 jet1 #tau_{21}; Events/0.05',20,0.,1.,addl_cuts='eventTopology==2',lPos=0))
 	if not mode=='wjetscr' :
 		#type-3
+		all_plots.append(Plot('npv_t3',['npv'],'; # primary vertices; Events/bin',61,-0.5,60.5,addl_cuts='eventTopology==3',iPos=33,lPos=2))
 		all_plots.append(Plot('ngv_t3',['ngoodvtx'],'; # good vertices; Events/bin',61,-0.5,60.5,addl_cuts='eventTopology==3',iPos=33,lPos=2))
 		all_plots.append(Plot('vpz_t3',['par_0'],'; p^{#nu}_{Z} [GeV]; Events/25 GeV',40,-500.,500.,addl_cuts='eventTopology==3'))
 		all_plots.append(Plot('lsf_t3',['par_1'],'; #lambda_{1}; Events/0.001',40,0.97,1.01,addl_cuts='eventTopology==3',lPos=2))
