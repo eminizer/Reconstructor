@@ -154,8 +154,8 @@ class Corrector(object) :
 		self.__btag_MC_eff_eta_hi  = xaxis.GetXmax()
 		self.__btag_MC_eff_pt_low = yaxis.GetXmax()
 		self.__btag_MC_eff_pt_hi  = yaxis.GetXmax()
-		self.__btag_MC_eff_bjet_histo.SetDirectory(0); self.__btag_MC_eff_cjet_histo.SetDirectory(0)
-		self.__btag_MC_eff_udsg_histo.SetDirectory(0)
+		self.__btag_MC_eff_bjet_histo_l.SetDirectory(0); self.__btag_MC_eff_cjet_histo_l.SetDirectory(0); self.__btag_MC_eff_udsg_histo_l.SetDirectory(0)
+		self.__btag_MC_eff_bjet_histo_m.SetDirectory(0); self.__btag_MC_eff_cjet_histo_m.SetDirectory(0); self.__btag_MC_eff_udsg_histo_m.SetDirectory(0)
 		btag_MC_eff_file.Close()
 		#Load the stuff we need for interpreting the SF file
 		#This code from https://twiki.cern.ch/twiki/bin/viewauth/CMS/BTagCalibration
