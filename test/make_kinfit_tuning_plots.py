@@ -62,7 +62,7 @@ for histo in allhistos :
 	histo.SetDirectory(0)
 
 #set up skimmed chain
-com_cuts = 'ismatchable==1 && ((eventTopology<3 && fullselection==1) || (eventTopology==3 && metfilters==1 && trigger==1 && onelepton==1 && btags==1 && ak4jetmult==1 && ak4jetcuts==1 && METcuts==1 && kinfitchi2==1 && recoleptM==1 && validminimization==1 && ((lepflavor==1 && (lep_relPt>30. || lep_dR>0.4) && lep_Iso<0.15) || (lepflavor==2 && (lep_relPt>20. || lep_dR>0.4) && lep_Iso<0.0695))))'
+com_cuts = 'ismatchable==1 && fullselection==1'
 chain=fullchain.CopyTree(com_cuts)
 
 #plot plots
