@@ -220,7 +220,7 @@ def getfourvec(branches,index,jes,jer,leps,corrector,isdata,pp) :
 			jecUpJet = cleanjet*(newJEC+newJECuncUp)
 			newJet=corrector.smearJet(jecUpJet,jer,genJetVec,ptres,dRCheck)
 		elif jes=='down' :
-			jecDownJet = cleanjet*(newJEC+newJECuncDown)
+			jecDownJet = cleanjet*(newJEC-newJECuncDown)
 			newJet=corrector.smearJet(jecDownJet,jer,genJetVec,ptres,dRCheck)
 	#print '	final pT = %.2f'%(newJet.Pt()) #DEBUG
 	return newJet, subtractedleps, metcorrvec-newJet

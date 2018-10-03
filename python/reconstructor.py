@@ -25,7 +25,6 @@ from metHelper import setupMET
 from kinfit import reconstruct
 from angleReconstructor import getObservables, getMCRWs
 from corrector import Corrector
-from memsniffer import checkmem
 import sys
 import gc
 
@@ -256,48 +255,60 @@ class Reconstructor(object) :
 	wegc 	 = AddBranch(writename='wegc',inival=1.,dictlist=thisdictlist)
 	#scalefactors
 	thisdictlist = [allBranches,scalefactorBranches]
-	sf_pileup 			 = AddBranch(writename='sf_pileup',inival=1.,dictlist=thisdictlist)
-	sf_pileup_low 		 = AddBranch(writename='sf_pileup_low',inival=1.,dictlist=thisdictlist)
-	sf_pileup_hi 		 = AddBranch(writename='sf_pileup_hi',inival=1.,dictlist=thisdictlist)
-	sf_trig_eff_BtoF 	 = AddBranch(writename='sf_trig_eff_BtoF',inival=1.,dictlist=thisdictlist)
-	sf_trig_eff_BtoF_low = AddBranch(writename='sf_trig_eff_BtoF_low',inival=1.,dictlist=thisdictlist)
-	sf_trig_eff_BtoF_hi  = AddBranch(writename='sf_trig_eff_BtoF_hi',inival=1.,dictlist=thisdictlist)
-	sf_trig_eff_GH 		 = AddBranch(writename='sf_trig_eff_GH',inival=1.,dictlist=thisdictlist)
-	sf_trig_eff_GH_low 	 = AddBranch(writename='sf_trig_eff_GH_low',inival=1.,dictlist=thisdictlist)
-	sf_trig_eff_GH_hi 	 = AddBranch(writename='sf_trig_eff_GH_hi',inival=1.,dictlist=thisdictlist)
-	sf_lep_ID_BtoF 		 = AddBranch(writename='sf_lep_ID_BtoF',inival=1.,dictlist=thisdictlist)
-	sf_lep_ID_BtoF_low 	 = AddBranch(writename='sf_lep_ID_BtoF_low',inival=1.,dictlist=thisdictlist)
-	sf_lep_ID_BtoF_hi 	 = AddBranch(writename='sf_lep_ID_BtoF_hi',inival=1.,dictlist=thisdictlist)
-	sf_lep_ID_GH 		 = AddBranch(writename='sf_lep_ID_GH',inival=1.,dictlist=thisdictlist)
-	sf_lep_ID_GH_low 	 = AddBranch(writename='sf_lep_ID_GH_low',inival=1.,dictlist=thisdictlist)
-	sf_lep_ID_GH_hi 	 = AddBranch(writename='sf_lep_ID_GH_hi',inival=1.,dictlist=thisdictlist)
-	sf_lep_iso_BtoF 	 = AddBranch(writename='sf_lep_iso_BtoF',inival=1.,dictlist=thisdictlist)
-	sf_lep_iso_BtoF_low  = AddBranch(writename='sf_lep_iso_BtoF_low',inival=1.,dictlist=thisdictlist)
-	sf_lep_iso_BtoF_hi 	 = AddBranch(writename='sf_lep_iso_BtoF_hi',inival=1.,dictlist=thisdictlist)
-	sf_lep_iso_GH 		 = AddBranch(writename='sf_lep_iso_GH',inival=1.,dictlist=thisdictlist)
-	sf_lep_iso_GH_low 	 = AddBranch(writename='sf_lep_iso_GH_low',inival=1.,dictlist=thisdictlist)
-	sf_lep_iso_GH_hi 	 = AddBranch(writename='sf_lep_iso_GH_hi',inival=1.,dictlist=thisdictlist)
-	sf_lep_mini_iso 	 = AddBranch(writename='sf_lep_mini_iso',inival=1.,dictlist=thisdictlist)
-	sf_lep_mini_iso_low  = AddBranch(writename='sf_lep_mini_iso_low',inival=1.,dictlist=thisdictlist)
-	sf_lep_mini_iso_hi 	 = AddBranch(writename='sf_lep_mini_iso_hi',inival=1.,dictlist=thisdictlist)
-	sf_btag_eff 		 = AddBranch(writename='sf_btag_eff',inival=1.,dictlist=thisdictlist)
-	sf_btag_eff_low 	 = AddBranch(writename='sf_btag_eff_low',inival=1.,dictlist=thisdictlist)
-	sf_btag_eff_hi 		 = AddBranch(writename='sf_btag_eff_hi',inival=1.,dictlist=thisdictlist)
-	sf_mu_R 			 = AddBranch(writename='sf_mu_R',inival=1.,dictlist=thisdictlist)
-	sf_mu_R_low 		 = AddBranch(writename='sf_mu_R_low',inival=1.,dictlist=thisdictlist)
-	sf_mu_R_hi 			 = AddBranch(writename='sf_mu_R_hi',inival=1.,dictlist=thisdictlist)
-	sf_mu_F 			 = AddBranch(writename='sf_mu_F',inival=1.,dictlist=thisdictlist)
-	sf_mu_F_low 		 = AddBranch(writename='sf_mu_F_low',inival=1.,dictlist=thisdictlist)
-	sf_mu_F_hi 			 = AddBranch(writename='sf_mu_F_hi',inival=1.,dictlist=thisdictlist)
-	sf_scale_comb 		 = AddBranch(writename='sf_scale_comb',inival=1.,dictlist=thisdictlist)
-	sf_scale_comb_low 	 = AddBranch(writename='sf_scale_comb_low',inival=1.,dictlist=thisdictlist)
-	sf_scale_comb_hi 	 = AddBranch(writename='sf_scale_comb_hi',inival=1.,dictlist=thisdictlist)
-	sf_pdf_alphas 		 = AddBranch(writename='sf_pdf_alphas',inival=1.,dictlist=thisdictlist)
-	sf_pdf_alphas_low 	 = AddBranch(writename='sf_pdf_alphas_low',inival=1.,dictlist=thisdictlist)
-	sf_pdf_alphas_hi 	 = AddBranch(writename='sf_pdf_alphas_hi',inival=1.,dictlist=thisdictlist)
-	sf_top_pt_rw 		 = AddBranch(writename='sf_top_pt_rw',inival=1.,dictlist=thisdictlist)
-	sf_top_pt_rw_low 	 = AddBranch(writename='sf_top_pt_rw_low',inival=1.,dictlist=thisdictlist)
-	sf_top_pt_rw_hi 	 = AddBranch(writename='sf_top_pt_rw_hi',inival=1.,dictlist=thisdictlist)
+	sf_pileup 			  = AddBranch(writename='sf_pileup',inival=1.,dictlist=thisdictlist)
+	sf_pileup_low 		  = AddBranch(writename='sf_pileup_low',inival=1.,dictlist=thisdictlist)
+	sf_pileup_hi 		  = AddBranch(writename='sf_pileup_hi',inival=1.,dictlist=thisdictlist)
+	sf_trig_eff_BtoF 	  = AddBranch(writename='sf_trig_eff_BtoF',inival=1.,dictlist=thisdictlist)
+	sf_trig_eff_BtoF_low  = AddBranch(writename='sf_trig_eff_BtoF_low',inival=1.,dictlist=thisdictlist)
+	sf_trig_eff_BtoF_hi   = AddBranch(writename='sf_trig_eff_BtoF_hi',inival=1.,dictlist=thisdictlist)
+	sf_trig_eff_GH 		  = AddBranch(writename='sf_trig_eff_GH',inival=1.,dictlist=thisdictlist)
+	sf_trig_eff_GH_low 	  = AddBranch(writename='sf_trig_eff_GH_low',inival=1.,dictlist=thisdictlist)
+	sf_trig_eff_GH_hi 	  = AddBranch(writename='sf_trig_eff_GH_hi',inival=1.,dictlist=thisdictlist)
+	sf_lep_ID_BtoF 		  = AddBranch(writename='sf_lep_ID_BtoF',inival=1.,dictlist=thisdictlist)
+	sf_lep_ID_BtoF_low 	  = AddBranch(writename='sf_lep_ID_BtoF_low',inival=1.,dictlist=thisdictlist)
+	sf_lep_ID_BtoF_hi 	  = AddBranch(writename='sf_lep_ID_BtoF_hi',inival=1.,dictlist=thisdictlist)
+	sf_lep_ID_GH 		  = AddBranch(writename='sf_lep_ID_GH',inival=1.,dictlist=thisdictlist)
+	sf_lep_ID_GH_low 	  = AddBranch(writename='sf_lep_ID_GH_low',inival=1.,dictlist=thisdictlist)
+	sf_lep_ID_GH_hi 	  = AddBranch(writename='sf_lep_ID_GH_hi',inival=1.,dictlist=thisdictlist)
+	sf_lep_iso_BtoF 	  = AddBranch(writename='sf_lep_iso_BtoF',inival=1.,dictlist=thisdictlist)
+	sf_lep_iso_BtoF_low   = AddBranch(writename='sf_lep_iso_BtoF_low',inival=1.,dictlist=thisdictlist)
+	sf_lep_iso_BtoF_hi 	  = AddBranch(writename='sf_lep_iso_BtoF_hi',inival=1.,dictlist=thisdictlist)
+	sf_lep_iso_GH 		  = AddBranch(writename='sf_lep_iso_GH',inival=1.,dictlist=thisdictlist)
+	sf_lep_iso_GH_low 	  = AddBranch(writename='sf_lep_iso_GH_low',inival=1.,dictlist=thisdictlist)
+	sf_lep_iso_GH_hi 	  = AddBranch(writename='sf_lep_iso_GH_hi',inival=1.,dictlist=thisdictlist)
+	sf_lep_mini_iso 	  = AddBranch(writename='sf_lep_mini_iso',inival=1.,dictlist=thisdictlist)
+	sf_lep_mini_iso_low   = AddBranch(writename='sf_lep_mini_iso_low',inival=1.,dictlist=thisdictlist)
+	sf_lep_mini_iso_hi 	  = AddBranch(writename='sf_lep_mini_iso_hi',inival=1.,dictlist=thisdictlist)
+	sf_btag_eff_flavb 	  = AddBranch(writename='sf_btag_eff_flavb',inival=1.,dictlist=thisdictlist)
+	sf_btag_eff_flavb_low = AddBranch(writename='sf_btag_eff_flavb_low',inival=1.,dictlist=thisdictlist)
+	sf_btag_eff_flavb_hi  = AddBranch(writename='sf_btag_eff_flavb_hi',inival=1.,dictlist=thisdictlist)
+	sf_btag_eff_flavc 	  = AddBranch(writename='sf_btag_eff_flavc',inival=1.,dictlist=thisdictlist)
+	sf_btag_eff_flavc_low = AddBranch(writename='sf_btag_eff_flavc_low',inival=1.,dictlist=thisdictlist)
+	sf_btag_eff_flavc_hi  = AddBranch(writename='sf_btag_eff_flavc_hi',inival=1.,dictlist=thisdictlist)
+	sf_btag_eff_heavy 	  = AddBranch(writename='sf_btag_eff_heavy',inival=1.,dictlist=thisdictlist)
+	sf_btag_eff_heavy_low = AddBranch(writename='sf_btag_eff_heavy_low',inival=1.,dictlist=thisdictlist)
+	sf_btag_eff_heavy_hi  = AddBranch(writename='sf_btag_eff_heavy_hi',inival=1.,dictlist=thisdictlist)
+	sf_btag_eff_light 	  = AddBranch(writename='sf_btag_eff_light',inival=1.,dictlist=thisdictlist)
+	sf_btag_eff_light_low = AddBranch(writename='sf_btag_eff_light_low',inival=1.,dictlist=thisdictlist)
+	sf_btag_eff_light_hi  = AddBranch(writename='sf_btag_eff_light_hi',inival=1.,dictlist=thisdictlist)
+	sf_ttag_eff 		  = AddBranch(writename='sf_ttag_eff',inival=1.,dictlist=thisdictlist)
+	sf_ttag_eff_low 	  = AddBranch(writename='sf_ttag_eff_low',inival=1.,dictlist=thisdictlist)
+	sf_ttag_eff_hi 		  = AddBranch(writename='sf_ttag_eff_hi',inival=1.,dictlist=thisdictlist)
+	sf_mu_R 			  = AddBranch(writename='sf_mu_R',inival=1.,dictlist=thisdictlist)
+	sf_mu_R_low 		  = AddBranch(writename='sf_mu_R_low',inival=1.,dictlist=thisdictlist)
+	sf_mu_R_hi 			  = AddBranch(writename='sf_mu_R_hi',inival=1.,dictlist=thisdictlist)
+	sf_mu_F 			  = AddBranch(writename='sf_mu_F',inival=1.,dictlist=thisdictlist)
+	sf_mu_F_low 		  = AddBranch(writename='sf_mu_F_low',inival=1.,dictlist=thisdictlist)
+	sf_mu_F_hi 			  = AddBranch(writename='sf_mu_F_hi',inival=1.,dictlist=thisdictlist)
+	sf_scale_comb 		  = AddBranch(writename='sf_scale_comb',inival=1.,dictlist=thisdictlist)
+	sf_scale_comb_low 	  = AddBranch(writename='sf_scale_comb_low',inival=1.,dictlist=thisdictlist)
+	sf_scale_comb_hi 	  = AddBranch(writename='sf_scale_comb_hi',inival=1.,dictlist=thisdictlist)
+	sf_pdf_alphas 		  = AddBranch(writename='sf_pdf_alphas',inival=1.,dictlist=thisdictlist)
+	sf_pdf_alphas_low 	  = AddBranch(writename='sf_pdf_alphas_low',inival=1.,dictlist=thisdictlist)
+	sf_pdf_alphas_hi 	  = AddBranch(writename='sf_pdf_alphas_hi',inival=1.,dictlist=thisdictlist)
+	sf_top_pt_rw 		  = AddBranch(writename='sf_top_pt_rw',inival=1.,dictlist=thisdictlist)
+	sf_top_pt_rw_low 	  = AddBranch(writename='sf_top_pt_rw_low',inival=1.,dictlist=thisdictlist)
+	sf_top_pt_rw_hi 	  = AddBranch(writename='sf_top_pt_rw_hi',inival=1.,dictlist=thisdictlist)
 	#physics objects
 	thisdictlist = [allBranches,physobjectBranches]
 	#fourvectors
@@ -450,6 +461,7 @@ class Reconstructor(object) :
 		#-----------------------------------------------------Below here is a bunch of preselection and object assignment-----------------------------------------------------#
 		#light preskim for requisite physics objects
 		if not self.__hasRequisitePhysicsObjects__() :
+			#print 'EVENT %d NOT VALID; MISSING REQUISITE PHYSICS OBJECTS!'%(eventnumber) #DEBUG
 			return
 		#MC stuff (event type, addTwice, eventweight, MC truth fourvectors for ttbar events)
 		if not self.is_data :
@@ -469,7 +481,7 @@ class Reconstructor(object) :
 			#print 'EVENT NUMBER %d NOT VALID; MISSING LEPTONS (# muons = %d, # electrons = %d)'%(eventnumber,len(muons),len(electrons)) #DEBUG
 			return
 		#jets (adjusting met and counting btagged AK4 jets also)
-		ak4jets, ak4jetsforisocalc, ak8jets, newmet, nLbtags, nMbtags = self.__makeJetLists__(met,allleps)
+		ak4jets, ak4jetsforisocalc, ak8jets, newmet, nLbtags, nMbtags, nttags = self.__makeJetLists__(met,allleps)
 		met.SetPtEtaPhiM(newmet.Pt(),newmet.Eta(),newmet.Phi(),newmet.M())
 		#if the lepton cleaning got rid of too many jets toss the event
 		if not len(ak4jets)>0 :
@@ -571,7 +583,7 @@ class Reconstructor(object) :
 				self.__reconstructObservables__(scaledlep,scaledmet,scaledlepb,scaledhadt,lep,hypotheses,hypindex,corrhypindex)
 		#MC Truth observable and reweighting calculation 
 		if not self.is_data :
-			self.__calculateReweights__(mctruthfourvecs,topology,lep,ak4jets)
+			self.__calculateReweights__(mctruthfourvecs,topology,lep,ak4jets,nttags)
 		#Finally write the event to the tree and closeout
 		self.__closeout__() #yay! A complete event!
 
@@ -677,6 +689,11 @@ class Reconstructor(object) :
 			metcorrvecs.append(newJet.getMETCorrectionVec())
 			if newJet.isValid() :
 				ak8jets.append(newJet)
+		#count the number of top tagged jets
+		n_top_tags = 0
+		for ak8jet in ak8jets :
+			if ak8jet.isTopTagged() :
+				n_top_tags+=1
 		#sort the lists of jets by pT
 		ak4jets.sort(key=lambda x: x.getPt(), reverse=True)
 		ak4jetsforisocalc.sort(key=lambda x: x.getPt(), reverse=True)
@@ -693,7 +710,7 @@ class Reconstructor(object) :
 		self.__setFourVectorBranchValues__('met',met)
 		self.metE.setWriteValue(met.E())
 		#return the stuff I'll need later
-		return ak4jets,ak4jetsforisocalc,ak8jets,met,nLbtags,nMbtags
+		return ak4jets,ak4jetsforisocalc,ak8jets,met,nLbtags,nMbtags,n_top_tags
 
 	def __setEventTopology__(self,ak8jets) :
 		#find top- and W-tags
@@ -937,7 +954,7 @@ class Reconstructor(object) :
 			#print 'setting correct prefit observable values: cstar = %.2f, x_F = %.2f, M = %.2f'%(cstar,x_F,M) #DEBUG
 			self.cstar_corprefit.setWriteValue(cstar); self.x_F_corprefit.setWriteValue(xF); self.M_corprefit.setWriteValue(M)
 
-	def __calculateReweights__(self,mctvecs,topology,lep,ak4jets) :
+	def __calculateReweights__(self,mctvecs,topology,lep,ak4jets,ntoptags) :
 		#template reweights
 		if self.event_type.getWriteValue()<2 : 
 			self.cstar_MC.setWriteValue(self.mcGenEventBranches['MC_cstar'].getReadValue()) 
@@ -990,8 +1007,19 @@ class Reconstructor(object) :
 		lep_mini_iso_sf, lep_mini_iso_sf_up, lep_mini_iso_sf_down = self.corrector.getMiniIsoEff(self.allBranches['npv'].getReadValue(),lep)
 		self.sf_lep_mini_iso.setWriteValue(lep_mini_iso_sf); self.sf_lep_mini_iso_hi.setWriteValue(lep_mini_iso_sf_up); self.sf_lep_mini_iso_low.setWriteValue(lep_mini_iso_sf_down)
 		#b-tagging efficiency reweighting
-		btag_eff_sf, btag_eff_sf_up, btag_eff_sf_down = self.corrector.getBTagEff(topology,ak4jets)
-		self.sf_btag_eff.setWriteValue(btag_eff_sf); self.sf_btag_eff_hi.setWriteValue(btag_eff_sf_up); self.sf_btag_eff_low.setWriteValue(btag_eff_sf_down)
+		( btag_eff_flavb_sf, btag_eff_flavb_sf_up, btag_eff_flavb_sf_down, 
+			btag_eff_flavc_sf, btag_eff_flavc_sf_up, btag_eff_flavc_sf_down, 
+			btag_eff_heavy_sf, btag_eff_heavy_sf_up, btag_eff_heavy_sf_down, 
+			btag_eff_light_sf, btag_eff_light_sf_up, btag_eff_light_sf_down ) = self.corrector.getBTagEff(topology,ak4jets)
+		self.sf_btag_eff_flavb.setWriteValue(btag_eff_flavb_sf); self.sf_btag_eff_flavb_hi.setWriteValue(btag_eff_flavb_sf_up); self.sf_btag_eff_flavb_low.setWriteValue(btag_eff_flavb_sf_down)
+		self.sf_btag_eff_flavc.setWriteValue(btag_eff_flavc_sf); self.sf_btag_eff_flavc_hi.setWriteValue(btag_eff_flavc_sf_up); self.sf_btag_eff_flavc_low.setWriteValue(btag_eff_flavc_sf_down)
+		self.sf_btag_eff_heavy.setWriteValue(btag_eff_heavy_sf); self.sf_btag_eff_heavy_hi.setWriteValue(btag_eff_heavy_sf_up); self.sf_btag_eff_heavy_low.setWriteValue(btag_eff_heavy_sf_down)
+		self.sf_btag_eff_light.setWriteValue(btag_eff_light_sf); self.sf_btag_eff_light_hi.setWriteValue(btag_eff_light_sf_up); self.sf_btag_eff_light_low.setWriteValue(btag_eff_light_sf_down)
+		#top-tagging efficiency reweighting (only for type-1/2 events since type-3 events have no AK8 jets)
+		if topology!=3 and ntoptags!=0 :
+			#SF and uncertainties come from https://twiki.cern.ch/twiki/bin/viewauth/CMS/JetTopTagging
+			ttag_eff_sf, ttag_eff_sf_up, ttag_eff_sf_down = ntoptags*(1.06), ntoptags*(1.06+0.09), ntoptags*(1.06-0.04)
+			self.sf_ttag_eff.setWriteValue(ttag_eff_sf); self.sf_ttag_eff_hi.setWriteValue(ttag_eff_sf_up); self.sf_ttag_eff_low.setWriteValue(ttag_eff_sf_down)
 		#Scale, pdf/alpha_s, and top pT reweights (ttbar only)
 		if self.event_type.getWriteValue()<4 :
 			( mu_R_sf, mu_R_sf_up, mu_R_sf_down, mu_F_sf, mu_F_sf_up, mu_F_sf_down,

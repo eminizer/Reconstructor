@@ -684,7 +684,10 @@ class Corrector(object) :
 		return nomfac,upfac,downfac
 
 	def getBTagEff(self,topology,jets) :
-		nomfac = 1.; upfac = 0.; downfac = 0.
+		nomfac_flavb = 1.; upfac_flavb = 0.; downfac_flavb = 0.
+		nomfac_flavc = 1.; upfac_flavc = 0.; downfac_flavc = 0.
+		nomfac_heavy = 1.; upfac_heavy = 0.; downfac_heavy = 0.
+		nomfac_light = 1.; upfac_light = 0.; downfac_light = 0.
 		#set the histograms and reader to use based on topology (loose or medium b-tags?)
 		udsg_histo = self.__btag_MC_eff_udsg_histo_l
 		cjet_histo = self.__btag_MC_eff_cjet_histo_l
@@ -734,22 +737,50 @@ class Corrector(object) :
 				sfdown = reader.eval_auto_bounds('down',0,eta,pt)
 			#if the jet is b-tagged
 			if jetistagged :
-				#multiply weights just by the sf
-				nomfac*=sf; 
-				#up/down fractional errors add in quadrature
 				uperr = sfup-sf; downerr=sf-sfdown
-				upfac+=(uperr/sf)**2; downfac+=(downerr/sf)**2
+				#check the flavor to find which factor to change
+				if flav==0 :
+					#multiply weights just by the sf
+					nomfac_light*=sf; 
+					#up/down fractional errors add in quadrature
+					upfac_light+=(uperr/sf)**2; downfac_light+=(downerr/sf)**2
+				else :
+					#multiply weights just by the sf
+					nomfac_heavy*=sf; 
+					#up/down fractional errors add in quadrature
+					upfac_heavy+=(uperr/sf)**2; downfac_heavy+=(downerr/sf)**2
+					if flav==5 :
+						nomfac_flavb*=sf; 	
+						upfac_flavb+=(uperr/sf)**2; downfac_flavb+=(downerr/sf)**2
+					elif flav==4 :
+						nomfac_flavc*=sf; 	
+						upfac_flavc+=(uperr/sf)**2; downfac_flavc+=(downerr/sf)**2
 			#and if not
 			else :
 				#multiply weights by ratio of (1-sf*eff)/(1-eff)
 				newfac = (1.-sf*mc_eff)/(1.-mc_eff)
-				nomfac*=newfac
-				#up/down fractional errors add in quadrature
 				uperr = ((sfup-sf)*mc_eff)/(1.-mc_eff); downerr = ((sf-sfdown)*mc_eff)/(1.-mc_eff)
-				upfac+=(uperr/newfac)**2; downfac+=(downerr/newfac)**2
+				#again check the flavor to find which factor it is
+				if flav==0 :
+					nomfac_light*=newfac
+					#up/down fractional errors add in quadrature
+					upfac_light+=(uperr/newfac)**2; downfac_light+=(downerr/newfac)**2
+				else :
+					nomfac_heavy*=newfac
+					#up/down fractional errors add in quadrature
+					upfac_heavy+=(uperr/newfac)**2; downfac_heavy+=(downerr/newfac)**2
+					if flav==5 :
+						nomfac_flavb*=newfac
+						upfac_flavb+=(uperr/newfac)**2; downfac_flavb+=(downerr/newfac)**2
+					elif flav==4 :
+						nomfac_flavc*=newfac
+						upfac_flavc+=(uperr/newfac)**2; downfac_flavc+=(downerr/newfac)**2
 		#adjust the final weights
-		upfac = nomfac*(1.+sqrt(upfac)); downfac=nomfac*(1.-sqrt(downfac))
-		return nomfac,upfac,downfac
+		upfac_flavb = nomfac_flavb*(1.+sqrt(upfac_flavb)); downfac_flavb=nomfac_flavb*(1.-sqrt(downfac_flavb))
+		upfac_flavc = nomfac_flavc*(1.+sqrt(upfac_flavc)); downfac_flavc=nomfac_flavc*(1.-sqrt(downfac_flavc))
+		upfac_heavy = nomfac_heavy*(1.+sqrt(upfac_heavy)); downfac_heavy=nomfac_heavy*(1.-sqrt(downfac_heavy))
+		upfac_light = nomfac_light*(1.+sqrt(upfac_light)); downfac_light=nomfac_light*(1.-sqrt(downfac_light))
+		return nomfac_flavb,upfac_flavb,downfac_flavb,nomfac_flavc,upfac_flavc,downfac_flavc,nomfac_heavy,upfac_heavy,downfac_heavy,nomfac_light,upfac_light,downfac_light
 
 	def getGenReweights(self,branches) :
 		returnlist = []

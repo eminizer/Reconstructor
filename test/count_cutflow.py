@@ -135,26 +135,21 @@ for ele_data_filename in ele_data_filenames :
 
 #Cut details
 cutnames = []; cutstrings = []; prior_cutstrings = []
+goodpv = 'goodpv'
 metfilters = 'metfilters==1'
 METcuts = 'METcuts==1'
 trigger = 'trigger==1'
 isolepton = 'isolepton==1'
 onelepton = 'onelepton==1'
+ak4jetmult = 'ak4jetmult==1'
 btags = 'btags==1'
-jetcuts = 'ak4jetcuts==1'
+jetcuts = 'jetcuts==1'
 lepcuts = 'lepcuts==1'
 validminimization = 'validminimization==1'
 kinfitchi2 = 'kinfitchi2==1'
 recoleptM = 'recoleptM==1'
 fullselection = 'fullselection==1'
 wjetscrselection = 'wjets_cr_selection==1'
-#qcdbaseselection = 'metfilters==1 && trigger==1 && onelepton==1 && btags==1 && ak4jetmult==1 && ak4jetcuts==1 && validminimization==1'
-#qcdASRselection = qcdbaseselection+' && kinfitchi2==1 && recoleptM==1 && isolepton==1 && METcuts==0'
-#qcdBSRselection = qcdbaseselection+' && kinfitchi2==1 && recoleptM==1 && isolepton==0 && METcuts==0'
-#qcdCSRselection = qcdbaseselection+' && kinfitchi2==1 && recoleptM==1 && isolepton==0 && METcuts==1'
-#qcdACRselection = qcdbaseselection+' && (kinfitchi2==0 || recoleptM==0) && isolepton==1 && METcuts==0'
-#qcdBCRselection = qcdbaseselection+' && (kinfitchi2==0 || recoleptM==0) && isolepton==0 && METcuts==0'
-#qcdCCRselection = qcdbaseselection+' && (kinfitchi2==0 || recoleptM==0) && isolepton==0 && METcuts==1'
 qcdASRselection = 'qcd_A_SR_selection==1'
 qcdBSRselection = 'qcd_B_SR_selection==1'
 qcdCSRselection = 'qcd_C_SR_selection==1'
@@ -164,13 +159,14 @@ qcdCCRselection = 'qcd_C_CR_selection==1'
 
 if 't1' in topologies :
 	cutnames.append('t1 skim'); 				  cutstrings.append('weight!=0.'); 		prior_cutstrings.append('weight!=0.')
+	cutnames.append('t1 good PV');				  cutstrings.append(goodpv); 			prior_cutstrings.append('weight!=0.')
 	cutnames.append('t1 MET filters'); 			  cutstrings.append(metfilters); 		prior_cutstrings.append('weight!=0.')
 	cutnames.append('t1 trigger'); 				  cutstrings.append(trigger); 			prior_cutstrings.append('weight!=0.')
 	cutnames.append('t1 MET cuts'); 			  cutstrings.append(METcuts); 			prior_cutstrings.append('weight!=0.')
+	cutnames.append('t1 lep cuts'); 			  cutstrings.append(lepcuts); 			prior_cutstrings.append('weight!=0.')
 	cutnames.append('t1 lepton 2D isolation'); 	  cutstrings.append(isolepton); 		prior_cutstrings.append('weight!=0.')
 	cutnames.append('t1 additional lepton veto'); cutstrings.append(onelepton); 		prior_cutstrings.append('weight!=0.')
 	cutnames.append('t1 nbtags'); 				  cutstrings.append(btags); 			prior_cutstrings.append('weight!=0.')
-	cutnames.append('t1 lep cuts'); 			  cutstrings.append(lepcuts); 			prior_cutstrings.append('weight!=0.')
 	cutnames.append('t1 jet cuts'); 			  cutstrings.append(jetcuts); 			prior_cutstrings.append('weight!=0.')
 	cutnames.append('t1 valid minimization'); 	  cutstrings.append(validminimization); prior_cutstrings.append('weight!=0.')
 	cutnames.append('t1 reco lept mass'); 	  	  cutstrings.append(recoleptM); 		prior_cutstrings.append('weight!=0.')
@@ -188,13 +184,14 @@ if 't1' in topologies :
 
 if 't2' in topologies :
 	cutnames.append('t2 skim'); 				  cutstrings.append('weight!=0.'); 		prior_cutstrings.append('weight!=0.')
+	cutnames.append('t2 good PV');				  cutstrings.append(goodpv); 			prior_cutstrings.append('weight!=0.')
 	cutnames.append('t2 MET filters'); 			  cutstrings.append(metfilters); 		prior_cutstrings.append('weight!=0.')
 	cutnames.append('t2 trigger'); 				  cutstrings.append(trigger); 			prior_cutstrings.append('weight!=0.')
 	cutnames.append('t2 MET cuts'); 			  cutstrings.append(METcuts); 			prior_cutstrings.append('weight!=0.')
+	cutnames.append('t2 lep cuts'); 			  cutstrings.append(lepcuts); 			prior_cutstrings.append('weight!=0.')
 	cutnames.append('t2 lepton 2D isolation'); 	  cutstrings.append(isolepton); 		prior_cutstrings.append('weight!=0.')
 	cutnames.append('t2 additional lepton veto'); cutstrings.append(onelepton); 		prior_cutstrings.append('weight!=0.')
 	cutnames.append('t2 nbtags'); 				  cutstrings.append(btags); 			prior_cutstrings.append('weight!=0.')
-	cutnames.append('t2 lep cuts'); 			  cutstrings.append(lepcuts); 			prior_cutstrings.append('weight!=0.')
 	cutnames.append('t2 jet cuts'); 			  cutstrings.append(jetcuts); 			prior_cutstrings.append('weight!=0.')
 	cutnames.append('t2 valid minimization'); 	  cutstrings.append(validminimization); prior_cutstrings.append('weight!=0.')
 	cutnames.append('t2 reco lept mass'); 	  	  cutstrings.append(recoleptM); 		prior_cutstrings.append('weight!=0.')
@@ -210,6 +207,7 @@ if 't2' in topologies :
 
 if 't3' in topologies :
 	cutnames.append('t3 skim'); 				  cutstrings.append('weight!=0.'); 		prior_cutstrings.append('weight!=0.')
+	cutnames.append('t3 good PV');				  cutstrings.append(goodpv); 			prior_cutstrings.append('weight!=0.')
 	cutnames.append('t3 MET filters'); 			  cutstrings.append(metfilters); 		prior_cutstrings.append('weight!=0.')
 	cutnames.append('t3 trigger'); 				  cutstrings.append(trigger); 			prior_cutstrings.append('weight!=0.')
 	cutnames.append('t3 MET cuts'); 			  cutstrings.append(METcuts); 			prior_cutstrings.append('weight!=0.')
