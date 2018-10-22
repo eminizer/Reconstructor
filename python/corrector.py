@@ -248,7 +248,7 @@ class Corrector(object) :
 		newJEC = corrector.getCorrection()
 		return newJEC
 
-	def getJECuncForJet(self,jetvec,pp) :
+	def getJECuncForJet(self,jetvec,pp,jecsysstring) :
 		uncCorrector=None
 		if pp.find('AK4') != -1 :
 			uncCorrector = self.__ak4JecUncertainty

@@ -666,7 +666,7 @@ class Reconstructor(object) :
 		#print '	Adding AK4 jets (%d total)...'%(self.ak4_size.getReadValue())#DEBUG
 		ak4jets = []; ak4jetsforisocalc = []; ak8jets = []; metcorrvecs = []
 		for i in range(self.ak4_size.getReadValue()) :
-			newJet = AK4Jet(self.ak4JetBranches,i,self.JES,self.JER,leplist,self.corrector,self.is_data)
+			newJet = AK4Jet(self.ak4JetBranches,i,self.JEC,leplist,self.corrector,self.is_data)
 			metcorrvecs.append(newJet.getMETCorrectionVec())
 			if newJet.isValidForIsoCalc() :
 				ak4jetsforisocalc.append(newJet)
@@ -685,7 +685,7 @@ class Reconstructor(object) :
 		self.nMbTags.setWriteValue(nMbtags)
 		#print '	Adding AK8 jets (%d total)...'%(self.ak8_size.getReadValue())#DEBUG
 		for i in range(self.ak8_size.getReadValue()) :
-			newJet = AK8Jet(self.ak8JetBranches,i,self.JES,self.JER,leplist,self.corrector,self.is_data)
+			newJet = AK8Jet(self.ak8JetBranches,i,self.JEC,leplist,self.corrector,self.is_data)
 			metcorrvecs.append(newJet.getMETCorrectionVec())
 			if newJet.isValid() :
 				ak8jets.append(newJet)
@@ -1266,7 +1266,7 @@ class Reconstructor(object) :
 			self.alt_lep_iso_cut_branches['fullminiisoselection'].setWriteValue(0)
 
 	##################################  #__init__ function  ##################################
-	def __init__(self,fileName,tree,isData,xsec,kfac,jes,jer,onGrid,pu_histo,totweight,renormdict) :
+	def __init__(self,fileName,tree,isData,xsec,kfac,jec,onGrid,pu_histo,totweight,renormdict) :
 		#output file
 		self.outfile_name = fileName
 		self.outfile = TFile(self.outfile_name,'recreate')
@@ -1289,8 +1289,7 @@ class Reconstructor(object) :
 		#k factor
 		self.kfac = kfac
 		#JEC systematics?
-		self.JES = jes
-		self.JER = jer
+		self.JEC = jec
 		#are we running on the grid?
 		self.onGrid = onGrid
 		#Set the total weight

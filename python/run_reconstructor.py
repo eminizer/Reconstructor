@@ -175,10 +175,13 @@ parser.add_option('--alpha', 		 type='float', action='store', default=1.0,	dest=
 	help="Cross section of sample's process")
 parser.add_option('--epsilon', 		 type='float', action='store', default=1.0,	dest='epsilonOverride', 		    
 	help="Cross section of sample's process")
-parser.add_option('--JES', type='string', action='store', default='nominal',  dest='JES',  
-	help='JES systematics: shift JES up or down (default is nominal)')
-parser.add_option('--JER', type='string', action='store', default='nominal',  dest='JER',  
-	help='JER systematics: shift JER up or down (default is nominal)')
+parser.add_option('--JEC', type='choice', action='store', default='nominal',  dest='jec', 
+	choices=['nominal',
+			 'AK4JESPU_up','AK4JESEta_up','AK4JESPt_up','AK4JESScale_up','AK4JESTime_up','AK4JESFlav_up','AK4JERStat_up','AK4JERSys_up',
+			 'AK4JESPU_dn','AK4JESEta_dn','AK4JESPt_dn','AK4JESScale_dn','AK4JESTime_dn','AK4JESFlav_dn','AK4JERStat_dn','AK4JERSys_dn',
+			 'AK8JESPU_up','AK8JESEta_up','AK8JESPt_up','AK8JESScale_up','AK8JESTime_up','AK8JESFlav_up','AK8JERStat_up','AK8JERSys_up',
+			 'AK8JESPU_dn','AK8JESEta_dn','AK8JESPt_dn','AK8JESScale_dn','AK8JESTime_dn','AK8JESFlav_dn','AK8JERStat_dn','AK8JERSys_dn',],  
+	help='JES systematics variations')
 (options, args) = parser.parse_args()
 
 ##########							Set Up Event Loop								##########
@@ -281,10 +284,8 @@ nanalysisevents = analysisTree.GetEntries()
 print 'number of analyzed events for this job = %d'%(nanalysisevents) 
 #Set filename for analyzer from sample name
 filename = options.name
-if options.JES.lower() != 'nominal' :
-	filename+='_JES_'+options.JES.lower()
-if options.JER.lower() != 'nominal' :
-	filename+='_JER_'+options.JER.lower()
+if options.jec != 'nominal' :
+	filename+='_'+options.jec
 if options.n_jobs>1 :
 	filename+='_'+str(options.i_job)
 filename+='_tree.root'
@@ -292,7 +293,7 @@ filename+='_tree.root'
 data=False
 if options.name.lower().find('singlemu')!=-1 or options.name.lower().find('singleel')!=-1 :
 	data=True
-analyzer = Reconstructor(filename, analysisTree, data, options.xSec, options.kFac, options.JES.lower(), options.JER.lower(), options.on_grid, total_pileup_histo, totweight, renormalization_dict) 
+analyzer = Reconstructor(filename, analysisTree, data, options.xSec, options.kFac, options.jec, options.on_grid, total_pileup_histo, totweight, renormalization_dict) 
 
 #Counter 
 count = 0

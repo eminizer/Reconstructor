@@ -6,9 +6,9 @@ from math import *
 
 class Jet(object) :
 
-	def __init__(self,branches,index,jes,jer,leps,corrector,isdata,pp) :
+	def __init__(self,branches,index,jec,leps,corrector,isdata,pp) :
 		#print '----------------------- New Jet --------------------------' #DEBUG
-		self.__fourvec, self.__cleanedLeptons, self.__metCorrVec = getfourvec(branches,index,jes,jer,leps,corrector,isdata,pp)
+		self.__fourvec, self.__cleanedLeptons, self.__metCorrVec = getfourvec(branches,index,jec,leps,corrector,isdata,pp)
 		self.__pt = self.__fourvec.Pt() if self.__fourvec!=None else -900
 		self.__eta = self.__fourvec.Eta() if self.__fourvec!=None else -900
 		self.__isIDed = self.__checkID__(branches,index,pp)
@@ -137,14 +137,14 @@ class AK8Jet(Jet) :
 	def isWTagged(self) :
 		return self.__isWtagged
 
-def getfourvec(branches,index,jes,jer,leps,corrector,isdata,pp) :
+def getfourvec(branches,index,jec,leps,corrector,isdata,pp) :
 	#get all the jet fourvectors, etc.
 	pt  = branches[pp+'_Pt'].getReadValue(index)
 	eta = branches[pp+'_Eta'].getReadValue(index)
 	phi = branches[pp+'_Phi'].getReadValue(index)
 	E   = branches[pp+'_E'].getReadValue(index)
 	jec0 = branches[pp+'_jecFactor0'].getReadValue(index)
-	jecunc = 0. if pp.find('subjet')!=-1 else branches[pp+'_jecUncertainty'].getReadValue(index)
+	#jecunc = 0. if pp.find('subjet')!=-1 else branches[pp+'_jecUncertainty'].getReadValue(index)
 	#get the jet keys and subjet keys if necessary
 	jetkeys = branches[pp+'_Keys'].getReadValue(index)
 	subjet1keys = []; subjet2keys = []
@@ -173,26 +173,31 @@ def getfourvec(branches,index,jes,jer,leps,corrector,isdata,pp) :
 	if cleanjet == None :
 		#print 'CLEANED JET WAS "NONE"' #DEBUG
 		return None, None, metcorrvec
-	nominalJet = cleanjet
 	#print '	cleaned pT = %.2f'%(cleanjet.Pt()) #DEBUG
 	#if this is a subjet, regardless of the systematics, return it without correcting
 	if pp.find('subjet')!=-1 :
-		return nominalJet, None, (metcorrvec-nominalJet)
+		return cleanjet, None, (metcorrvec-cleanjet)
 	newJEC = 1./jec0
-	#if there was a lepton subtracted from the jet
+	#if there was a lepton subtracted from the jet get the on-the-fly JEC and recorrect it
 	if len(subtractedleps)>0 :
 		#get and apply the new jec
 		jetArea = branches[pp+'_jetArea'].getReadValue(index)
 		rho = branches['rho'].getReadValue()
 		npv = branches['npv'].getReadValue()
 		newJEC = corrector.getJECforJet(cleanjet,jetArea,rho,npv,pp)
-	nominalJet = cleanjet*newJEC
-	#print '	readjusted pT = %.2f'%(nominalJet.Pt()) #DEBUG
-	#If this is data, don't apply any smearing or systematics, just return the corrected, cleaned jet
+	#adjust the new JEC if this is a systematic-shifted sample
+	if jec!='nominal' and ((pp.find('jetAK4')!=-1 and jec.find('AK4JES')!=-1) or (pp.find('jetAK8')!=-1 and jec.find('AK8JES')!=-1)) :
+		jecunc_up, jecunc_down = corrector.getJECuncForJet(cleanjet,pp,jec)
+		if jec.endswith('_up') :
+			newJEC = newJEC+jecunc_up
+		elif jec.endswith('_dn') :
+			newJEC = newJEC-jecunc_down
+	adjJet = cleanjet*newJEC
+	#print '	readjusted pT = %.2f'%(adjJet.Pt()) #DEBUG
+	#If this is data, don't apply any smearing. just return the corrected, cleaned jet
 	if isdata :
-		return nominalJet, subtractedleps, metcorrvec-nominalJet
-	#The rest depends on whether we're doing JEC systematics
-	#Also we need the generated pt, eta, phi
+		return adjJet, subtractedleps, metcorrvec-adjJet
+	#Otherwise smear the jet pT (need the generated pt, eta, phi, and pT resolution)
 	genJetVec = TLorentzVector()
 	genPt  = branches[pp+'_GenJetPt'].getReadValue(index)
 	genEta = branches[pp+'_GenJetEta'].getReadValue(index)
@@ -202,26 +207,15 @@ def getfourvec(branches,index,jes,jer,leps,corrector,isdata,pp) :
 		genJetVec = None
 	else :
 		genJetVec.SetPtEtaPhiE(genPt,genEta,genPhi,genE)
-	#subtract out the leptons that were removed from the generated jet
 	dRCheck = 0.8 if pp.find('jetAK8')!=-1 else 0.4
-	#get the pt resolution of the jet
-	ptres = branches[pp+'_PtResolution'].getReadValue(index)
-	#Smear the jet 
+	ptres = branches[pp+'_PtResolution'].getReadValue(index) 
 	newJet = None
-	if jes=='nominal' :
-		newJet=corrector.smearJet(nominalJet,jer,genJetVec,ptres,dRCheck)
+	#for JER-wiggled systematics
+	if jec!='nominal' and ((pp.find('jetAK4')!=-1 and jec.find('AK4JER')!=-1) or (pp.find('jetAK8')!=-1 and jec.find('AK8JER')!=-1)) :
+		newJet=corrector.smearJet(adjJet,jec,genJetVec,ptres,dRCheck)
+	#for nominal smearing (not wiggling JER systematics)
 	else :
-		#otherwise get the new jec uncertainty
-		newJECuncDown, newJECuncUp = jecunc, jecunc
-		if len(subtractedleps)>0 :
-			newJECuncDown, newJECuncUp = corrector.getJECuncForJet(cleanjet,pp)
-		#And scale the fourvector up or down if we're looking for JES corrections
-		if jes=='up' :
-			jecUpJet = cleanjet*(newJEC+newJECuncUp)
-			newJet=corrector.smearJet(jecUpJet,jer,genJetVec,ptres,dRCheck)
-		elif jes=='down' :
-			jecDownJet = cleanjet*(newJEC-newJECuncDown)
-			newJet=corrector.smearJet(jecDownJet,jer,genJetVec,ptres,dRCheck)
+		newJet=corrector.smearJet(nominalJet,'nominal',genJetVec,ptres,dRCheck)
 	#print '	final pT = %.2f'%(newJet.Pt()) #DEBUG
 	return newJet, subtractedleps, metcorrvec-newJet
 
