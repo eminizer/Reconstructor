@@ -509,6 +509,12 @@ class Reconstructor(object) :
 		met1_vec, met2_vec = setupMET(lep.getFourVector(),met)
 		self.nMETs.setWriteValue(2) if met1_vec.Pz() != met2_vec.Pz() else self.nMETs.setWriteValue(1)
 		self.metE.setWriteValue(met1_vec.E())
+
+		#toss the event if it's for systematics shifts and doesn't pass selection to this point
+		if self.JEC!='nominal' and not self.__passesPreRecoCuts__(canreconstruct,topology,nLbtags,nMbtags,lep,electrons,muons,ak4jets,ak8jets,met) :
+			#print 'EVENT NUMBER %d NOT VALID; FAILS PRE RECO CUTS'%(eventnumber) #DEBUG
+			return
+
 		#-----------------------------------------------------------------Below here is event reconstruction-----------------------------------------------------------------#
 		if canreconstruct :
 			#print '	Reconstructing event...' #DEBUG
@@ -1040,6 +1046,67 @@ class Reconstructor(object) :
 		if cutdict==None :
 			cutdict=self.cut_branches
 		cutdict[cutname].setWriteValue(1) if cutbool else cutdict[cutname].setWriteValue(0)
+
+	def __passesPreRecoCuts__(self,canreconstruct,topology,nLbtags,nMbtags,lep,electrons,muons,ak4jets,ak8jets,met) :
+		#number of AK4 jets
+		if not canreconstruct : return False
+		#good primary vertex
+		if not (self.vtxBranches['vtx_ndof'].getReadValue()>=4 and abs(self.vtxBranches['vtx_z'].getReadValue())<24. and abs(self.vtxBranches['vtx_rho'].getReadValue())<2.) : return False
+		#met filtering
+		metfiltercuts = []
+		for branch in self.filterBranches.values() :
+			if self.is_data==0 and branch.getReadName()=='Flag_eeBadScFilter' : #the one filter that shouldn't be applied to Monte Carlo
+				continue
+			if branch.getWriteValue()!=1 :
+				metfiltercuts.append(False)
+		if not metfiltercuts.count(False)==0 : return False
+		#number of btags
+		if not ((topology<3 and nLbtags>0) or (topology==3 and nMbtags>1)) : return False
+		#other cuts are lepton flavor specific
+		other_leps = []; allcuts = []
+		if self.lepflavor.getWriteValue()==1 :
+			#trigger
+			trigvals = []
+			if topology==1 or topology==2 :
+				for trigName in MU_TRIG_PATHS_BOOSTED :
+					trigvals.append(self.triggerBranches[trigName].getWriteValue())
+			elif topology==3 :
+				for trigName in MU_TRIG_PATHS_RESOLVED :
+					trigvals.append(self.triggerBranches[trigName].getWriteValue())
+			if not trigvals.count(1)>0 : return False
+			#exactly one isolated lepton
+			other_leps+=electrons; other_leps+=muons[1:]; noOtherLeps = True
+			for olep in other_leps :
+				if olep.is2DIso(topology) and (topology<3 or olep.isLooseIso()) :
+					noOtherLeps = False
+					break
+			if not noOtherLeps : return False
+			#leading ak4 jets
+			if not (topology==3 or ((len(ak4jets)>1 and ak4jets[0].getPt()>150. and ak4jets[1].getPt()>50.) and (topology==1 or ak8jets[0].getSDM()>40.))) : return False
+			#boosted lepton pT cuts
+			if not (topology==3 or lep.getPt()>50.) : return False
+		elif self.lepflavor.getWriteValue()==2 :
+			#trigger
+			trigvals = []
+			if topology==1 or topology==2 :
+				for trigName in EL_TRIG_PATHS_BOOSTED :
+					trigvals.append(self.triggerBranches[trigName].getWriteValue())
+			elif topology==3 :
+				for trigName in EL_TRIG_PATHS_RESOLVED :
+					trigvals.append(self.triggerBranches[trigName].getWriteValue())
+			if not trigvals.count(1)>0 : return False
+			#exactly one isolated lepton
+			other_leps+=muons; other_leps+=electrons[1:]; noOtherLeps = True
+			for lep in other_leps :
+				if (topology<3 and lep.is2DIso(topology)) or (topology==3 and lep.is2DIso(topology) and lep.isLooseIso()) :
+					noOtherLeps = False
+					break
+			if not noOtherLeps : return False
+			#leading ak4 jets
+			if not (topology==3 or ((len(ak4jets)>1 and ak4jets[0].getPt()>250. and ak4jets[1].getPt()>70.) and (topology==1 or ak8jets[0].getSDM()>40.))) : return False
+			#boosted lepton pT cuts
+			if not (topology==3 or lep.getPt()>50.) : return False
+		return True
 
 	def __assignFullSelectionCutVars__(self,canreconstruct,topology,nLbtags,nMbtags,fitchi2,scaledlept,lep,electrons,muons,ak4jets,ak8jets,met) :
 		#number of AK4 jets

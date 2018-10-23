@@ -69,8 +69,8 @@ class Jet(object) :
 
 class AK4Jet(Jet) :
 
-	def __init__(self,branches,index,jes,jer,leps,corrector,isdata) :
-		Jet.__init__(self,branches,index,jes,jer,leps,corrector,isdata,'jetAK4CHS')
+	def __init__(self,branches,index,jec,leps,corrector,isdata) :
+		Jet.__init__(self,branches,index,jec,leps,corrector,isdata,'jetAK4CHS')
 		self.__flavor = branches['jetAK4CHS_HadronFlavour'].getReadValue(index)
 		self.setIsValid(self.getPt()>30. and abs(self.getEta())<2.4 and self.isIDed()==1)
 		self.__isValidForIsoCalc = self.getPt()>15. and abs(self.getEta())<3.0 and self.isIDed()==1
@@ -83,10 +83,10 @@ class AK4Jet(Jet) :
 
 class AK8Jet(Jet) :
 
-	def __init__(self,branches,index,jes,jer,leps,corrector,isdata) :
-		Jet.__init__(self,branches,index,jes,jer,leps,corrector,isdata,'jetAK8CHS')
+	def __init__(self,branches,index,jec,leps,corrector,isdata) :
+		Jet.__init__(self,branches,index,jec,leps,corrector,isdata,'jetAK8CHS')
 		#print 'Adding AK8 jet with soft drop mass %.4f'%(self.__sdm) #DEBUG
-		self.__subjets = self.__getsubjets__(branches,index,jes,jer,leps,corrector,isdata)
+		self.__subjets = self.__getsubjets__(branches,index,jec,leps,corrector,isdata)
 		self.__n_subjets = len(self.__subjets)
 		self.setIsValid(self.getPt()>200. and abs(self.getEta())<2.4 and self.isIDed()==1 and self.__n_subjets>1)
 		self.__tau3 = branches['jetAK8CHS_tau3CHS'].getReadValue(index)
@@ -96,7 +96,7 @@ class AK8Jet(Jet) :
 		self.__isttagged = self.getPt()>400. and self.__sdm>105. and self.__sdm<220. and self.__tau3!=0. and self.__tau2!=0. and (self.__tau3/self.__tau2)<0.80
 		self.__isWtagged = self.getPt()>200. and self.__sdm>65. and self.__sdm<105. and self.__tau2!=0. and self.__tau1!=0. and (self.__tau2/self.__tau1)<0.55
 
-	def __getsubjets__(self,branches,index,jes,jer,leps,corrector,isdata) :
+	def __getsubjets__(self,branches,index,jec,leps,corrector,isdata) :
 		#start by making a list of all the subjets for this jet
 		allsubjets = []
 		#get the subjet indices
@@ -104,11 +104,11 @@ class AK8Jet(Jet) :
 		subjet1index = branches['jetAK8CHS_vSubjetIndex1'].getReadValue(index)
 		#add the subjets
 		if subjet0index>-1 :
-			newSubjet = Jet(branches,int(subjet0index),jes,jer,leps,corrector,isdata,'subjetAK8CHS')
+			newSubjet = Jet(branches,int(subjet0index),jec,leps,corrector,isdata,'subjetAK8CHS')
 			if newSubjet.getFourVector()!=None :
 				allsubjets.append(newSubjet)
 		if subjet1index>-1 :
-			newSubjet = Jet(branches,int(subjet1index),jes,jer,leps,corrector,isdata,'subjetAK8CHS')
+			newSubjet = Jet(branches,int(subjet1index),jec,leps,corrector,isdata,'subjetAK8CHS')
 			if newSubjet.getFourVector()!=None :
 				allsubjets.append(newSubjet)
 		#order the list of subjets by pt
@@ -215,7 +215,7 @@ def getfourvec(branches,index,jec,leps,corrector,isdata,pp) :
 		newJet=corrector.smearJet(adjJet,jec,genJetVec,ptres,dRCheck)
 	#for nominal smearing (not wiggling JER systematics)
 	else :
-		newJet=corrector.smearJet(nominalJet,'nominal',genJetVec,ptres,dRCheck)
+		newJet=corrector.smearJet(adjJet,'nominal',genJetVec,ptres,dRCheck)
 	#print '	final pT = %.2f'%(newJet.Pt()) #DEBUG
 	return newJet, subtractedleps, metcorrvec-newJet
 
