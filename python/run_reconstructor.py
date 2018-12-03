@@ -200,7 +200,7 @@ print 'Using input file '+input_files_list+''
 #open input file in read only mode 
 input_files_list = open(input_files_list,'r')
 #Set up the garbage output file and the chain
-garbageFileName = 'garbage' 
+garbageFileName = 'garbage_'+options.name 
 if options.n_jobs!=1 : 
 	garbageFileName+='_'+str(options.i_job) 
 garbageFileName+='.root' 
@@ -318,8 +318,20 @@ for event in range(nanalysisevents) :
 			timeLeft = timedelta(seconds=(100.-percentDone)*timeSinceSetup.total_seconds()/percentDone)
 			print ( 'Count at %d of %d, (%.4f%% complete; elapsed = %02d:%02d:%02d, remaining = %02d:%02d:%02d)'
 				   %(count,min(nanalysisevents,maxEvents),percentDone,timeSinceSetup.seconds/3600,(timeSinceSetup.seconds%3600)/60,(timeSinceSetup.seconds%60),timeLeft.seconds/3600,(timeLeft.seconds%3600)/60,(timeLeft.seconds%60))  )
+	#a couple vetoes for bugged events
+	if options.name=='DYJets_M-50_HT-2500toInf' :
+		if options.n_jobs==40 :
+			if (options.i_job==11 and count==4839) or (options.i_job==32 and count==8219) or (options.i_job==34 and count==4157) :
+				continue
+	elif options.name=='WJets_HT-2500toInf' :
+		if options.n_jobs==10 :
+			if (options.i_job==4 and count==17253) or (options.i_job==5 and count==16924) :
+				continue
+	#another veto for splitting the last WJets_HT-800to1200_AK8JESFlav_up job that just won't finish
+	#if count<80000 or count>=120000 :
+	#	continue
+	
 	#analyze event and add to TTree
-	#if count<1500 or count>1600 :
 	analyzer.analyze(event)
 	#reset analyzer
 	analyzer.reset()

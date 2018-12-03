@@ -8,10 +8,10 @@ from optparse import OptionParser
 import multiprocessing
 import copy
 
-def_weights  = '(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF*sf_lep_iso_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH*sf_lep_iso_GH))*weight*sf_pileup*sf_btag_eff*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
-qcda_weights = '(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH))*weight*sf_pileup*sf_btag_eff*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
+def_weights  = '(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF*sf_lep_iso_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH*sf_lep_iso_GH))*weight*sf_pileup*sf_btag_eff_heavy*sf_btag_eff_light*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
+qcda_weights = '(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH))*weight*sf_pileup*sf_btag_eff_heavy*sf_btag_eff_light*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
 qcdb_weights = def_weights
-qcdc_weights = '(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH))*weight*sf_pileup*sf_btag_eff*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
+qcdc_weights = '(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH))*weight*sf_pileup*sf_btag_eff_heavy*sf_btag_eff_light*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
 
 gROOT.SetBatch()
 
@@ -403,7 +403,7 @@ if estimate_qcd :
 #plot class
 class Plot(object) :
 
-	def __init__(self,name,varlist,title,nBins,low,hi,MC_weights=options.MC_weights,addl_cuts='',iPos=11,lPos=3,logy=False,suppress_QCD=False) :
+	def __init__(self,name,varlist,title,nBins,low,hi,MC_weights=options.MC_weights,addl_cuts='',iPos=11,lPos=3,logy=False,suppress_QCD=False,resid_zoom=1) :
 		#save init info
 		self._name = name
 		self._varlist = varlist
@@ -419,17 +419,21 @@ class Plot(object) :
 		self._cutstring = 'weight!=0' #vanilla (charge-summed)
 		#self._cutstring = 'weight!=0 && lep_Q>0.' #positively charged leptons only
 		#self._cutstring = 'weight!=0 && lep_Q<0.' #negatively charged leptons only
+		for var in varlist :
+			self._cutstring+=' && '+var+'!=-900.'
 		if addl_cuts!='' :
 			self._cutstring+=' && '+addl_cuts
 		#print 'cuts for '+name+' = '+self._cutstring #DEBUG
 		#luminosity object position
 		self._iPos = iPos #iPos = 10*(alignment) + position (1/2/3 = left/center/right)
 		#legend position
-		self._lPos = lPos #1=left, 2=middle, 3=right (default)
+		self._lPos = lPos #1=left, 2=middle, 3=right (default), 4=above everything in 3 columns
 		#whether to put the y-axis on a log scale
 		self._logy = logy
 		#whether to explicitly omit the data-driven QCD ackground estimate
 		self._suppress_QCD = suppress_QCD
+		#how far to zoom in on the residual plot axes
+		self._resid_zoom = resid_zoom
 
 	def plot(self,treedict,outfilep) :
 		outfilep.cd()
@@ -491,6 +495,7 @@ class Plot(object) :
 			treedict['DATA_SR'].Draw('%s>>%s(%d,%f,%f)'%(var,interactivename,self._nBins,self._low,self._hi),'(%s)'%(self._cutstring))
 			newinthisto=gROOT.FindObject(interactivename)
 			newinthisto.SetTitle(self._title)
+			newinthisto.SetBinContent(1,newinthisto.GetBinContent(1)+newinthisto.GetBinContent(0))
 			newinthisto.SetBinContent(newinthisto.GetNbinsX(),newinthisto.GetBinContent(newinthisto.GetNbinsX())+newinthisto.GetBinContent(newinthisto.GetNbinsX()+1))
 			self._data_histo.Add(newinthisto)
 		self._data_histo.SetTitle(self._title)
@@ -504,9 +509,11 @@ class Plot(object) :
 				treedict['DATA_QCD_SB'].Draw('%s>>%s(%d,%f,%f)'%(var,interactivename+'_up',self._nBins,self._low,self._hi),'('+qcd_c_cut+' && '+self._cutstring+')*('+str(QCD_transfer_factors_up[self._name.split('_')[-1]])+')')
 				newinthisto=gROOT.FindObject(interactivename)
 				newinthisto.SetTitle(self._title)
+				newinthisto.SetBinContent(1,newinthisto.GetBinContent(1)+newinthisto.GetBinContent(0))
 				newinthisto.SetBinContent(newinthisto.GetNbinsX(),newinthisto.GetBinContent(newinthisto.GetNbinsX())+newinthisto.GetBinContent(newinthisto.GetNbinsX()+1))
 				self._MC_histos[0].Add(newinthisto)
 				newinthistoup=gROOT.FindObject(interactivename+'_up')
+				newinthistoup.SetBinContent(1,newinthistoup.GetBinContent(1)+newinthistoup.GetBinContent(0))
 				newinthistoup.SetBinContent(newinthistoup.GetNbinsX(),newinthistoup.GetBinContent(newinthistoup.GetNbinsX())+newinthistoup.GetBinContent(newinthistoup.GetNbinsX()+1))
 				dummy_qcd_up_histo.Add(newinthistoup)
 			for i in range(len(shortnames_done)) :
@@ -524,16 +531,19 @@ class Plot(object) :
 					#print '	findobject for name %s returns %s'%(interactivename,gROOT.FindObject(interactivename)) #DEBUG
 					newinthisto=gROOT.FindObject(interactivename)
 					newinthisto.SetTitle(self._title)
+					newinthisto.SetBinContent(1,newinthisto.GetBinContent(1)+newinthisto.GetBinContent(0))
 					newinthisto.SetBinContent(newinthisto.GetNbinsX(),newinthisto.GetBinContent(newinthisto.GetNbinsX())+newinthisto.GetBinContent(newinthisto.GetNbinsX()+1))
 					self._MC_histos[0].Add(newinthisto)
 					newinthistoup=gROOT.FindObject(interactivename+'_up')
+					newinthistoup.SetBinContent(1,newinthistoup.GetBinContent(1)+newinthistoup.GetBinContent(0))
 					newinthistoup.SetBinContent(newinthistoup.GetNbinsX(),newinthistoup.GetBinContent(newinthistoup.GetNbinsX())+newinthistoup.GetBinContent(newinthistoup.GetNbinsX()+1))
 					dummy_qcd_up_histo.Add(newinthistoup)
 				self._MC_histos[0].SetTitle(self._title)
 			for i in range(1,self._nBins+1) :
 				if self._MC_histos[0].GetBinContent(i)<=0. :
 					self._MC_histos[0].SetBinContent(i,0.)
-				binerr = sqrt((dummy_qcd_up_histo.GetBinContent(i)-self._MC_histos[0].GetBinContent(i))**2+self._MC_histos[0].GetBinContent(i))
+				#binerr = sqrt((dummy_qcd_up_histo.GetBinContent(i)-self._MC_histos[0].GetBinContent(i))**2+self._MC_histos[0].GetBinContent(i))
+				binerr = sqrt((dummy_qcd_up_histo.GetBinContent(i)-self._MC_histos[0].GetBinContent(i))**2+(0.3*self._MC_histos[0].GetBinContent(i))**2)
 				self._MC_histos[0].SetBinError(i,binerr)
 		#plot and get the MC histograms
 		for i in range(len(shortnames_done)) :
@@ -549,6 +559,7 @@ class Plot(object) :
 				#print '	findobject for name %s returns %s'%(interactivename,gROOT.FindObject(interactivename)) #DEBUG
 				newinthisto=gROOT.FindObject(interactivename)
 				newinthisto.SetTitle(self._title)
+				newinthisto.SetBinContent(1,newinthisto.GetBinContent(1)+newinthisto.GetBinContent(0))
 				newinthisto.SetBinContent(newinthisto.GetNbinsX(),newinthisto.GetBinContent(newinthisto.GetNbinsX())+newinthisto.GetBinContent(newinthisto.GetNbinsX()+1))
 				if estimate_qcd and not self._suppress_QCD :
 					self._MC_histos[i+1].Add(newinthisto)
@@ -585,26 +596,36 @@ class Plot(object) :
 			self._resid.SetBinContent(i,resid_cont)
 			self._resid.SetBinError(i,resid_err)
 		#set the maximum of the stack to show the whole thing
-		self._MC_stack.SetMaximum(1.02*max(self._MC_stack.GetMaximum()+sqrt(self._MC_stack.GetMaximum()),self._data_histo.GetMaximum()+sqrt(self._data_histo.GetMaximum())))
+		stack_max=max(self._MC_stack.GetMaximum()+sqrt(self._MC_stack.GetMaximum()),self._data_histo.GetMaximum()+sqrt(self._data_histo.GetMaximum()))
+		if self._lPos==4 :
+			self._MC_stack.SetMaximum(1.25*stack_max)
+		else :
+			self._MC_stack.SetMaximum(1.05*stack_max) 
 		#make a legend
-		legwidth = 0.25
-		legheight = 0.1+len(self._MC_histos)*0.05
+		legwidth = 0.2 if self._lPos!=4 else 0.4
+		legheight = (len(self._MC_histos)+2)*0.05 if self._lPos!=4 else ((len(self._MC_histos)+2)*0.05)/3.5
 		x2 = 0.9; y2 = 0.83
 		if self._lPos==1 :
 			x2 = 0.44
 		elif self._lPos==2 :
 			x2 = 0.7
 		self._leg = TLegend(x2-legwidth,y2-legheight,x2,y2)
-		self._leg.AddEntry(self._data_histo,'DATA ('+str(self._data_histo.GetEntries())+' entries)','PE')
+		if self._lPos==4 :
+			self._leg.SetNColumns(3)
+		#self._leg.AddEntry(self._data_histo,'DATA ('+str(self._data_histo.GetEntries())+' entries)','PE')
+		self._leg.AddEntry(self._data_histo,'DATA','PE')
 		for i in reversed(range(len(self._MC_histos))) :
 			entries = self._MC_histos[i].GetEntries()
 			if i==0 and estimate_qcd and not self._suppress_QCD :
-				self._leg.AddEntry(self._MC_histos[i],'data-driven QCD ('+str(entries)+' entries)','F')
+				#self._leg.AddEntry(self._MC_histos[i],'data-driven QCD ('+str(entries)+' entries)','F')
+				self._leg.AddEntry(self._MC_histos[i],'data-driven QCD','F')
 			else :
 				if estimate_qcd and not self._suppress_QCD :
-					self._leg.AddEntry(self._MC_histos[i],shortnames_done[i-1]+' ('+str(entries)+' entries)','F')
+					#self._leg.AddEntry(self._MC_histos[i],shortnames_done[i-1]+' ('+str(entries)+' entries)','F')
+					self._leg.AddEntry(self._MC_histos[i],shortnames_done[i-1],'F')
 				else :
-					self._leg.AddEntry(self._MC_histos[i],shortnames_done[i]+' ('+str(entries)+' entries)','F')
+					#self._leg.AddEntry(self._MC_histos[i],shortnames_done[i]+' ('+str(entries)+' entries)','F')
+					self._leg.AddEntry(self._MC_histos[i],shortnames_done[i],'F')
 		self._leg.AddEntry(self._MC_err_histo,'MC uncertainty','F')
 		#build the final plot
 		self._canv.cd()
@@ -660,7 +681,12 @@ class Plot(object) :
 		self._MC_err_resid.GetYaxis().SetTitleOffset(0.25)
 		self._MC_err_resid.GetXaxis().SetTitleSize((0.75/0.25)*self._MC_err_resid.GetXaxis().GetTitleSize())
 		self._MC_err_resid.GetYaxis().SetTitleSize((0.75/0.25)*self._MC_err_resid.GetYaxis().GetTitleSize())
-		self._MC_err_resid.GetYaxis().SetRangeUser(0.1,1.9)
+		if self._resid_zoom==1 :
+			self._MC_err_resid.GetYaxis().SetRangeUser(0.7,1.3)
+		elif self._resid_zoom==2 :
+			self._MC_err_resid.GetYaxis().SetRangeUser(0.85,1.15)
+		elif self._resid_zoom==3 :
+			self._MC_err_resid.GetYaxis().SetRangeUser(0.92,1.08)
 		self._MC_err_resid.GetYaxis().SetNdivisions(504)
 		self._canv.Update()
 		#plot the CMS_Lumi lines on the canvases
@@ -690,192 +716,192 @@ if mode=='' or mode=='wjetscr' or mode.startswith('qcd') :
 	#type-1
 	if mode=='wjetscr' :
 		all_plots.append(Plot('npv_t1',['npv'],'; # primary vertices; Events/bin',61,-0.5,60.5,addl_cuts='eventTopology==1'))
-		all_plots.append(Plot('ngv_t1',['ngoodvtx'],'; # good vertices; Events/bin',61,-0.5,60.5,addl_cuts='eventTopology==1'))
+		all_plots.append(Plot('ngv_t1',['ngoodvtx'],'; # good vertices; Events/bin',41,-0.5,40.5,addl_cuts='eventTopology==1',lPos=4))
 		all_plots.append(Plot('lbsf_t1',['par_2'],'; #lambda_{2}; Events/0.05',20,0.2,1.2,addl_cuts='eventTopology==1'))
 		all_plots.append(Plot('hsfs_t1',['par_3','par_4'],'; #lambda_{3/4}; Events/0.05',20,0.2,1.2,addl_cuts='eventTopology==1',iPos=33,lPos=1))
 		all_plots.append(Plot('chi2_t1',['chi2'],'; #chi^{2}; Events/5',50,-65.,185.,addl_cuts='eventTopology==1',iPos=33,lPos=0))
 	else :
 		all_plots.append(Plot('npv_t1',['npv'],'; # primary vertices; Events/bin',61,-0.5,60.5,addl_cuts='eventTopology==1',iPos=33,lPos=2))
-		all_plots.append(Plot('ngv_t1',['ngoodvtx'],'; # good vertices; Events/bin',61,-0.5,60.5,addl_cuts='eventTopology==1',iPos=33,lPos=2))
-		all_plots.append(Plot('lbsf_t1',['par_2'],'; #lambda_{2}; Events/0.02',30,0.6,1.2,addl_cuts='eventTopology==1',iPos=33,lPos=1))
-		all_plots.append(Plot('hsfs_t1',['par_3','par_4'],'; #lambda_{3/4}; Events/0.02',30,0.6,1.2,addl_cuts='eventTopology==1',lPos=2))
-		all_plots.append(Plot('chi2_t1',['chi2'],'; #chi^{2}; Events/1',50,-65.,-15.,addl_cuts='eventTopology==1',iPos=33))
+		all_plots.append(Plot('ngv_t1',['ngoodvtx'],'; # good vertices; Events/bin',41,-0.5,40.5,addl_cuts='eventTopology==1',lPos=4))
+		all_plots.append(Plot('lbsf_t1',['par_2'],'; #lambda_{2}; Events/0.01',40,0.75,1.15,addl_cuts='eventTopology==1',lPos=4))
+		all_plots.append(Plot('hsfs_t1',['par_3','par_4'],'; #lambda_{3/4}; Events/0.01',40,0.8,1.2,addl_cuts='eventTopology==1',iPos=33,lPos=1))
+		all_plots.append(Plot('chi2_t1',['chi2'],'; #chi^{2}; Events/1',28,-43.,-15.,addl_cuts='eventTopology==1',lPos=4))
 	all_plots.append(Plot('vpz_t1',['par_0'],'; p^{#nu}_{Z} [GeV]; Events/25 GeV',40,-500.,500.,addl_cuts='eventTopology==1'))
-	all_plots.append(Plot('lsf_t1',['par_1'],'; #lambda_{1}; Events/0.001',40,0.97,1.01,addl_cuts='eventTopology==1',lPos=2))
+	all_plots.append(Plot('lsf_t1',['par_1'],'; #lambda_{1}; Events/0.0005',40,0.985,1.005,addl_cuts='eventTopology==1',lPos=4))
 	all_plots.append(Plot('leppT_t1',['lep_pt'],';'+lepstring+' p_{T} [GeV]; Events/10 GeV',40,50.,450.,addl_cuts='eventTopology==1',iPos=33,lPos=2))
-	all_plots.append(Plot('lepeta_t1',['lep_eta'],';'+lepstring+' #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==1',lPos=0))
-	all_plots.append(Plot('leprelpT_t1',['lep_relPt'],'; p_{T}^{rel}('+shortlepstring+', jet) [GeV]; Events/10 GeV',40,0.,400.,addl_cuts='eventTopology==1',iPos=33,lPos=2,suppress_QCD=True))
-	all_plots.append(Plot('lepdR_t1',['lep_dR'],'; #Delta R('+shortlepstring+', jet); Events/0.1',30,0.,3.,addl_cuts='eventTopology==1',iPos=33,lPos=2,suppress_QCD=True))
+	all_plots.append(Plot('lepeta_t1',['lep_eta'],';'+lepstring+' #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==1',lPos=4))
+	all_plots.append(Plot('leprelpT_t1',['lep_relPt'],'; p_{T}^{rel}('+shortlepstring+', jet) [GeV]; Events/10 GeV',30,0.,300.,addl_cuts='eventTopology==1',lPos=4,suppress_QCD=True))
+	all_plots.append(Plot('lepdR_t1',['lep_dR'],'; #Delta R('+shortlepstring+', jet); Events/0.1',20,0.,2.,addl_cuts='eventTopology==1',lPos=4,suppress_QCD=True))
 	if leptype=='muons' or leptype=='all_leptons' :
 		all_plots.append(Plot('lepIso_t1',['lep_Iso'],'; '+lepstring+' PF relative isolation; Events/0.005',30,0.,0.15,addl_cuts='eventTopology==1',iPos=33,lPos=2,logy=True,suppress_QCD=True))
-		all_plots.append(Plot('ak41pT_t1',['ak41_pt'],'; AK4 jet1 p_{T} [GeV]; Events/20 GeV',40,150.,950.,addl_cuts='eventTopology==1'))
-		all_plots.append(Plot('ak42pT_t1',['ak42_pt'],'; AK4 jet2 p_{T} [GeV]; Events/20 GeV',40,50.,850.,addl_cuts='eventTopology==1',iPos=33,lPos=2))
+		all_plots.append(Plot('ak41pT_t1',['ak41_pt'],'; AK4 jet1 p_{T} [GeV]; Events/20 GeV',40,150.,950.,addl_cuts='eventTopology==1',lPos=4))
+		all_plots.append(Plot('ak42pT_t1',['ak42_pt'],'; AK4 jet2 p_{T} [GeV]; Events/10 GeV',55,50.,600.,addl_cuts='eventTopology==1',lPos=4))
 	elif leptype=='electrons' :
 		all_plots.append(Plot('lepIso_t1',['lep_Iso'],'; '+lepstring+' PF relative isolation; Events/0.002',50,0.,0.50,addl_cuts='eventTopology==1',iPos=33,lPos=2,logy=True,suppress_QCD=True))
-		all_plots.append(Plot('ak41pT_t1',['ak41_pt'],'; AK4 jet1 p_{T} [GeV]; Events/20 GeV',40,250.,1050.,addl_cuts='eventTopology==1'))
-		all_plots.append(Plot('ak42pT_t1',['ak42_pt'],'; AK4 jet2 p_{T} [GeV]; Events/20 GeV',40,70.,870.,addl_cuts='eventTopology==1',iPos=33,lPos=2))
-	all_plots.append(Plot('ak41eta_t1',['ak41_eta'],'; AK4 jet1 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==1',lPos=0))
+		all_plots.append(Plot('ak41pT_t1',['ak41_pt'],'; AK4 jet1 p_{T} [GeV]; Events/20 GeV',35,250.,950.,addl_cuts='eventTopology==1',lPos=4))
+		all_plots.append(Plot('ak42pT_t1',['ak42_pt'],'; AK4 jet2 p_{T} [GeV]; Events/10 GeV',53,70.,600.,addl_cuts='eventTopology==1',lPos=4))
+	all_plots.append(Plot('ak41eta_t1',['ak41_eta'],'; AK4 jet1 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==1',lPos=4))
 	all_plots.append(Plot('ak41csv_t1',['ak41_csvv2'],'; AK4 jet1 CSVv2; Events/0.025',40,0.0,1.0,addl_cuts='eventTopology==1',lPos=2))
-	all_plots.append(Plot('ak42eta_t1',['ak42_eta'],'; AK4 jet2 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==1',lPos=0))
+	all_plots.append(Plot('ak42eta_t1',['ak42_eta'],'; AK4 jet2 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==1',lPos=4))
 	all_plots.append(Plot('ak42csv_t1',['ak42_csvv2'],'; AK4 jet2 CSVv2; Events/0.025',40,0.0,1.0,addl_cuts='eventTopology==1',lPos=2))
 	all_plots.append(Plot('ak8pT_t1',['ak81_pt'],'; top-tagged AK8 jet p_{T} [GeV]; Events/10 GeV',50,400.,900.,addl_cuts='eventTopology==1',iPos=33,lPos=2))
-	all_plots.append(Plot('ak8eta_t1',['ak81_eta'],'; top-tagged AK8 jet #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==1',lPos=0))
-	all_plots.append(Plot('ak8M_t1',['ak81_M'],'; top-tagged AK8 jet mass [GeV]; Events/10 GeV',40,0.0,400.0,addl_cuts='eventTopology==1'))
-	all_plots.append(Plot('ak8tau32_t1',['ak81_tau32'],'; top-tagged AK8 jet #tau_{32}; Events/0.05',16,0.,0.8,addl_cuts='eventTopology==1',lPos=0))
-	all_plots.append(Plot('ak8SDM_t1',['ak81_SDM'],'; top-tagged AK8 jet softdrop mass [GeV]; Events/5 GeV',23,105.,220.,addl_cuts='eventTopology==1'))
+	all_plots.append(Plot('ak8eta_t1',['ak81_eta'],'; top-tagged AK8 jet #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==1',lPos=4))
+	all_plots.append(Plot('ak8M_t1',['ak81_M'],'; top-tagged AK8 jet mass [GeV]; Events/5 GeV',30,100.,250.,addl_cuts='eventTopology==1',lPos=4))
+	all_plots.append(Plot('ak8tau32_t1',['ak81_tau32'],'; top-tagged AK8 jet #tau_{32}; Events/0.05',16,0.,0.8,addl_cuts='eventTopology==1',lPos=4))
+	all_plots.append(Plot('ak8SDM_t1',['ak81_SDM'],'; top-tagged AK8 jet softdrop mass [GeV]; Events/5 GeV',23,105.,220.,addl_cuts='eventTopology==1',lPos=4))
 	if leptype=='muons' or leptype=='all_leptons' :
-		all_plots.append(Plot('MET_t1',['met_E'],'; MET [GeV]; Events/20 GeV',40,50.,850.,addl_cuts='eventTopology==1',iPos=33,lPos=2))
+		all_plots.append(Plot('MET_t1',['met_E'],'; MET [GeV]; Events/20 GeV',40,50.,850.,addl_cuts='eventTopology==1',lPos=4))
 	elif leptype=='electrons' :
-		all_plots.append(Plot('MET_t1',['met_E'],'; MET [GeV]; Events/20 GeV',40,100.,900.,addl_cuts='eventTopology==1',iPos=33,lPos=2))
-	all_plots.append(Plot('METphi_t1',['met_phi'],'; MET #phi; Events/0.2',31,-3.2,3.2,addl_cuts='eventTopology==1',lPos=0))
-	all_plots.append(Plot('scaledMETphi_t1',['scaled_met_phi'],'; MET #phi (postfit); Events/0.2',31,-3.2,3.2,addl_cuts='eventTopology==1',lPos=0))
+		all_plots.append(Plot('MET_t1',['met_E'],'; MET [GeV]; Events/20 GeV',40,100.,900.,addl_cuts='eventTopology==1',lPos=4))
+	all_plots.append(Plot('METphi_t1',['met_phi'],'; MET #phi; Events/0.2',31,-3.2,3.2,addl_cuts='eventTopology==1',lPos=4))
+	all_plots.append(Plot('scaledMETphi_t1',['scaled_met_phi'],'; MET #phi (postfit); Events/0.2',31,-3.2,3.2,addl_cuts='eventTopology==1',lPos=4))
 	all_plots.append(Plot('lepWHT_t1',['met_E+lep_pt'],'; p_{T}^{lep}+MET [GeV]; Events/20',50,0.,1000.,addl_cuts='eventTopology==1',lPos=0))
-	all_plots.append(Plot('nak4_t1',['nak4jets'],'; # AK4 jets; Events/bin',16,-0.5,15.5,addl_cuts='eventTopology==1',iPos=33,lPos=0))
+	all_plots.append(Plot('nak4_t1',['nak4jets'],'; # AK4 jets; Events/bin',9,1.5,10.5,addl_cuts='eventTopology==1',iPos=33,lPos=4))
 	all_plots.append(Plot('nak8_t1',['nak8jets'],'; # AK8 jets; Events/bin',11,-0.5,10.5,addl_cuts='eventTopology==1',iPos=33,lPos=2))
 	all_plots.append(Plot('nttags_t1',['ntTags'],'; # top-tagged AK8 jets; Events/bin',11,-0.5,10.5,addl_cuts='eventTopology==1',iPos=33,lPos=2))
-	all_plots.append(Plot('nbtags_t1',['nLbTags'],'; # b-tagged AK4 jets; Events/bin',10,0.5,10.5,addl_cuts='eventTopology==1',iPos=33,lPos=2))
-	all_plots.append(Plot('lepWpT_t1',['scaled_lepW_pt'],'; reconstructed W_{lep} p_{T} [GeV]; Events/40 GeV',30,0.,1200.,addl_cuts='eventTopology==1',iPos=33,lPos=0))
-	all_plots.append(Plot('lepWM_t1',['scaled_lepW_M'],'; reconstructed W_{lep} mass [GeV]; Events/0.05 GeV',20,80.,81.,addl_cuts='eventTopology==1',iPos=33,lPos=0))
-	all_plots.append(Plot('leptpT_t1',['scaled_lept_pt'],'; reconstructed t_{lep} p_{T} [GeV]; Events/40 GeV',30,0.,1200.,addl_cuts='eventTopology==1'))
+	all_plots.append(Plot('nbtags_t1',['nLbTags'],'; # b-tagged AK4 jets; Events/bin',5,0.5,5.5,addl_cuts='eventTopology==1',lPos=4))
+	all_plots.append(Plot('lepWpT_t1',['scaled_lepW_pt'],'; reconstructed W_{lep} p_{T} [GeV]; Events/20 GeV',40,0.,800.,addl_cuts='eventTopology==1',lPos=4))
+	all_plots.append(Plot('lepWM_t1',['scaled_lepW_M'],'; reconstructed W_{lep} mass [GeV]; Events/0.01 GeV',40,80.25,80.65,addl_cuts='eventTopology==1',lPos=4))
+	all_plots.append(Plot('leptpT_t1',['scaled_lept_pt'],'; reconstructed t_{lep} p_{T} [GeV]; Events/40 GeV',25,0.,1000.,addl_cuts='eventTopology==1',lPos=4))
 	all_plots.append(Plot('leptM_t1',['scaled_lept_M'],'; reconstructed t_{lep} mass [GeV]; Events/5 GeV',20,110.,210.,addl_cuts='eventTopology==1',iPos=33,lPos=1))
-	all_plots.append(Plot('hadtpT_t1',['scaled_hadt_pt'],'; reconstructed t_{had} p_{T} [GeV]; Events/40 GeV',30,0.,1200.,addl_cuts='eventTopology==1'))
-	all_plots.append(Plot('hadtM_t1',['scaled_hadt_M'],'; reconstructed t_{had} mass [GeV]; Events/10 GeV',30,50.,350.,addl_cuts='eventTopology==1'))
-	all_plots.append(Plot('cstar_t1',['cstar'],'; c*; Events/0.1',20,-1.,1.,addl_cuts='eventTopology==1',lPos=0))
+	all_plots.append(Plot('hadtpT_t1',['scaled_hadt_pt'],'; reconstructed t_{had} p_{T} [GeV]; Events/20 GeV',35,350.,1050.,addl_cuts='eventTopology==1',lPos=4))
+	all_plots.append(Plot('hadtM_t1',['scaled_hadt_M'],'; reconstructed t_{had} mass [GeV]; Events/5 GeV',24,110.,230.,addl_cuts='eventTopology==1',lPos=4))
+	all_plots.append(Plot('cstar_t1',['cstar'],'; c*; Events/0.1',20,-1.,1.,addl_cuts='eventTopology==1',lPos=4))
 	all_plots.append(Plot('x_F_t1',['abs(x_F)'],'; |x_{F}|; Events/0.02',30,0.,0.6,addl_cuts='eventTopology==1',iPos=33,lPos=2))
-	all_plots.append(Plot('M_t1',['M'],'; M; Events/100 GeV',25,500.,3000.,addl_cuts='eventTopology==1'))
+	all_plots.append(Plot('M_t1',['M'],'; M; Events/100 GeV',25,500.,3000.,addl_cuts='eventTopology==1',lPos=4))
 	all_plots.append(Plot('ttpt_t1',['tt_pt'],'; top pair p_{T} [GeV]; Events/20 GeV',30,0.,600.,addl_cuts='eventTopology==1',iPos=33,lPos=2))
-	all_plots.append(Plot('lep_hadt_dR_t1',['lep_hadt_deltaR'],'; #Delta R ('+shortlepstring+', t_{had}); Events/0.2',30,0.,6.,addl_cuts='eventTopology==1'))
-	all_plots.append(Plot('lep_v_dPhi_t1',['lep_v_deltaPhi'],'; #Delta #phi ('+shortlepstring+', #nu); Events/0.2',32,-3.2,3.2,addl_cuts='eventTopology==1'))
-	all_plots.append(Plot('lept_hadt_dR_t1',['lept_hadt_deltaR'],'; #Delta R (t_{lep}, t_{had}); Events/0.1',30,0.,6.,addl_cuts='eventTopology==1'))
-	all_plots.append(Plot('ak43pT_t1',['ak43_pt'],'; AK4 jet3 p_{T} [GeV]; Events/10 GeV',40,30.,430.,addl_cuts='eventTopology==1',iPos=33,lPos=2))
-	all_plots.append(Plot('ak43eta_t1',['ak43_eta'],'; AK4 jet3 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==1',lPos=0))
+	all_plots.append(Plot('lep_hadt_dR_t1',['lep_hadt_deltaR'],'; #Delta R ('+shortlepstring+', t_{had}); Events/0.1',30,1.5,4.5,addl_cuts='eventTopology==1',lPos=4))
+	all_plots.append(Plot('lep_v_dPhi_t1',['lep_v_deltaPhi'],'; #Delta #phi ('+shortlepstring+', #nu); Events/0.1',30,-1.5,1.5,addl_cuts='eventTopology==1',lPos=4))
+	all_plots.append(Plot('lept_hadt_dR_t1',['lept_hadt_deltaR'],'; #Delta R (t_{lep}, t_{had}); Events/0.1',20,2.,4.,addl_cuts='eventTopology==1',lPos=4))
+	all_plots.append(Plot('ak43pT_t1',['ak43_pt'],'; AK4 jet3 p_{T} [GeV]; Events/10 GeV',30,30.,330.,addl_cuts='eventTopology==1',lPos=4))
+	all_plots.append(Plot('ak43eta_t1',['ak43_eta'],'; AK4 jet3 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==1',lPos=4))
 	all_plots.append(Plot('ak43csv_t1',['ak43_csvv2'],'; AK4 jet3 CSVv2; Events/0.025',40,0.0,1.0,addl_cuts='eventTopology==1',lPos=2))
-	all_plots.append(Plot('ak44pT_t1',['ak44_pt'],'; AK4 jet4 p_{T} [GeV]; Events/10 GeV',30,30.,330.,addl_cuts='eventTopology==1',iPos=33,lPos=2))
-	all_plots.append(Plot('ak44eta_t1',['ak44_eta'],'; AK4 jet4 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==1',lPos=0))
+	all_plots.append(Plot('ak44pT_t1',['ak44_pt'],'; AK4 jet4 p_{T} [GeV]; Events/10 GeV',20,30.,230.,addl_cuts='eventTopology==1',lPos=4))
+	all_plots.append(Plot('ak44eta_t1',['ak44_eta'],'; AK4 jet4 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==1',lPos=4))
 	all_plots.append(Plot('ak44csv_t1',['ak44_csvv2'],'; AK4 jet4 CSVv2; Events/0.025',40,0.0,1.0,addl_cuts='eventTopology==1',lPos=2))
-	all_plots.append(Plot('ak8tau21_t1',['ak81_tau21'],'; top-tagged AK8 jet #tau_{21}; Events/0.05',20,0.,1.,addl_cuts='eventTopology==1',lPos=0))
+	all_plots.append(Plot('ak8tau21_t1',['ak81_tau21'],'; top-tagged AK8 jet #tau_{21}; Events/0.05',20,0.,1.,addl_cuts='eventTopology==1',lPos=4))
 	#type-2
 	if mode=='wjetscr' :
 		all_plots.append(Plot('npv_t2',['npv'],'; # primary vertices; Events/bin',61,-0.5,60.5,addl_cuts='eventTopology==2'))
-		all_plots.append(Plot('ngv_t2',['ngoodvtx'],'; # good vertices; Events/bin',61,-0.5,60.5,addl_cuts='eventTopology==2'))
+		all_plots.append(Plot('ngv_t2',['ngoodvtx'],'; # good vertices; Events/bin',41,-0.5,40.5,addl_cuts='eventTopology==2',lPos=4))
 		all_plots.append(Plot('lbsf_t2',['par_2'],'; #lambda_{2}; Events/0.05',20,0.2,1.2,addl_cuts='eventTopology==2',iPos=33,lPos=1))
 		all_plots.append(Plot('hsfs_t2',['par_3','par_4','par_5'],'; #lambda_{3/4/5}; Events/0.05',20,0.2,1.2,addl_cuts='eventTopology==2',iPos=33,lPos=1))
 		all_plots.append(Plot('chi2_t2',['chi2'],'; #chi^{2}; Events/5',50,-65.,185.,addl_cuts='eventTopology==2'))
 	else :
 		all_plots.append(Plot('npv_t2',['npv'],'; # primary vertices; Events/bin',61,-0.5,60.5,addl_cuts='eventTopology==2',iPos=33,lPos=2))
-		all_plots.append(Plot('ngv_t2',['ngoodvtx'],'; # good vertices; Events/bin',61,-0.5,60.5,addl_cuts='eventTopology==2',iPos=33,lPos=2))
-		all_plots.append(Plot('lbsf_t2',['par_2'],'; #lambda_{2}; Events/0.02',30,0.6,1.2,addl_cuts='eventTopology==2',iPos=33,lPos=1))
-		all_plots.append(Plot('hsfs_t2',['par_3','par_4','par_5'],'; #lambda_{3/4/5}; Events/0.02',30,0.6,1.2,addl_cuts='eventTopology==2',iPos=33,lPos=1))
-		all_plots.append(Plot('chi2_t2',['chi2'],'; #chi^{2}; Events/1',50,-65.,-15.,addl_cuts='eventTopology==2'))
+		all_plots.append(Plot('ngv_t2',['ngoodvtx'],'; # good vertices; Events/bin',41,-0.5,40.5,addl_cuts='eventTopology==2',lPos=4))
+		all_plots.append(Plot('lbsf_t2',['par_2'],'; #lambda_{2}; Events/0.02',25,0.7,1.2,addl_cuts='eventTopology==2',iPos=33,lPos=1))
+		all_plots.append(Plot('hsfs_t2',['par_3','par_4','par_5'],'; #lambda_{3/4/5}; Events/0.02',25,0.7,1.2,addl_cuts='eventTopology==2',iPos=33,lPos=1))
+		all_plots.append(Plot('chi2_t2',['chi2'],'; #chi^{2}; Events/1',28,-43.,-15.,addl_cuts='eventTopology==2',lPos=4))
 	all_plots.append(Plot('vpz_t2',['par_0'],'; p^{#nu}_{Z} [GeV]; Events/25 GeV',40,-500.,500.,addl_cuts='eventTopology==2'))
-	all_plots.append(Plot('lsf_t2',['par_1'],'; #lambda_{1}; Events/0.001',40,0.97,1.01,addl_cuts='eventTopology==2',lPos=2))
-	all_plots.append(Plot('leppT_t2',['lep_pt'],';'+lepstring+' p_{T} [GeV]; Events/10 GeV',40,50.,450.,addl_cuts='eventTopology==2',iPos=33,lPos=2))
-	all_plots.append(Plot('lepeta_t2',['lep_eta'],';'+lepstring+' #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==2',lPos=0))
-	all_plots.append(Plot('leprelpT_t2',['lep_relPt'],'; p_{T}^{rel}('+shortlepstring+', jet) [GeV]; Events/10 GeV',40,0.,400.,addl_cuts='eventTopology==2',iPos=33,lPos=2,suppress_QCD=True))
-	all_plots.append(Plot('lepdR_t2',['lep_dR'],'; #Delta R('+shortlepstring+', jet); Events/0.1',30,0.,3.,addl_cuts='eventTopology==2',iPos=33,lPos=0,suppress_QCD=True))
+	all_plots.append(Plot('lsf_t2',['par_1'],'; #lambda_{1}; Events/0.0005',40,0.985,1.005,addl_cuts='eventTopology==2',lPos=4))
+	all_plots.append(Plot('leppT_t2',['lep_pt'],';'+lepstring+' p_{T} [GeV]; Events/10 GeV',30,50.,350.,addl_cuts='eventTopology==2',lPos=4))
+	all_plots.append(Plot('lepeta_t2',['lep_eta'],';'+lepstring+' #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==2',lPos=4))
+	all_plots.append(Plot('leprelpT_t2',['lep_relPt'],'; p_{T}^{rel}('+shortlepstring+', jet) [GeV]; Events/10 GeV',30,0.,300.,addl_cuts='eventTopology==2',lPos=4,suppress_QCD=True))
+	all_plots.append(Plot('lepdR_t2',['lep_dR'],'; #Delta R('+shortlepstring+', jet); Events/0.1',20,0.,2.,addl_cuts='eventTopology==2',lPos=4,suppress_QCD=True))
 	if leptype=='muons' or leptype=='all_leptons' :
 		all_plots.append(Plot('lepIso_t2',['lep_Iso'],'; '+lepstring+' PF relative isolation; Events/0.005',30,0.,0.15,addl_cuts='eventTopology==2',iPos=33,lPos=2,logy=True,suppress_QCD=True))
-		all_plots.append(Plot('ak41pT_t2',['ak41_pt'],'; AK4 jet1 p_{T} [GeV]; Events/20 GeV',40,150.,950.,addl_cuts='eventTopology==2'))
-		all_plots.append(Plot('ak42pT_t2',['ak42_pt'],'; AK4 jet2 p_{T} [GeV]; Events/20 GeV',40,50.,850.,addl_cuts='eventTopology==2',iPos=33,lPos=2))
+		all_plots.append(Plot('ak41pT_t2',['ak41_pt'],'; AK4 jet1 p_{T} [GeV]; Events/10 GeV',35,150.,500.,addl_cuts='eventTopology==2',lPos=4))
+		all_plots.append(Plot('ak42pT_t2',['ak42_pt'],'; AK4 jet2 p_{T} [GeV]; Events/10 GeV',30,50.,350.,addl_cuts='eventTopology==2',lPos=4))
 	elif leptype=='electrons' :
 		all_plots.append(Plot('lepIso_t2',['lep_Iso'],'; '+lepstring+' PF relative isolation; Events/0.002',50,0.,0.50,addl_cuts='eventTopology==2',iPos=33,lPos=2,logy=True,suppress_QCD=True))
-		all_plots.append(Plot('ak41pT_t2',['ak41_pt'],'; AK4 jet1 p_{T} [GeV]; Events/20 GeV',40,250.,1050.,addl_cuts='eventTopology==2'))
-		all_plots.append(Plot('ak42pT_t2',['ak42_pt'],'; AK4 jet2 p_{T} [GeV]; Events/20 GeV',40,70.,870.,addl_cuts='eventTopology==2',iPos=33,lPos=2))
-	all_plots.append(Plot('ak41eta_t2',['ak41_eta'],'; AK4 jet1 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==2',lPos=0))
+		all_plots.append(Plot('ak41pT_t2',['ak41_pt'],'; AK4 jet1 p_{T} [GeV]; Events/10 GeV',35,250.,600.,addl_cuts='eventTopology==2',lPos=4))
+		all_plots.append(Plot('ak42pT_t2',['ak42_pt'],'; AK4 jet2 p_{T} [GeV]; Events/10 GeV',33,70.,400.,addl_cuts='eventTopology==2',lPos=4))
+	all_plots.append(Plot('ak41eta_t2',['ak41_eta'],'; AK4 jet1 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==2',lPos=4))
 	all_plots.append(Plot('ak41csv_t2',['ak41_csvv2'],'; AK4 jet1 CSVv2; Events/0.025',40,0.0,1.0,addl_cuts='eventTopology==2',lPos=2))
-	all_plots.append(Plot('ak42eta_t2',['ak42_eta'],'; AK4 jet2 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==2',lPos=0))
+	all_plots.append(Plot('ak42eta_t2',['ak42_eta'],'; AK4 jet2 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==2',lPos=4))
 	all_plots.append(Plot('ak42csv_t2',['ak42_csvv2'],'; AK4 jet2 CSVv2; Events/0.025',40,0.0,1.0,addl_cuts='eventTopology==2',lPos=2))
-	all_plots.append(Plot('ak8pT_t2',['ak81_pt'],'; AK8 jet1 p_{T} [GeV]; Events/10 GeV',50,200.,700.,addl_cuts='eventTopology==2',iPos=33,lPos=2))
-	all_plots.append(Plot('ak8eta_t2',['ak81_eta'],'; AK8 jet1 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==2',lPos=0))
-	all_plots.append(Plot('ak8M_t2',['ak81_M'],'; AK8 jet1 mass [GeV]; Events/10 GeV',40,0.0,400.0,addl_cuts='eventTopology==2',iPos=33,lPos=2))
+	all_plots.append(Plot('ak8pT_t2',['ak81_pt'],'; AK8 jet1 p_{T} [GeV]; Events/10 GeV',50,200.,700.,addl_cuts='eventTopology==2',lPos=4))
+	all_plots.append(Plot('ak8eta_t2',['ak81_eta'],'; AK8 jet1 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==2',lPos=4))
+	all_plots.append(Plot('ak8M_t2',['ak81_M'],'; AK8 jet1 mass [GeV]; Events/5 GeV',40,40.,240.,addl_cuts='eventTopology==2',lPos=4))
 	all_plots.append(Plot('ak8tau32_t2',['ak81_tau32'],'; AK8 jet1 #tau_{32}; Events/0.05',20,0.,1.,addl_cuts='eventTopology==2',lPos=2))
-	all_plots.append(Plot('ak8SDM_t2',['ak81_SDM'],'; AK8 jet1 softdrop mass [GeV]; Events/5 GeV',40,40.,240.,addl_cuts='eventTopology==2'))
+	all_plots.append(Plot('ak8SDM_t2',['ak81_SDM'],'; AK8 jet1 softdrop mass [GeV]; Events/5 GeV',40,40.,240.,addl_cuts='eventTopology==2',lPos=4))
 	if leptype=='muons' or leptype=='all_leptons' :
-		all_plots.append(Plot('MET_t2',['met_E'],'; MET [GeV]; Events/20 GeV',40,50.,850.,addl_cuts='eventTopology==2',iPos=33,lPos=2))
+		all_plots.append(Plot('MET_t2',['met_E'],'; MET [GeV]; Events/10 GeV',45,50.,500.,addl_cuts='eventTopology==2',lPos=4))
 	elif leptype=='electrons' :
-		all_plots.append(Plot('MET_t2',['met_E'],'; MET [GeV]; Events/20 GeV',40,100.,900.,addl_cuts='eventTopology==2',iPos=33,lPos=2))
-	all_plots.append(Plot('METphi_t2',['met_phi'],'; MET #phi; Events/0.2',31,-3.2,3.2,addl_cuts='eventTopology==2',lPos=0))
-	all_plots.append(Plot('scaledMETphi_t2',['scaled_met_phi'],'; MET #phi (postfit); Events/0.2',31,-3.2,3.2,addl_cuts='eventTopology==2',lPos=0))
+		all_plots.append(Plot('MET_t2',['met_E'],'; MET [GeV]; Events/10 GeV',45,100.,550.,addl_cuts='eventTopology==2',lPos=4))
+	all_plots.append(Plot('METphi_t2',['met_phi'],'; MET #phi; Events/0.2',31,-3.2,3.2,addl_cuts='eventTopology==2',lPos=4))
+	all_plots.append(Plot('scaledMETphi_t2',['scaled_met_phi'],'; MET #phi (postfit); Events/0.2',31,-3.2,3.2,addl_cuts='eventTopology==2',lPos=4))
 	all_plots.append(Plot('lepWHT_t2',['met_E+lep_pt'],'; p_{T}^{lep}+MET [GeV]; Events/20',50,0.,1000.,addl_cuts='eventTopology==2',lPos=0))
-	all_plots.append(Plot('nak4_t2',['nak4jets'],'; # AK4 jets; Events/bin',16,-0.5,15.5,addl_cuts='eventTopology==2',iPos=33,lPos=0))
+	all_plots.append(Plot('nak4_t2',['nak4jets'],'; # AK4 jets; Events/bin',6,3.5,9.5,addl_cuts='eventTopology==2',iPos=33,lPos=2))
 	all_plots.append(Plot('nak8_t2',['nak8jets'],'; # AK8 jets; Events/bin',11,-0.5,10.5,addl_cuts='eventTopology==2',iPos=33,lPos=2))
 	all_plots.append(Plot('nttags_t2',['ntTags'],'; # top-tagged AK8 jets; Events/bin',10,0.5,10.5,addl_cuts='eventTopology==2',iPos=33,lPos=2))
-	all_plots.append(Plot('nbtags_t2',['nLbTags'],'; # b-tagged AK4 jets; Events/bin',10,0.5,10.5,addl_cuts='eventTopology==2',iPos=33,lPos=2))
-	all_plots.append(Plot('lepWpT_t2',['scaled_lepW_pt'],'; reconstructed W_{lep} p_{T} [GeV]; Events/40 GeV',30,0.,1200.,addl_cuts='eventTopology==2',iPos=33,lPos=2))
-	all_plots.append(Plot('lepWM_t2',['scaled_lepW_M'],'; reconstructed W_{lep} mass [GeV]; Events/0.05 GeV',20,80.,81.,addl_cuts='eventTopology==2',iPos=33,lPos=0))
-	all_plots.append(Plot('leptpT_t2',['scaled_lept_pt'],'; reconstructed t_{lep} p_{T} [GeV]; Events/40 GeV',30,0.,1200.,addl_cuts='eventTopology==2'))
+	all_plots.append(Plot('nbtags_t2',['nLbTags'],'; # b-tagged AK4 jets; Events/bin',5,0.5,5.5,addl_cuts='eventTopology==2',lPos=4))
+	all_plots.append(Plot('lepWpT_t2',['scaled_lepW_pt'],'; reconstructed W_{lep} p_{T} [GeV]; Events/20 GeV',30,0.,600.,addl_cuts='eventTopology==2',lPos=4))
+	all_plots.append(Plot('lepWM_t2',['scaled_lepW_M'],'; reconstructed W_{lep} mass [GeV]; Events/0.01 GeV',40,80.25,80.65,addl_cuts='eventTopology==2',lPos=4))
+	all_plots.append(Plot('leptpT_t2',['scaled_lept_pt'],'; reconstructed t_{lep} p_{T} [GeV]; Events/20 GeV',40,0.,800.,addl_cuts='eventTopology==2',lPos=4))
 	all_plots.append(Plot('leptM_t2',['scaled_lept_M'],'; reconstructed t_{lep} mass [GeV]; Events/5 GeV',20,110.,210.,addl_cuts='eventTopology==2',iPos=33,lPos=1))
-	all_plots.append(Plot('hadtpT_t2',['scaled_hadt_pt'],'; reconstructed t_{had} p_{T} [GeV]; Events/20 GeV',30,0.,600.,addl_cuts='eventTopology==2'))
-	all_plots.append(Plot('hadtM_t2',['scaled_hadt_M'],'; reconstructed t_{had} mass [GeV]; Events/10 GeV',30,50.,350.,addl_cuts='eventTopology==2'))
-	all_plots.append(Plot('cstar_t2',['cstar'],'; c*; Events/0.1',20,-1.,1.,addl_cuts='eventTopology==2',lPos=0))
+	all_plots.append(Plot('hadtpT_t2',['scaled_hadt_pt'],'; reconstructed t_{had} p_{T} [GeV]; Events/20 GeV',30,0.,600.,addl_cuts='eventTopology==2',lPos=4))
+	all_plots.append(Plot('hadtM_t2',['scaled_hadt_M'],'; reconstructed t_{had} mass [GeV]; Events/5 GeV',30,100.,250.,addl_cuts='eventTopology==2',lPos=4))
+	all_plots.append(Plot('cstar_t2',['cstar'],'; c*; Events/0.1',20,-1.,1.,addl_cuts='eventTopology==2',lPos=4))
 	all_plots.append(Plot('x_F_t2',['abs(x_F)'],'; |x_{F}|; Events/0.05',20,0.,0.4,addl_cuts='eventTopology==2',iPos=33,lPos=2))
-	all_plots.append(Plot('M_t2',['M'],'; M; Events/100 GeV',20,300.,2300.,addl_cuts='eventTopology==2',iPos=33,lPos=2))
-	all_plots.append(Plot('ttpt_t2',['tt_pt'],'; top pair p_{T} [GeV]; Events/20 GeV',30,0.,600.,addl_cuts='eventTopology==2',iPos=33,lPos=0))
-	all_plots.append(Plot('lep_hadt_dR_t2',['lep_hadt_deltaR'],'; #Delta R ('+shortlepstring+', t_{had}); Events/0.2',30,0.,6.,addl_cuts='eventTopology==2'))
-	all_plots.append(Plot('lep_v_dPhi_t2',['lep_v_deltaPhi'],'; #Delta #phi ('+shortlepstring+', #nu); Events/0.2',32,-3.2,3.2,addl_cuts='eventTopology==2'))
-	all_plots.append(Plot('lept_hadt_dR_t2',['lept_hadt_deltaR'],'; #Delta R (t_{lep}, t_{had}); Events/0.1',30,0.,6.,addl_cuts='eventTopology==2'))
-	all_plots.append(Plot('ak43pT_t2',['ak43_pt'],'; AK4 jet3 p_{T} [GeV]; Events/10 GeV',30,30.,330.,addl_cuts='eventTopology==2',iPos=33,lPos=2))
-	all_plots.append(Plot('ak43eta_t2',['ak43_eta'],'; AK4 jet3 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==2',lPos=0))
+	all_plots.append(Plot('M_t2',['M'],'; M; Events/100 GeV',20,300.,2300.,addl_cuts='eventTopology==2',lPos=4))
+	all_plots.append(Plot('ttpt_t2',['tt_pt'],'; top pair p_{T} [GeV]; Events/20 GeV',30,0.,600.,addl_cuts='eventTopology==2',lPos=4))
+	all_plots.append(Plot('lep_hadt_dR_t2',['lep_hadt_deltaR'],'; #Delta R ('+shortlepstring+', t_{had}); Events/0.2',25,0.,5.,addl_cuts='eventTopology==2',lPos=4))
+	all_plots.append(Plot('lep_v_dPhi_t2',['lep_v_deltaPhi'],'; #Delta #phi ('+shortlepstring+', #nu); Events/0.2',20,-2.,2.,addl_cuts='eventTopology==2',lPos=4))
+	all_plots.append(Plot('lept_hadt_dR_t2',['lept_hadt_deltaR'],'; #Delta R (t_{lep}, t_{had}); Events/0.1',25,0.,5.,addl_cuts='eventTopology==2',iPos=33,lPos=1))
+	all_plots.append(Plot('ak43pT_t2',['ak43_pt'],'; AK4 jet3 p_{T} [GeV]; Events/5 GeV',34,30.,200.,addl_cuts='eventTopology==2',lPos=4))
+	all_plots.append(Plot('ak43eta_t2',['ak43_eta'],'; AK4 jet3 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==2',lPos=4))
 	all_plots.append(Plot('ak43csv_t2',['ak43_csvv2'],'; AK4 jet3 CSVv2; Events/0.025',40,0.0,1.0,addl_cuts='eventTopology==2',lPos=2))
-	all_plots.append(Plot('ak44pT_t2',['ak44_pt'],'; AK4 jet4 p_{T} [GeV]; Events/10 GeV',20,30.,230.,addl_cuts='eventTopology==2',iPos=33,lPos=2))
-	all_plots.append(Plot('ak44eta_t2',['ak44_eta'],'; AK4 jet4 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==2',lPos=0))
+	all_plots.append(Plot('ak44pT_t2',['ak44_pt'],'; AK4 jet4 p_{T} [GeV]; Events/5 GeV',20,30.,130.,addl_cuts='eventTopology==2',lPos=4))
+	all_plots.append(Plot('ak44eta_t2',['ak44_eta'],'; AK4 jet4 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==2',lPos=4))
 	all_plots.append(Plot('ak44csv_t2',['ak44_csvv2'],'; AK4 jet4 CSVv2; Events/0.025',40,0.0,1.0,addl_cuts='eventTopology==2',lPos=2))
 	all_plots.append(Plot('ak8tau21_t2',['ak81_tau21'],'; AK8 jet1 #tau_{21}; Events/0.05',20,0.,1.,addl_cuts='eventTopology==2',lPos=0))
 	if not mode=='wjetscr' :
 		#type-3
 		all_plots.append(Plot('npv_t3',['npv'],'; # primary vertices; Events/bin',61,-0.5,60.5,addl_cuts='eventTopology==3',iPos=33,lPos=2))
-		all_plots.append(Plot('ngv_t3',['ngoodvtx'],'; # good vertices; Events/bin',61,-0.5,60.5,addl_cuts='eventTopology==3',iPos=33,lPos=2))
+		all_plots.append(Plot('ngv_t3',['ngoodvtx'],'; # good vertices; Events/bin',41,-0.5,40.5,addl_cuts='eventTopology==3',lPos=4))
 		all_plots.append(Plot('vpz_t3',['par_0'],'; p^{#nu}_{Z} [GeV]; Events/25 GeV',40,-500.,500.,addl_cuts='eventTopology==3'))
-		all_plots.append(Plot('lsf_t3',['par_1'],'; #lambda_{1}; Events/0.001',40,0.97,1.01,addl_cuts='eventTopology==3',lPos=2))
+		all_plots.append(Plot('lsf_t3',['par_1'],'; #lambda_{1}; Events/0.0005',40,0.985,1.005,addl_cuts='eventTopology==3',lPos=4))
 		all_plots.append(Plot('lbsf_t3',['par_2'],'; #lambda_{2}; Events/0.02',30,0.6,1.2,addl_cuts='eventTopology==3',iPos=33,lPos=1))
-		all_plots.append(Plot('hsfs_t3',['par_3','par_4','par_5'],'; #lambda_{3/4/5}; Events/0.02',30,0.6,1.2,addl_cuts='eventTopology==3',iPos=33,lPos=1))
-		all_plots.append(Plot('chi2_t3',['chi2'],'; #chi^{2}; Events/5',40,-50.,150.,addl_cuts='eventTopology==3',iPos=33,lPos=2,logy=True))
-		all_plots.append(Plot('leppT_t3',['lep_pt'],';'+lepstring+' p_{T} [GeV]; Events/10 GeV',30,30.,330.,addl_cuts='eventTopology==3',iPos=33,lPos=2))
-		all_plots.append(Plot('lepeta_t3',['lep_eta'],';'+lepstring+' #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==3',lPos=0))
-		all_plots.append(Plot('leprelpT_t3',['lep_relPt'],'; p_{T}^{rel}('+shortlepstring+', jet) [GeV]; Events/10 GeV',40,0.,400.,addl_cuts='eventTopology==3',iPos=33,lPos=2,suppress_QCD=True))
-		all_plots.append(Plot('lepdR_t3',['lep_dR'],'; #Delta R('+shortlepstring+', jet); Events/0.1',30,0.,3.,addl_cuts='eventTopology==3',iPos=33,lPos=0,suppress_QCD=True))
+		all_plots.append(Plot('hsfs_t3',['par_3','par_4','par_5'],'; #lambda_{3/4/5}; Events/0.02',30,0.6,1.2,addl_cuts='eventTopology==3',iPos=33,lPos=1,resid_zoom=2))
+		all_plots.append(Plot('chi2_t3',['chi2'],'; #chi^{2}; Events/5',34,-45.,125.,addl_cuts='eventTopology==3',lPos=4,logy=True))
+		all_plots.append(Plot('leppT_t3',['lep_pt'],';'+lepstring+' p_{T} [GeV]; Events/10 GeV',34,30.,200.,addl_cuts='eventTopology==3',lPos=4,resid_zoom=2))
+		all_plots.append(Plot('lepeta_t3',['lep_eta'],';'+lepstring+' #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==3',lPos=4))
+		all_plots.append(Plot('leprelpT_t3',['lep_relPt'],'; p_{T}^{rel}('+shortlepstring+', jet) [GeV]; Events/10 GeV',50,0.,250.,addl_cuts='eventTopology==3',lPos=4,suppress_QCD=True))
+		all_plots.append(Plot('lepdR_t3',['lep_dR'],'; #Delta R('+shortlepstring+', jet); Events/0.1',30,0.,3.,addl_cuts='eventTopology==3',lPos=4,suppress_QCD=True))
 		if leptype=='muons' or leptype=='all_leptons' :
-			all_plots.append(Plot('lepIso_t3',['lep_Iso'],'; '+lepstring+' PF relative isolation; Events/0.005',30,0.,0.15,addl_cuts='eventTopology==3',iPos=33,lPos=2,logy=True,suppress_QCD=True))
+			all_plots.append(Plot('lepIso_t3',['lep_Iso'],'; '+lepstring+' PF relative isolation; Events/0.005',30,0.,0.15,addl_cuts='eventTopology==3',lPos=4,logy=True,suppress_QCD=True))
 		elif leptype=='electrons' :
-			all_plots.append(Plot('lepIso_t3',['lep_Iso'],'; '+lepstring+' PF relative isolation; Events/0.002',30,0.,0.06,addl_cuts='eventTopology==3',iPos=33,lPos=2,logy=True,suppress_QCD=True))
-		all_plots.append(Plot('ak41pT_t3',['ak41_pt'],'; AK4 jet1 p_{T} [GeV]; Events/10 GeV',30,30.,330.,addl_cuts='eventTopology==3'))
-		all_plots.append(Plot('ak41eta_t3',['ak41_eta'],'; AK4 jet1 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==3',lPos=0))
-		all_plots.append(Plot('ak41csv_t3',['ak41_csvv2'],'; AK4 jet1 CSVv2; Events/0.025',40,0.0,1.0,addl_cuts='eventTopology==3',lPos=0,logy=True))
-		all_plots.append(Plot('ak42pT_t3',['ak42_pt'],'; AK4 jet2 p_{T} [GeV]; Events/5 GeV',40,30.,230.,addl_cuts='eventTopology==3',iPos=33,lPos=0))
-		all_plots.append(Plot('ak42eta_t3',['ak42_eta'],'; AK4 jet2 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==3',lPos=0))
-		all_plots.append(Plot('ak42csv_t3',['ak42_csvv2'],'; AK4 jet2 CSVv2; Events/0.025',40,0.0,1.0,addl_cuts='eventTopology==3',lPos=0,logy=True))
+			all_plots.append(Plot('lepIso_t3',['lep_Iso'],'; '+lepstring+' PF relative isolation; Events/0.002',30,0.,0.06,addl_cuts='eventTopology==3',lPos=4,logy=True,suppress_QCD=True))
+		all_plots.append(Plot('ak41pT_t3',['ak41_pt'],'; AK4 jet1 p_{T} [GeV]; Events/5 GeV',40,30.,230.,addl_cuts='eventTopology==3',lPos=4))
+		all_plots.append(Plot('ak41eta_t3',['ak41_eta'],'; AK4 jet1 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==3',lPos=4))
+		all_plots.append(Plot('ak41csv_t3',['ak41_csvv2'],'; AK4 jet1 CSVv2; Events/0.025',40,0.0,1.0,addl_cuts='eventTopology==3',lPos=4,logy=True))
+		all_plots.append(Plot('ak42pT_t3',['ak42_pt'],'; AK4 jet2 p_{T} [GeV]; Events/5 GeV',30,30.,180.,addl_cuts='eventTopology==3',lPos=4))
+		all_plots.append(Plot('ak42eta_t3',['ak42_eta'],'; AK4 jet2 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==3',lPos=4))
+		all_plots.append(Plot('ak42csv_t3',['ak42_csvv2'],'; AK4 jet2 CSVv2; Events/0.025',40,0.0,1.0,addl_cuts='eventTopology==3',lPos=4,logy=True))
 		#all_plots.append(Plot('ak8pT_t3',['ak81_pt'],'; AK8 jet1 p_{T} [GeV]; Events/20 GeV',40,100.,900.,addl_cuts='eventTopology==3'))
-		#all_plots.append(Plot('ak8eta_t3',['ak81_eta'],'; AK8 jet1 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==3',lPos=0))
+		#all_plots.append(Plot('ak8eta_t3',['ak81_eta'],'; AK8 jet1 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==3',lPos=4))
 		#all_plots.append(Plot('ak8M_t3',['ak81_M'],'; AK8 jet1 mass [GeV]; Events/10 GeV',40,0.0,400.0,addl_cuts='eventTopology==3'))
 		#all_plots.append(Plot('ak8tau32_t3',['ak81_tau32'],'; AK8 jet1 #tau_{32}; Events/0.05 GeV',20,0.,1.,addl_cuts='eventTopology==3',lPos=0))
 		#all_plots.append(Plot('ak8SDM_t3',['ak81_SDM'],'; AK8 jet1 softdrop mass [GeV]; Events/10 GeV',40,0.,400.,addl_cuts='eventTopology==3'))
-		all_plots.append(Plot('MET_t3',['met_E'],'; MET [GeV]; Events/10 GeV',40,40.,440.,addl_cuts='eventTopology==3',iPos=33,lPos=2))
-		all_plots.append(Plot('METphi_t3',['met_phi'],'; MET #phi; Events/0.2',31,-3.2,3.2,addl_cuts='eventTopology==3',lPos=0))
-		all_plots.append(Plot('scaledMETphi_t3',['scaled_met_phi'],'; MET #phi (postfit); Events/0.2',31,-3.2,3.2,addl_cuts='eventTopology==3',lPos=0))
+		all_plots.append(Plot('MET_t3',['met_E'],'; MET [GeV]; Events/5 GeV',60,40.,340.,addl_cuts='eventTopology==3',lPos=4))
+		all_plots.append(Plot('METphi_t3',['met_phi'],'; MET #phi; Events/0.2',31,-3.2,3.2,addl_cuts='eventTopology==3',lPos=4))
+		all_plots.append(Plot('scaledMETphi_t3',['scaled_met_phi'],'; MET #phi (postfit); Events/0.2',31,-3.2,3.2,addl_cuts='eventTopology==3',lPos=4))
 		all_plots.append(Plot('lepWHT_t3',['met_E+lep_pt'],'; p_{T}^{lep}+MET [GeV]; Events/20',50,0.,1000.,addl_cuts='eventTopology==3',lPos=0))
-		all_plots.append(Plot('nak4_t3',['nak4jets'],'; # AK4 jets; Events/bin',16,-0.5,15.5,addl_cuts='eventTopology==3',iPos=33,lPos=0))
+		all_plots.append(Plot('nak4_t3',['nak4jets'],'; # AK4 jets; Events/bin',5,3.5,8.5,addl_cuts='eventTopology==3',iPos=33,lPos=2,resid_zoom=2))
 		#all_plots.append(Plot('nak8_t3',['nak8jets'],'; # AK8 jets; Events/bin',11,-0.5,10.5,addl_cuts='eventTopology==3',iPos=33,lPos=2))
 		all_plots.append(Plot('nttags_t3',['ntTags'],'; # top-tagged AK8 jets; Events/bin',1,-0.5,0.5,addl_cuts='eventTopology==3',iPos=33,lPos=0,logy=True))
-		all_plots.append(Plot('nbtags_t3',['nMbTags'],'; # b-tagged AK4 jets; Events/bin',9,1.5,10.5,addl_cuts='eventTopology==3',iPos=33,lPos=2,logy=True))
-		all_plots.append(Plot('lepWpT_t3',['scaled_lepW_pt'],'; reconstructed W_{lep} p_{T} [GeV]; Events/20 GeV',30,0.,600.,addl_cuts='eventTopology==3',iPos=33,lPos=2))
-		all_plots.append(Plot('lepWM_t3',['scaled_lepW_M'],'; reconstructed W_{lep} mass [GeV]; Events/0.05 GeV',20,80.,81.,addl_cuts='eventTopology==3',iPos=33,lPos=0,logy=True))
-		all_plots.append(Plot('leptpT_t3',['scaled_lept_pt'],'; reconstructed t_{lep} p_{T} [GeV]; Events/20 GeV',30,0.,600.,addl_cuts='eventTopology==3'))
-		all_plots.append(Plot('leptM_t3',['scaled_lept_M'],'; reconstructed t_{lep} mass [GeV]; Events/10 GeV',30,50.,350.,addl_cuts='eventTopology==3'))
-		all_plots.append(Plot('hadtpT_t3',['scaled_hadt_pt'],'; reconstructed t_{had} p_{T} [GeV]; Events/10 GeV',40,0.,400.,addl_cuts='eventTopology==3'))
-		all_plots.append(Plot('hadtM_t3',['scaled_hadt_M'],'; reconstructed t_{had} mass [GeV]; Events/10 GeV',30,50.,350.,addl_cuts='eventTopology==3'))
-		all_plots.append(Plot('cstar_t3',['cstar'],'; c*; Events/0.1',20,-1.,1.,addl_cuts='eventTopology==3',lPos=0))
-		all_plots.append(Plot('x_F_t3',['abs(x_F)'],'; |x_{F}|; Events/0.05',15,0.,0.3,addl_cuts='eventTopology==3',iPos=33,lPos=2,logy=True))
-		all_plots.append(Plot('M_t3',['M'],'; M; Events/100 GeV',12,300.,1500.,addl_cuts='eventTopology==3',iPos=33,lPos=2,logy=True))
-		all_plots.append(Plot('ttpt_t3',['tt_pt'],'; top pair p_{T} [GeV]; Events/10 GeV',30,0.,300.,addl_cuts='eventTopology==3',iPos=33,lPos=2,logy=True))
+		all_plots.append(Plot('nbtags_t3',['nMbTags'],'; # b-tagged AK4 jets; Events/bin',3,1.5,4.5,addl_cuts='eventTopology==3',lPos=4,logy=True))
+		all_plots.append(Plot('lepWpT_t3',['scaled_lepW_pt'],'; reconstructed W_{lep} p_{T} [GeV]; Events/5 GeV',60,0.,300.,addl_cuts='eventTopology==3',lPos=4))
+		all_plots.append(Plot('lepWM_t3',['scaled_lepW_M'],'; reconstructed W_{lep} mass [GeV]; Events/0.02 GeV',50,80.,81.,addl_cuts='eventTopology==3',lPos=4))
+		all_plots.append(Plot('leptpT_t3',['scaled_lept_pt'],'; reconstructed t_{lep} p_{T} [GeV]; Events/10 GeV',40,0.,400.,addl_cuts='eventTopology==3',lPos=4))
+		all_plots.append(Plot('leptM_t3',['scaled_lept_M'],'; reconstructed t_{lep} mass [GeV]; Events/5 GeV',30,100.,250.,addl_cuts='eventTopology==3'))
+		all_plots.append(Plot('hadtpT_t3',['scaled_hadt_pt'],'; reconstructed t_{had} p_{T} [GeV]; Events/5 GeV',60,0.,300.,addl_cuts='eventTopology==3',lPos=4))
+		all_plots.append(Plot('hadtM_t3',['scaled_hadt_M'],'; reconstructed t_{had} mass [GeV]; Events/5 GeV',40,100.,300.,addl_cuts='eventTopology==3'))
+		all_plots.append(Plot('cstar_t3',['cstar'],'; c*; Events/0.1',20,-1.,1.,addl_cuts='eventTopology==3',lPos=4))
+		all_plots.append(Plot('x_F_t3',['abs(x_F)'],'; |x_{F}|; Events/0.05',15,0.,0.3,addl_cuts='eventTopology==3',iPos=33,lPos=2))
+		all_plots.append(Plot('M_t3',['M'],'; M; Events/100 GeV',12,300.,1500.,addl_cuts='eventTopology==3',lPos=4))
+		all_plots.append(Plot('ttpt_t3',['tt_pt'],'; top pair p_{T} [GeV]; Events/10 GeV',30,0.,300.,addl_cuts='eventTopology==3',lPos=4))
 		all_plots.append(Plot('lep_hadt_dR_t3',['lep_hadt_deltaR'],'; #Delta R ('+shortlepstring+', t_{had}); Events/0.2',30,0.,6.,addl_cuts='eventTopology==3'))
-		all_plots.append(Plot('lep_v_dPhi_t3',['lep_v_deltaPhi'],'; #Delta #phi ('+shortlepstring+', #nu); Events/0.2',32,-3.2,3.2,addl_cuts='eventTopology==3',lPos=0))
+		all_plots.append(Plot('lep_v_dPhi_t3',['lep_v_deltaPhi'],'; #Delta #phi ('+shortlepstring+', #nu); Events/0.2',32,-3.2,3.2,addl_cuts='eventTopology==3',lPos=4))
 		all_plots.append(Plot('lept_hadt_dR_t3',['lept_hadt_deltaR'],'; #Delta R (t_{lep}, t_{had}); Events/0.1',30,0.,6.,addl_cuts='eventTopology==3'))
-		all_plots.append(Plot('ak43pT_t3',['ak43_pt'],'; AK4 jet3 p_{T} [GeV]; Events/10 GeV',20,30.,230.,addl_cuts='eventTopology==3',iPos=33,lPos=2))
-		all_plots.append(Plot('ak43eta_t3',['ak43_eta'],'; AK4 jet3 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==3',lPos=0))
-		all_plots.append(Plot('ak43csv_t3',['ak43_csvv2'],'; AK4 jet3 CSVv2; Events/0.025',40,0.0,1.0,addl_cuts='eventTopology==3',lPos=0,logy=True))
-		all_plots.append(Plot('ak44pT_t3',['ak44_pt'],'; AK4 jet4 p_{T} [GeV]; Events/5 GeV',20,30.,130.,addl_cuts='eventTopology==3',iPos=33,lPos=2))
-		all_plots.append(Plot('ak44eta_t3',['ak44_eta'],'; AK4 jet4 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==3',lPos=0))
-		all_plots.append(Plot('ak44csv_t3',['ak44_csvv2'],'; AK4 jet4 CSVv2; Events/0.025',40,0.0,1.0,addl_cuts='eventTopology==3',lPos=0,logy=True))
+		all_plots.append(Plot('ak43pT_t3',['ak43_pt'],'; AK4 jet3 p_{T} [GeV]; Events/5 GeV',20,30.,130.,addl_cuts='eventTopology==3',lPos=4))
+		all_plots.append(Plot('ak43eta_t3',['ak43_eta'],'; AK4 jet3 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==3',lPos=4))
+		all_plots.append(Plot('ak43csv_t3',['ak43_csvv2'],'; AK4 jet3 CSVv2; Events/0.025',40,0.0,1.0,addl_cuts='eventTopology==3',lPos=4,logy=True))
+		all_plots.append(Plot('ak44pT_t3',['ak44_pt'],'; AK4 jet4 p_{T} [GeV]; Events/2 GeV',30,30.,90.,addl_cuts='eventTopology==3',lPos=4))
+		all_plots.append(Plot('ak44eta_t3',['ak44_eta'],'; AK4 jet4 #eta; Events/0.1',48,-2.4,2.4,addl_cuts='eventTopology==3',lPos=4))
+		all_plots.append(Plot('ak44csv_t3',['ak44_csvv2'],'; AK4 jet4 CSVv2; Events/0.025',40,0.0,1.0,addl_cuts='eventTopology==3',lPos=4,logy=True))
 		#all_plots.append(Plot('ak8tau21_t3',['ak81_tau21'],'; AK8 jet1 #tau_{21}; Events/0.05 GeV',20,0.,1.,addl_cuts='eventTopology==3'))
 
 #plot plots on canvases in parallel 

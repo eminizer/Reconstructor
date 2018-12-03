@@ -510,6 +510,8 @@ class Reconstructor(object) :
 		self.nMETs.setWriteValue(2) if met1_vec.Pz() != met2_vec.Pz() else self.nMETs.setWriteValue(1)
 		self.metE.setWriteValue(met1_vec.E())
 
+		#return #to speed through a sample and make sure it doesn't crash
+
 		#toss the event if it's for systematics shifts and doesn't pass selection to this point
 		if self.JEC!='nominal' and not self.__passesPreRecoCuts__(canreconstruct,topology,nLbtags,nMbtags,lep,electrons,muons,ak4jets,ak8jets,met) :
 			#print 'EVENT NUMBER %d NOT VALID; FAILS PRE RECO CUTS'%(eventnumber) #DEBUG
