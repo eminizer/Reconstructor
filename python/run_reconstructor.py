@@ -177,11 +177,13 @@ parser.add_option('--epsilon', 		 type='float', action='store', default=1.0,	des
 	help="Cross section of sample's process")
 parser.add_option('--JEC', type='choice', action='store', default='nominal',  dest='jec', 
 	choices=['nominal',
-			 'AK4JESPU_up','AK4JESEta_up','AK4JESPt_up','AK4JESScale_up','AK4JESTime_up','AK4JESFlav_up','AK4JERStat_up','AK4JERSys_up',
-			 'AK4JESPU_dn','AK4JESEta_dn','AK4JESPt_dn','AK4JESScale_dn','AK4JESTime_dn','AK4JESFlav_dn','AK4JERStat_dn','AK4JERSys_dn',
-			 'AK8JESPU_up','AK8JESEta_up','AK8JESPt_up','AK8JESScale_up','AK8JESTime_up','AK8JESFlav_up','AK8JERStat_up','AK8JERSys_up',
-			 'AK8JESPU_dn','AK8JESEta_dn','AK8JESPt_dn','AK8JESScale_dn','AK8JESTime_dn','AK8JESFlav_dn','AK8JERStat_dn','AK8JERSys_dn',],  
-	help='JES systematics variations')
+			 'JES_up','JES_dn','JER_up','JER_dn',
+			 #'AK4JESPU_up','AK4JESEta_up','AK4JESPt_up','AK4JESScale_up','AK4JESTime_up','AK4JESFlav_up','AK4JERStat_up','AK4JERSys_up',
+			 #'AK4JESPU_dn','AK4JESEta_dn','AK4JESPt_dn','AK4JESScale_dn','AK4JESTime_dn','AK4JESFlav_dn','AK4JERStat_dn','AK4JERSys_dn',
+			 #'AK8JESPU_up','AK8JESEta_up','AK8JESPt_up','AK8JESScale_up','AK8JESTime_up','AK8JESFlav_up','AK8JERStat_up','AK8JERSys_up',
+			 #'AK8JESPU_dn','AK8JESEta_dn','AK8JESPt_dn','AK8JESScale_dn','AK8JESTime_dn','AK8JESFlav_dn','AK8JERStat_dn','AK8JERSys_dn',
+			 ],  
+	help='JEC systematics variations')
 (options, args) = parser.parse_args()
 
 ##########							Set Up Event Loop								##########
@@ -220,7 +222,7 @@ total_scale_comb_sf_down_histo   = TH1D('total_scale_comb_sf_down_histo','total 
 total_pdf_alphas_sf_histo        = TH1D('total_pdf_alphas_sf_histo','total pdf/alpha_{s} sf; pdf/alpha_{s} sf; events',100,-1.,3.); total_pdf_alphas_sf_histo.SetDirectory(0)
 total_pdf_alphas_sf_up_histo     = TH1D('total_pdf_alphas_sf_up_histo','total pdf/alpha_{s} sf (up); pdf/alpha_{s} sf up; events',100,-1.,3.); total_pdf_alphas_sf_up_histo.SetDirectory(0)
 total_pdf_alphas_sf_down_histo   = TH1D('total_pdf_alphas_sf_down_histo','total pdf/alpha_{s} sf (down); pdf/alpha_{s} sf down; events',100,-1.,3.); total_pdf_alphas_sf_down_histo.SetDirectory(0)
-total_top_pt_reweight_histo 	 = TH1D('total_top_pt_reweight_histo','total top p_{T} reweighting factors; top p_{T} reweight; events',150,-3.,3.); total_top_pt_reweight_histo.SetDirectory(0)
+total_top_pt_reweight_v1_histo 	 = TH1D('total_top_pt_reweight_v1_histo','total top p_{T} reweighting factors; top p_{T} reweight; events',150,-3.,3.); total_top_pt_reweight_v1_histo.SetDirectory(0)
 totweight = 0.
 for input_file in input_files_list :
 	print '	'+input_file.rstrip()+''
@@ -250,8 +252,8 @@ for input_file in input_files_list :
 	total_pdf_alphas_sf_up_histo.Add(pdfasup_histo)
 	pdfasdown_histo = f.Get('EventCounter/pdf_alphas_sf_down')
 	total_pdf_alphas_sf_down_histo.Add(pdfasdown_histo)
-	top_pt_reweight_histo = f.Get('EventCounter/top_pt_rw')
-	total_top_pt_reweight_histo.Add(top_pt_reweight_histo)
+	top_pt_reweight_v1_histo = f.Get('EventCounter/top_pt_rw_v1')
+	total_top_pt_reweight_v1_histo.Add(top_pt_reweight_v1_histo)
 	histo=f.Get('EventCounter/totweight')
 	newweight=histo.GetBinContent(1)
 	print '		Added %.2f to total weight'%(newweight)

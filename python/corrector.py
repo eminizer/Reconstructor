@@ -46,6 +46,9 @@ BTAGGING_MC_B_RATIO_HISTONAME 	 = 'bjet_ratio'
 BTAGGING_MC_C_RATIO_HISTONAME 	 = 'cjet_ratio'
 BTAGGING_MC_UDSG_RATIO_HISTONAME = 'udsg_ratio'
 BTAGGING_SF_CSV_FILENAME 		 = 'CSVv2_Moriond17_B_H.csv'
+#top tagging efficiency
+TOP_TAGGING_EFFICIENCY_ROOT_FILENAME = '2016TopTaggingScaleFactors.root'
+TOP_TAGGING_WP_SUBDIRNAME = 'CHS_wp5'
 
 #Imports
 from ROOT import vector, FactorizedJetCorrector, JetCorrectorParameters, JetCorrectionUncertainty 
@@ -59,8 +62,8 @@ class Corrector(object) :
 	##################################  #__init__ function  ##################################
 	def __init__(self,isdata,onGrid,pu_histo,runera,renormdict) :
 		#JEC setup
-		self.__ak4JetCorrector, self.__ak4JecUncertainties = setupJECCorrectors(onGrid,isdata,'AK4PFchs',runera)
-		self.__ak8JetCorrector, self.__ak8JecUncertainties = setupJECCorrectors(onGrid,isdata,'AK8PFchs',runera)
+		self.__ak4JetCorrector, self.__ak4JecUncertainties, self.__ak4TotalJecUncertainty = setupJECCorrectors(onGrid,isdata,'AK4PFchs',runera)
+		self.__ak8JetCorrector, self.__ak8JecUncertainties, self.__ak8TotalJecUncertainty = setupJECCorrectors(onGrid,isdata,'AK8PFchs',runera)
 		#pileup
 		self.__MC_pu_histo, self.__data_pu_histo_nom, self.__data_pu_histo_up, self.__data_pu_histo_down = self.setupPileupHistos(onGrid,pu_histo)
 		#trigger efficiency
@@ -134,6 +137,10 @@ class Corrector(object) :
 		self.__ele_miniiso_eff_eta_low = miniisoya.GetXmin(); self.__ele_miniiso_eff_eta_hi = miniisoya.GetXmax()
 		#b-tagging efficiency
 		self.__setupBTaggingEff__(onGrid)
+		#top tagging efficiency
+		( self.__ttag_eff_merged_nom, self.__ttag_eff_merged_up, self.__ttag_eff_merged_down,
+		  self.__ttag_eff_semimerged_nom, self.__ttag_eff_semimerged_up, self.__ttag_eff_semimerged_down,
+		  self.__ttag_eff_notmerged_nom, self.__ttag_eff_notmerged_up, self.__ttag_eff_notmerged_down ) = self.setupTopTaggingEffHistos(onGrid)
 		#PDF/alpha_s stuff
 		self.__renormdict = renormdict
 		self.__alphalist = getList(renormdict,'alpha')
@@ -171,8 +178,8 @@ class Corrector(object) :
 		v_sys.push_back('down')
 		# make a reader instance and load the sf data
 		self.__reader_l = BTagCalibrationReader(0, 		 # 0 is for loose op, 1: medium, 2: tight, 3: discr. reshaping
-		    								  "central", # central systematic type
-		    								  v_sys) 	 # vector of other sys. types    
+											  "central", # central systematic type
+											  v_sys) 	 # vector of other sys. types    
 		self.__reader_l.load(calib, 
 						   0, 	   # 0 is for b flavour, 1: FLAV_C, 2: FLAV_UDSG 
 						   "comb") # measurement type
@@ -250,10 +257,17 @@ class Corrector(object) :
 
 	def getJECuncForJet(self,jetvec,pp,jecsysstring) :
 		uncCorrector=None
+		jectype = jecsysstring.split('_')[0]
 		if pp.find('AK4') != -1 :
-			uncCorrector = self.__ak4JecUncertainties[jecsysstring.split('_')[0]][1]
+			if jectype in self.__ak4JecUncertainties :
+				uncCorrector = self.__ak4JecUncertainties[jectype][1]
+			else :
+				uncCorrector = self.__ak4TotalJecUncertainty
 		if pp.find('AK8') != -1 :
-			uncCorrector = self.__ak8JecUncertainties[jecsysstring.split('_')[0]][1]
+			if jectype in self.__ak8JecUncertainties :
+				uncCorrector = self.__ak8JecUncertainties[jectype][1]
+			else :
+				uncCorrector = self.__ak8TotalJecUncertainty
 		uncCorrector.setJetPhi(jetvec.Phi())
 		uncCorrector.setJetEta(jetvec.Eta())
 		uncCorrector.setJetPt(jetvec.Pt())
@@ -279,6 +293,10 @@ class Corrector(object) :
 			ptsmearfac = getJER(eta,1,'stat')
 		elif jec.endswith('JERSys_up') :
 			ptsmearfac = getJER(eta,1,'sys')
+		elif jec=='JER_up' :
+			ptsmearfac = getJER(eta,1,'both')
+		elif jec=='JER_dn' :
+			ptsmearfac = getJER(eta,-1,'both')
 		else :
 			print 'WARNING: JER OPTION '+str(jec)+' NOT RECOGNIZED!!'
 			return None
@@ -787,6 +805,38 @@ class Corrector(object) :
 		upfac_light = nomfac_light*(1.+sqrt(upfac_light)); downfac_light=nomfac_light*(1.-sqrt(downfac_light))
 		return nomfac_flavb,upfac_flavb,downfac_flavb,nomfac_flavc,upfac_flavc,downfac_flavc,nomfac_heavy,upfac_heavy,downfac_heavy,nomfac_light,upfac_light,downfac_light
 
+	def getTopTagEff(ak8jets,hadtvecs) :
+		#three different matching scenarios
+		nomfac_merged = 1.; upfac_merged = 1.; downfac_merged = 1.
+		nomfac_semimerged = 1.; upfac_semimerged = 1.; downfac_semimerged = 1.
+		nomfac_notmerged = 1.; upfac_notmerged = 1.; downfac_notmerged = 1.
+		#loop over ak8jets
+		for jet in ak8jets :
+			#if they're top tagged
+			if jet.isTopTagged() :
+				#bring its pt in range of the histograms
+				thispt = jet.getPt()
+				if thispt>=5000. : thispt = 4999.
+				#check the matching and increment the factors
+				nmatchedvecs = 0
+				for vec in hadtvecs :
+					if jet.DeltaR(vec)<0.8 :
+						nmatchedvecs+=1
+				if nmatchedvecs==3 :
+					nomfac_merged*=self.__ttag_eff_merged_nom.GetBinContent(self.__ttag_eff_merged_nom.FindFixBin(thispt))
+					upfac_merged*=self.__ttag_eff_merged_up.GetBinContent(self.__ttag_eff_merged_up.FindFixBin(thispt))
+					downfac_merged*=self.__ttag_eff_merged_down.GetBinContent(self.__ttag_eff_merged_down.FindFixBin(thispt))
+				elif nmatchedvecs==2 :
+					nomfac_semimerged*=self.__ttag_eff_semimerged_nom.GetBinContent(self.__ttag_eff_semimerged_nom.FindFixBin(thispt))
+					upfac_semimerged*=self.__ttag_eff_semimerged_up.GetBinContent(self.__ttag_eff_semimerged_up.FindFixBin(thispt))
+					downfac_semimerged*=self.__ttag_eff_semimerged_down.GetBinContent(self.__ttag_eff_semimerged_down.FindFixBin(thispt))
+				else :
+					nomfac_notmerged*=self.__ttag_eff_notmerged_nom.GetBinContent(self.__ttag_eff_notmerged_nom.FindFixBin(thispt))
+					upfac_notmerged*=self.__ttag_eff_notmerged_up.GetBinContent(self.__ttag_eff_notmerged_up.FindFixBin(thispt))
+					downfac_notmerged*=self.__ttag_eff_notmerged_down.GetBinContent(self.__ttag_eff_notmerged_down.FindFixBin(thispt))
+		#return the final scalefactors					
+		return nomfac_merged,upfac_merged,downfac_merged,nomfac_semimerged,upfac_semimerged,downfac_semimerged,nomfac_notmerged,upfac_notmerged,downfac_notmerged
+
 	def getGenReweights(self,branches) :
 		returnlist = []
 		#mu_R, from scale_weights
@@ -835,6 +885,9 @@ class Corrector(object) :
 				break
 		#print 'beta = %.4f, alpha = %.4f, epsilon = %.4f'%(beta,alpha,epsilon) #DEBUG
 		return alpha, epsilon
+
+	def getTopPtReweightV2(self,MCt,MCtbar) :
+		return 1.,1.,1. #for now
 
 	def __del__(self) :
 		pass
@@ -942,6 +995,20 @@ class Corrector(object) :
 		#muon_trk_file.Close()
 		return vs_eta_graph, vs_pu_graph
 
+	def setupTopTaggingEffHistos(self,onGrid) :
+		pp = './tardir/' if onGrid == 'yes' else '../other_input_files/'
+		self._ttag_eff_file = TFile.Open(pp+TOP_TAGGING_EFFICIENCY_ROOT_FILENAME)
+		mergednom = self._ttag_eff_file.Get(TOP_TAGGING_WP_SUBDIRNAME+'/sf_mergedTop_nominal')
+		mergedup = self._ttag_eff_file.Get(TOP_TAGGING_WP_SUBDIRNAME+'/sf_mergedTop_up')
+		mergeddown = self._ttag_eff_file.Get(TOP_TAGGING_WP_SUBDIRNAME+'/sf_mergedTop_down')
+		semimergednom = self._ttag_eff_file.Get(TOP_TAGGING_WP_SUBDIRNAME+'/sf_semimerged_nominal')
+		semimergedup = self._ttag_eff_file.Get(TOP_TAGGING_WP_SUBDIRNAME+'/sf_semimerged_up')
+		semimergeddown = self._ttag_eff_file.Get(TOP_TAGGING_WP_SUBDIRNAME+'/sf_semimerged_down')
+		notmergednom = self._ttag_eff_file.Get(TOP_TAGGING_WP_SUBDIRNAME+'/sf_notmerged_nominal')
+		notmergedup = self._ttag_eff_file.Get(TOP_TAGGING_WP_SUBDIRNAME+'/sf_notmerged_up')
+		notmergeddown = self._ttag_eff_file.Get(TOP_TAGGING_WP_SUBDIRNAME+'/sf_notmerged_down')
+		return mergednom,mergedup,mergeddown,semimergednom,semimergedup,semimergeddown,notmergednom,notmergedup,notmergeddown
+
 
 def setupJECCorrectors(onGrid,isdata,jetType,runera) :
 	#Define the JEC  parameters
@@ -951,47 +1018,49 @@ def setupJECCorrectors(onGrid,isdata,jetType,runera) :
 	ResJetPar = None
 	#Dictionary of this jet type's factorized uncertainty correctors; keys are the names that will be passed, values are lists of [corr. name,corrector]
 	jetstem=jetType.rstrip('PFchs')+'JES'
-	jetUncertainties = {jetstem+'PU':['SubTotalPileUp',None],
+	factjetUncertainties = {jetstem+'PU':['SubTotalPileUp',None],
 						jetstem+'Eta':['SubTotalRelative',None],
 						jetstem+'Pt':['SubTotalPt',None],
 						jetstem+'Scale':['SubTotalScale',None],
 						jetstem+'Time':['TimePtEta',None],
 						jetstem+'Flav':['FlavorQCD',None],
 						}
+	totaljetUncertainty = None
 	pp = './tardir/' if onGrid == 'yes' else '../other_input_files/'
 	#Get the files linked below from https://twiki.cern.ch/twiki/bin/view/CMS/JECDataMC
 	if not isdata :
 		L1JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016V4_MC_L1FastJet_'+jetType+'.txt')
 		L2JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016V4_MC_L2Relative_'+jetType+'.txt')
 		L3JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016V4_MC_L3Absolute_'+jetType+'.txt')
-		for n in jetUncertainties :
-			newps = JetCorrectorParameters(pp+'Summer16_23Sep2016V4_MC_UncertaintySources_'+jetType+'.txt',jetUncertainties[n][0])
-			jetUncertainties[n][1]=JetCorrectionUncertainty(newps)
+		for n in factjetUncertainties :
+			newps = JetCorrectorParameters(pp+'Summer16_23Sep2016V4_MC_UncertaintySources_'+jetType+'.txt',factjetUncertainties[n][0])
+			factjetUncertainties[n][1]=JetCorrectionUncertainty(newps)
+		totaljetUncertainty = JetCorrectionUncertainty(pp+'Summer16_23Sep2016V4_MC_Uncertainty_'+jetType+'.txt')
 	else :
 		if runera=='B' or runera=='C' or runera=='D' :
 			L1JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016BCDV4_DATA_L1FastJet_'+jetType+'.txt')
 			L2JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016BCDV4_DATA_L2Relative_'+jetType+'.txt')
 			L3JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016BCDV4_DATA_L3Absolute_'+jetType+'.txt')
 			ResJetPar = JetCorrectorParameters(pp+'Summer16_23Sep2016BCDV4_DATA_L2L3Residual_'+jetType+'.txt')
-			#jetUncertainty = JetCorrectionUncertainty(pp+'Summer16_23Sep2016BCDV4_DATA_Uncertainty_'+jetType+'.txt')
+			totaljetUncertainty = JetCorrectionUncertainty(pp+'Summer16_23Sep2016BCDV4_DATA_Uncertainty_'+jetType+'.txt')
 		elif runera=='E' or runera=='F' :
 			L1JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016EFV4_DATA_L1FastJet_'+jetType+'.txt')
 			L2JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016EFV4_DATA_L2Relative_'+jetType+'.txt')
 			L3JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016EFV4_DATA_L3Absolute_'+jetType+'.txt')
 			ResJetPar = JetCorrectorParameters(pp+'Summer16_23Sep2016EFV4_DATA_L2L3Residual_'+jetType+'.txt')
-			#jetUncertainty = JetCorrectionUncertainty(pp+'Summer16_23Sep2016EFV4_DATA_Uncertainty_'+jetType+'.txt')
+			totaljetUncertainty = JetCorrectionUncertainty(pp+'Summer16_23Sep2016EFV4_DATA_Uncertainty_'+jetType+'.txt')
 		elif runera=='G' :
 			L1JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016GV4_DATA_L1FastJet_'+jetType+'.txt')
 			L2JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016GV4_DATA_L2Relative_'+jetType+'.txt')
 			L3JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016GV4_DATA_L3Absolute_'+jetType+'.txt')
 			ResJetPar = JetCorrectorParameters(pp+'Summer16_23Sep2016GV4_DATA_L2L3Residual_'+jetType+'.txt')
-			#jetUncertainty = JetCorrectionUncertainty(pp+'Summer16_23Sep2016GV4_DATA_Uncertainty_'+jetType+'.txt')
+			totaljetUncertainty = JetCorrectionUncertainty(pp+'Summer16_23Sep2016GV4_DATA_Uncertainty_'+jetType+'.txt')
 		elif runera=='H' :
 			L1JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016HV4_DATA_L1FastJet_'+jetType+'.txt')
 			L2JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016HV4_DATA_L2Relative_'+jetType+'.txt')
 			L3JetPar  = JetCorrectorParameters(pp+'Summer16_23Sep2016HV4_DATA_L3Absolute_'+jetType+'.txt')
 			ResJetPar = JetCorrectorParameters(pp+'Summer16_23Sep2016HV4_DATA_L2L3Residual_'+jetType+'.txt')
-			#jetUncertainty = JetCorrectionUncertainty(pp+'Summer16_23Sep2016HV4_DATA_Uncertainty_'+jetType+'.txt')
+			totaljetUncertainty = JetCorrectionUncertainty(pp+'Summer16_23Sep2016HV4_DATA_Uncertainty_'+jetType+'.txt')
 		else :
 			print 'WARNING: Can\'t recognize Data Run Era based on filename (Run Era variable is '+str(runera)+')! This will crash I think'
 			return None, None
@@ -1005,34 +1074,38 @@ def setupJECCorrectors(onGrid,isdata,jetType,runera) :
 		vParJec.push_back(ResJetPar)
 	#define the corrector
 	jetCorrector = FactorizedJetCorrector(vParJec)
-	return jetCorrector, jetUncertainties
+	return jetCorrector, factjetUncertainties, totaljetUncertainty
 
 def getJER(jetEta, sysType, statorsys=None) :
-    jerSF = 1.0
-    if ( (sysType==0 or sysType==-1 or sysType==1) == False):
-        print "ERROR: Can't get JER! use type=0 (nom), -1 (down), +1 (up)"
-        return float(jerSF)
-    # Values from https://twiki.cern.ch/twiki/bin/view/CMS/JetResolution
-    etamin = 		 [0.000,  0.522,  0.783,  1.131,  1.305,  1.740,  1.930,  2.043,  2.322,  2.500,  2.853,  2.964,  3.139]
-    etamax = 		 [0.522,  0.783,  1.131,  1.305,  1.740,  1.930,  2.043,  2.322,  2.500,  2.853,  2.964,  3.139,  5.191]
-    scale_nom = 	 [1.1595, 1.1948, 1.1464, 1.1609, 1.1278, 1.1000, 1.1426, 1.1512, 1.2963, 1.3418, 1.7788, 1.1869, 1.1922]
-    #scale_uncert = [0.0645, 0.0652, 0.0632, 0.1025, 0.0986, 0.1079, 0.1214, 0.1140, 0.2371, 0.2091, 0.2008, 0.1243, 0.1488]
-    scale_unc_stat = [0.0052, 0.0113, 0.0084, 0.0161, 0.0099, 0.0263, 0.0512, 0.0306, 0.0814, 0.0619, 0.0648, 0.0197, 0.0386]
-    scale_unc_sys =  [0.0642, 0.0642, 0.0627, 0.0982, 0.0979, 0.1028, 0.1099, 0.1008, 0.2064, 0.1559, 0.1900, 0.1228, 0.1437]
-    for iSF in range(0,len(scale_nom)) :
-        if abs(jetEta) >= etamin[iSF] and abs(jetEta) < etamax[iSF] :
-            if sysType < 0 and statorsys=='stat' :
-                jerSF = scale_nom[iSF] - scale_unc_stat[iSF]
-            elif sysType > 0 and statorsys=='stat' :
-                jerSF = scale_nom[iSF] + scale_unc_stat[iSF]
-            if sysType < 0 and statorsys=='sys' :
-                jerSF = scale_nom[iSF] - scale_unc_sys[iSF]
-            elif sysType > 0 and statorsys=='sys' :
-                jerSF = scale_nom[iSF] + scale_unc_sys[iSF]
-            else :
-                jerSF = scale_nom[iSF]
-            break
-    return float(jerSF)
+	jerSF = 1.0
+	if ( (sysType==0 or sysType==-1 or sysType==1) == False):
+		print "ERROR: Can't get JER! use type=0 (nom), -1 (down), +1 (up)"
+		return float(jerSF)
+	# Values from https://twiki.cern.ch/twiki/bin/view/CMS/JetResolution
+	etamin = 		 [0.000,  0.522,  0.783,  1.131,  1.305,  1.740,  1.930,  2.043,  2.322,  2.500,  2.853,  2.964,  3.139]
+	etamax = 		 [0.522,  0.783,  1.131,  1.305,  1.740,  1.930,  2.043,  2.322,  2.500,  2.853,  2.964,  3.139,  5.191]
+	scale_nom = 	 [1.1595, 1.1948, 1.1464, 1.1609, 1.1278, 1.1000, 1.1426, 1.1512, 1.2963, 1.3418, 1.7788, 1.1869, 1.1922]
+	#scale_uncert = [0.0645, 0.0652, 0.0632, 0.1025, 0.0986, 0.1079, 0.1214, 0.1140, 0.2371, 0.2091, 0.2008, 0.1243, 0.1488]
+	scale_unc_stat = [0.0052, 0.0113, 0.0084, 0.0161, 0.0099, 0.0263, 0.0512, 0.0306, 0.0814, 0.0619, 0.0648, 0.0197, 0.0386]
+	scale_unc_sys =  [0.0642, 0.0642, 0.0627, 0.0982, 0.0979, 0.1028, 0.1099, 0.1008, 0.2064, 0.1559, 0.1900, 0.1228, 0.1437]
+	for iSF in range(0,len(scale_nom)) :
+		if abs(jetEta) >= etamin[iSF] and abs(jetEta) < etamax[iSF] :
+			if sysType < 0 and statorsys=='stat' :
+				jerSF = scale_nom[iSF] - scale_unc_stat[iSF]
+			elif sysType > 0 and statorsys=='stat' :
+				jerSF = scale_nom[iSF] + scale_unc_stat[iSF]
+			if sysType < 0 and statorsys=='sys' :
+				jerSF = scale_nom[iSF] - scale_unc_sys[iSF]
+			elif sysType > 0 and statorsys=='sys' :
+				jerSF = scale_nom[iSF] + scale_unc_sys[iSF]
+			elif sysType<0 and statorsys=='both' :
+				jerSF = scale_nom[iSF] - sqrt(scale_unc_stat[iSF]**2+scale_unc_sys[iSF]**2)
+			elif sysType>0 and statorsys=='both' :
+				jerSF = scale_nom[iSF] + sqrt(scale_unc_stat[iSF]**2+scale_unc_sys[iSF]**2)
+			else :
+				jerSF = scale_nom[iSF]
+			break
+	return float(jerSF)
 
 def getList(fulldict,pp) :
 	#find all the relevant keys

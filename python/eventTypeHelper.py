@@ -61,7 +61,7 @@ def findInitialPartons(branches) :
 #returns a bunch of fourvectors from Monte Carlo for MC truth reconstruction and matching
 def findMCParticles(branches) :
 	returnlist = []
-	names = ['t','tbar','lep','nu','lepb','hadW','hadb'] 
+	names = ['t','tbar','lep','nu','lepb','hadW','hadb','hadWs1','hadWs2'] 
 	for name in names :
 		thispt = branches['MC_'+name+'_pt'].getReadValue()
 		thiseta = branches['MC_'+name+'_eta'].getReadValue()

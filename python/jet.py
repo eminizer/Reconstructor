@@ -93,7 +93,7 @@ class AK8Jet(Jet) :
 		self.__tau2 = branches['jetAK8CHS_tau2CHS'].getReadValue(index)
 		self.__tau1 = branches['jetAK8CHS_tau1CHS'].getReadValue(index)
 		self.__sdm  = branches['jetAK8CHS_softDropMassCHS'].getReadValue(index)
-		self.__isttagged = self.getPt()>400. and self.__sdm>105. and self.__sdm<220. and self.__tau3!=0. and self.__tau2!=0. and (self.__tau3/self.__tau2)<0.80
+		self.__isttagged = self.getPt()>400. and self.__sdm>105. and self.__sdm<220. and self.__tau3!=0. and self.__tau2!=0. and (self.__tau3/self.__tau2)<0.81
 		self.__isWtagged = self.getPt()>200. and self.__sdm>65. and self.__sdm<105. and self.__tau2!=0. and self.__tau1!=0. and (self.__tau2/self.__tau1)<0.55
 
 	def __getsubjets__(self,branches,index,jec,leps,corrector,isdata) :
@@ -186,7 +186,7 @@ def getfourvec(branches,index,jec,leps,corrector,isdata,pp) :
 		npv = branches['npv'].getReadValue()
 		newJEC = corrector.getJECforJet(cleanjet,jetArea,rho,npv,pp)
 	#adjust the new JEC if this is a systematic-shifted sample
-	if jec!='nominal' and ((pp.find('jetAK4')!=-1 and jec.find('AK4JES')!=-1) or (pp.find('jetAK8')!=-1 and jec.find('AK8JES')!=-1)) :
+	if jec!='nominal' and (jec.startswith('JES') or (pp.find('jetAK4')!=-1 and jec.find('AK4JES')!=-1) or (pp.find('jetAK8')!=-1 and jec.find('AK8JES')!=-1)) :
 		jecunc_up, jecunc_down = corrector.getJECuncForJet(cleanjet,pp,jec)
 		if jec.endswith('_up') :
 			newJEC = newJEC+jecunc_up
@@ -211,7 +211,7 @@ def getfourvec(branches,index,jec,leps,corrector,isdata,pp) :
 	ptres = branches[pp+'_PtResolution'].getReadValue(index) 
 	newJet = None
 	#for JER-wiggled systematics
-	if jec!='nominal' and ((pp.find('jetAK4')!=-1 and jec.find('AK4JER')!=-1) or (pp.find('jetAK8')!=-1 and jec.find('AK8JER')!=-1)) :
+	if jec!='nominal' and (jec.startswith('JER') or (pp.find('jetAK4')!=-1 and jec.find('AK4JER')!=-1) or (pp.find('jetAK8')!=-1 and jec.find('AK8JER')!=-1)) :
 		newJet=corrector.smearJet(adjJet,jec,genJetVec,ptres,dRCheck)
 	#for nominal smearing (not wiggling JER systematics)
 	else :
