@@ -136,7 +136,7 @@ def make_renormalization_dict(name,alpha,epsilon,muRup,muRdown,muFup,muFdown,scu
 	print 'pdfas value = %.4f'%(returndict['pdfas'])
 	print 'pdfasup value = %.4f'%(returndict['pdfasup'])
 	print 'pdfasdown value = %.4f'%(returndict['pdfasdown'])
-	print 'top pT reweight mean value = %.4f'%(returndict['topptrwmean'])
+	print 'top pT reweight (v1) mean value = %.4f'%(returndict['topptrwmean'])
 	for line in printlines :
 		print line
 	#return the dictionary
@@ -267,7 +267,7 @@ if options.name.lower().find('mcatnlo')!=-1 :
 csvb_qq_global_hist=total_cstar_vs_beta_qqbar_histo
 csvb_gg_global_hist=total_cstar_vs_beta_gg_histo
 renormalization_dict = make_renormalization_dict(options.name,options.alphaOverride,options.epsilonOverride,total_mu_R_sf_up_histo,total_mu_R_sf_down_histo,total_mu_F_sf_up_histo,total_mu_F_sf_down_histo,
-												 total_scale_comb_sf_up_histo,total_scale_comb_sf_down_histo,total_pdf_alphas_sf_histo,total_pdf_alphas_sf_up_histo,total_pdf_alphas_sf_down_histo,total_top_pt_reweight_histo)
+												 total_scale_comb_sf_up_histo,total_scale_comb_sf_down_histo,total_pdf_alphas_sf_histo,total_pdf_alphas_sf_up_histo,total_pdf_alphas_sf_down_histo,total_top_pt_reweight_v1_histo)
 #Get the total number of events
 ntotalevents = chain.GetEntries()
 print 'number of total events = %d'%(ntotalevents) 

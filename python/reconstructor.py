@@ -93,7 +93,7 @@ class Reconstructor(object) :
 	MC_cstar 		= AddBranch(readname='MC_cstar',dictlist=thisdictlist)
 	MC_x_F 			= AddBranch(readname='MC_x_F',dictlist=thisdictlist)
 	MC_Mtt 			= AddBranch(readname='MC_Mtt',dictlist=thisdictlist)
-	fourvectornames = ['t','tbar','lep','nu','lepb','hadW','hadb']
+	fourvectornames = ['t','tbar','lep','nu','lepb','hadW','hadb','hadWs1','hadWs2']
 	for n in fourvectornames :
 		AddBranch(readname='MC_'+n+'_pt',dictlist=thisdictlist)
 		AddBranch(readname='MC_'+n+'_eta',dictlist=thisdictlist)
@@ -1211,7 +1211,7 @@ class Reconstructor(object) :
 			#MET cuts
 			self.docut('METcuts',((topology==3 and met.E()>40.) or met.E()>100.))
 			#boosted lepton pT cuts
-			self.docut('lepcuts',(topology==3 or lep.getPt()>50.))
+			self.docut('lepcuts',(topology==3 or lep.getPt()>80.))
 		#full selection
 		for cutbranch in self.cut_branches.values() :
 			if cutbranch.getWriteValue()==0 :

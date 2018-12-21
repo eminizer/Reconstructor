@@ -55,7 +55,7 @@ from ROOT import vector, FactorizedJetCorrector, JetCorrectorParameters, JetCorr
 from ROOT import TFile, Double, gSystem, BTagCalibration, BTagCalibrationReader, std
 import ROOT
 from random import gauss
-from math import sqrt
+from math import sqrt, exp
 
 class Corrector(object) :
 
@@ -805,7 +805,7 @@ class Corrector(object) :
 		upfac_light = nomfac_light*(1.+sqrt(upfac_light)); downfac_light=nomfac_light*(1.-sqrt(downfac_light))
 		return nomfac_flavb,upfac_flavb,downfac_flavb,nomfac_flavc,upfac_flavc,downfac_flavc,nomfac_heavy,upfac_heavy,downfac_heavy,nomfac_light,upfac_light,downfac_light
 
-	def getTopTagEff(ak8jets,hadtvecs) :
+	def getTopTagEff(self,ak8jets,hadtvecs) :
 		#three different matching scenarios
 		nomfac_merged = 1.; upfac_merged = 1.; downfac_merged = 1.
 		nomfac_semimerged = 1.; upfac_semimerged = 1.; downfac_semimerged = 1.
@@ -820,7 +820,7 @@ class Corrector(object) :
 				#check the matching and increment the factors
 				nmatchedvecs = 0
 				for vec in hadtvecs :
-					if jet.DeltaR(vec)<0.8 :
+					if vec!=None and (jet.getFourVector()).DeltaR(vec)<0.8 :
 						nmatchedvecs+=1
 				if nmatchedvecs==3 :
 					nomfac_merged*=self.__ttag_eff_merged_nom.GetBinContent(self.__ttag_eff_merged_nom.FindFixBin(thispt))
@@ -887,7 +887,25 @@ class Corrector(object) :
 		return alpha, epsilon
 
 	def getTopPtReweightV2(self,MCt,MCtbar) :
-		return 1.,1.,1. #for now
+		doubleterr=False; doubletbarerr=False
+		tpt = MCt.Pt(); tbarpt = MCtbar.Pt()
+		if tpt>550. :
+			doubleterr=True
+			tpt=550.
+		if tbarpt>550. :
+			doubletbarerr=True
+			tbarpt=550.
+		tfac = exp(0.057713-0.000477*tpt)
+		tfacerr = tfac*sqrt((0.027283)**2+(tpt*0.000132)**2)
+		if doubleterr :
+			tfacerr*=2
+		tbarfac = exp(0.056720-0.000465*tbarpt)
+		tbarfacerr = tbarfac*sqrt((0.027325)**2+(tbarpt*0.000132)**2)
+		if doubletbarerr :
+			tbarfacerr*=2
+		nomfac = 0.99996683*sqrt(tfac*tbarfac)
+		facerr = (1./(2*nomfac))*sqrt((tbarfac*tfacerr)**2+(tfac*tbarfacerr)**2)
+		return nomfac,nomfac+facerr,nomfac-facerr
 
 	def __del__(self) :
 		pass
@@ -1008,7 +1026,6 @@ class Corrector(object) :
 		notmergedup = self._ttag_eff_file.Get(TOP_TAGGING_WP_SUBDIRNAME+'/sf_notmerged_up')
 		notmergeddown = self._ttag_eff_file.Get(TOP_TAGGING_WP_SUBDIRNAME+'/sf_notmerged_down')
 		return mergednom,mergedup,mergeddown,semimergednom,semimergedup,semimergeddown,notmergednom,notmergedup,notmergeddown
-
 
 def setupJECCorrectors(onGrid,isdata,jetType,runera) :
 	#Define the JEC  parameters
