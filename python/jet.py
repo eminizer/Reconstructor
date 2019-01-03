@@ -187,7 +187,7 @@ def getfourvec(branches,index,jec,leps,corrector,isdata,pp) :
 		newJEC = corrector.getJECforJet(cleanjet,jetArea,rho,npv,pp)
 	#adjust the new JEC if this is a systematic-shifted sample
 	if jec!='nominal' and (jec.startswith('JES') or (pp.find('jetAK4')!=-1 and jec.find('AK4JES')!=-1) or (pp.find('jetAK8')!=-1 and jec.find('AK8JES')!=-1)) :
-		jecunc_up, jecunc_down = corrector.getJECuncForJet(cleanjet,pp,jec)
+		jecunc_down, jecunc_up = corrector.getJECuncForJet(cleanjet,pp,jec)
 		if jec.endswith('_up') :
 			newJEC = newJEC+jecunc_up
 		elif jec.endswith('_dn') :
