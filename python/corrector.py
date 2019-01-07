@@ -888,21 +888,29 @@ class Corrector(object) :
 
 	def getTopPtReweightV2(self,MCt,MCtbar) :
 		doubleterr=False; doubletbarerr=False
-		tpt = MCt.Pt(); tbarpt = MCtbar.Pt()
-		if tpt>550. :
-			doubleterr=True
-			tpt=550.
-		if tbarpt>550. :
-			doubletbarerr=True
-			tbarpt=550.
-		tfac = exp(0.057713-0.000477*tpt)
-		tfacerr = tfac*sqrt((0.027283)**2+(tpt*0.000132)**2)
-		if doubleterr :
-			tfacerr*=2
-		tbarfac = exp(0.056720-0.000465*tbarpt)
-		tbarfacerr = tbarfac*sqrt((0.027325)**2+(tbarpt*0.000132)**2)
-		if doubletbarerr :
-			tbarfacerr*=2
+		tfac=1.; tfacerr=0.; tbarfac=1.; tbarfacerr=0.
+		if MCt!=None :
+			tpt = MCt.Pt(); 
+			if tpt>550. :
+				doubleterr=True
+				tpt=550.
+			tfac = exp(0.057713-0.000477*tpt)
+			tfacerr = tfac*sqrt((0.027283)**2+(tpt*0.000132)**2)
+			if doubleterr :
+				tfacerr*=2
+		else :
+			print 'WARNING: MC top is %s, top pT reweight may be invalid!'%(MCt)
+		if MCtbar!=None :
+			tbarpt = MCtbar.Pt()
+			if tbarpt>550. :
+				doubletbarerr=True
+				tbarpt=550.
+			tbarfac = exp(0.056720-0.000465*tbarpt)
+			tbarfacerr = tbarfac*sqrt((0.027325)**2+(tbarpt*0.000132)**2)
+			if doubletbarerr :
+				tbarfacerr*=2
+		else :
+			print 'WARNING: MC antitop is %s, top pT reweight may be invalid!'%(MCtbar)
 		nomfac = 0.99996683*sqrt(tfac*tbarfac)
 		facerr = (1./(2*nomfac))*sqrt((tbarfac*tfacerr)**2+(tfac*tbarfacerr)**2)
 		return nomfac,nomfac+facerr,nomfac-facerr

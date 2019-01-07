@@ -208,8 +208,12 @@ if options.n_jobs!=1 :
 garbageFileName+='.root' 
 garbageFile = TFile(garbageFileName,'recreate') 
 chain = TChain(options.ttree_name)
-print 'Getting these files: '
+#is it real data?
+data=False
+if options.name.lower().find('singlemu')!=-1 or options.name.lower().find('singleel')!=-1 :
+	data=True
 #Read files in line by line and get the tree, pileup,cstar vs. beta,pdf_alphas/F_up/down,scale_comb_sf_up/down,pdf_alphas_sf_up/down histograms, and total weight value from each
+print 'Getting these files: '
 total_pileup_histo               = TH1D('total_pileup_histo','total MC pileup; pileup; events',100,0.,100.); total_pileup_histo.SetDirectory(0)
 total_cstar_vs_beta_qqbar_histo  = TH2D('total_cstar_vs_beta_qqbar_histo','MC truth c* vs. #beta (q#bar{q} events); #beta; c*; events',10,0.,1.,20,-1.,1.); total_cstar_vs_beta_qqbar_histo.SetDirectory(0)
 total_cstar_vs_beta_gg_histo     = TH2D('total_cstar_vs_beta_gg_histo','MC truth c* vs. #beta (qg/gg events); #beta; c*; events',10,0.,1.,20,-1.,1.); total_cstar_vs_beta_gg_histo.SetDirectory(0)
@@ -252,8 +256,9 @@ for input_file in input_files_list :
 	total_pdf_alphas_sf_up_histo.Add(pdfasup_histo)
 	pdfasdown_histo = f.Get('EventCounter/pdf_alphas_sf_down')
 	total_pdf_alphas_sf_down_histo.Add(pdfasdown_histo)
-	top_pt_reweight_v1_histo = f.Get('EventCounter/top_pt_rw_v1')
-	total_top_pt_reweight_v1_histo.Add(top_pt_reweight_v1_histo)
+	if not data :
+		top_pt_reweight_v1_histo = f.Get('EventCounter/top_pt_rw_v1')
+		total_top_pt_reweight_v1_histo.Add(top_pt_reweight_v1_histo)
 	histo=f.Get('EventCounter/totweight')
 	newweight=histo.GetBinContent(1)
 	print '		Added %.2f to total weight'%(newweight)
@@ -292,9 +297,6 @@ if options.n_jobs>1 :
 	filename+='_'+str(options.i_job)
 filename+='_tree.root'
 #Initialize analyzer
-data=False
-if options.name.lower().find('singlemu')!=-1 or options.name.lower().find('singleel')!=-1 :
-	data=True
 analyzer = Reconstructor(filename, analysisTree, data, options.xSec, options.kFac, options.jec, options.on_grid, total_pileup_histo, totweight, renormalization_dict) 
 
 #Counter 
@@ -325,9 +327,15 @@ for event in range(nanalysisevents) :
 		if options.n_jobs==40 :
 			if (options.i_job==11 and count==4839) or (options.i_job==32 and count==8219) or (options.i_job==34 and count==4157) :
 				continue
+		elif options.n_jobs==400 :
+			if (options.i_job==115  and count==293) or (options.i_job==329 and count==146) or (options.i_job==344 and count==747) :
+				continue
 	elif options.name=='WJets_HT-2500toInf' :
 		if options.n_jobs==10 :
 			if (options.i_job==4 and count==17253) or (options.i_job==5 and count==16924) :
+				continue
+		elif options.n_jobs==100 :
+			if (options.i_job==47 and count==1829) or (options.i_job==57 and count==1508) :
 				continue
 	#another veto for splitting the last WJets_HT-800to1200_AK8JESFlav_up job that just won't finish
 	#if count<80000 or count>=120000 :

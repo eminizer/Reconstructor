@@ -535,6 +535,7 @@ class Reconstructor(object) :
 
 		#toss the event if it's for systematics shifts and doesn't pass selection to this point
 		if self.JEC!='nominal' and not self.__passesPreRecoCuts__(canreconstruct,topology,nLbtags,nMbtags,lep,electrons,muons,ak4jets,ak8jets,met) :
+		#if not self.__passesPreRecoCuts__(canreconstruct,topology,nLbtags,nMbtags,lep,electrons,muons,ak4jets,ak8jets,met) : #ONLY IF YOU DON'T NEED CUTFLOW FROM THIS SAMPLE!!!
 			#print 'EVENT NUMBER %d NOT VALID; FAILS PRE RECO CUTS'%(eventnumber) #DEBUG
 			return
 
