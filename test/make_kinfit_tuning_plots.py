@@ -33,7 +33,8 @@ if not os.path.isdir('../'+sample) :
 	exit()
 
 #open the input files
-infiles = glob('../'+sample+'/aggregated_*.root')
+allinfiles = glob('../'+sample+'/aggregated_*.root')
+infiles = [filename for filename in allinfiles if filename.find('JES')==-1 and filename.find('JER')==-1]
 
 #start up the output file
 outfilename = 'kinfit_tuning_plots_'+sample+'_'+str(date.today())
@@ -66,7 +67,7 @@ com_cuts = 'ismatchable==1 && fullselection==1'
 chain=fullchain.CopyTree(com_cuts)
 
 #plot plots
-weights = '(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF*sf_lep_iso_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH*sf_lep_iso_GH))*weight*sf_pileup*sf_btag_eff*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
+weights = '(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF*sf_lep_iso_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH*sf_lep_iso_GH))*weight*sf_pileup*sf_ttag_eff_merged*sf_ttag_eff_semimerged*sf_ttag_eff_notmerged*sf_btag_eff_heavy*sf_btag_eff_light*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas*sf_top_pt_rw_v2'
 print 'Drawing type-1 leptonic top mass...'
 chain.Draw('leptcorprefitM>>t1leptM('+str(ntbins)+','+str(tmass_low)+','+str(tmass_high)+')','('+weights+')*('+com_cuts+' && eventTopology==1)')
 print 'Drawing type-1 hadronic top mass...'

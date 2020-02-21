@@ -42,10 +42,10 @@ weights = []
 filenames.append('powheg_TT');					shortnames.append('powheg semilep')
 filenames.append('powheg_TT');					shortnames.append('powheg dilep')
 filenames.append('powheg_TT');					shortnames.append('powheg hadronic')
-#MCATNLO TT
-filenames.append('mcatnlo_TT');					shortnames.append('mcatnlo semilep')
-filenames.append('mcatnlo_TT');					shortnames.append('mcatnlo dilep')
-filenames.append('mcatnlo_TT');					shortnames.append('mcatnlo hadronic')
+##MCATNLO TT
+#filenames.append('mcatnlo_TT');					shortnames.append('mcatnlo semilep')
+#filenames.append('mcatnlo_TT');					shortnames.append('mcatnlo dilep')
+#filenames.append('mcatnlo_TT');					shortnames.append('mcatnlo hadronic')
 #Single top
 filenames.append('ST_s-c');						shortnames.append('Single T')
 filenames.append('ST_t-c_top');					shortnames.append('Single T')
@@ -68,15 +68,15 @@ filenames.append('DYJets_M-50_HT-600to800');	shortnames.append('DYJets')
 filenames.append('DYJets_M-50_HT-800to1200');	shortnames.append('DYJets')
 filenames.append('DYJets_M-50_HT-1200to2500');	shortnames.append('DYJets')
 filenames.append('DYJets_M-50_HT-2500toInf');	shortnames.append('DYJets')
-###QCD
-#filenames.append('QCD_HT-100to200');			shortnames.append('QCD')
-#filenames.append('QCD_HT-200to300');			shortnames.append('QCD')
-#filenames.append('QCD_HT-300to500');			shortnames.append('QCD')
-#filenames.append('QCD_HT-500to700');			shortnames.append('QCD')
-#filenames.append('QCD_HT-700to1000');			shortnames.append('QCD')
-#filenames.append('QCD_HT-1000to1500');			shortnames.append('QCD')
-#filenames.append('QCD_HT-1500to2000');			shortnames.append('QCD')
-#filenames.append('QCD_HT-2000toInf');			shortnames.append('QCD')
+#QCD
+filenames.append('QCD_HT-100to200');			shortnames.append('QCD')
+filenames.append('QCD_HT-200to300');			shortnames.append('QCD')
+filenames.append('QCD_HT-300to500');			shortnames.append('QCD')
+filenames.append('QCD_HT-500to700');			shortnames.append('QCD')
+filenames.append('QCD_HT-700to1000');			shortnames.append('QCD')
+filenames.append('QCD_HT-1000to1500');			shortnames.append('QCD')
+filenames.append('QCD_HT-1500to2000');			shortnames.append('QCD')
+filenames.append('QCD_HT-2000toInf');			shortnames.append('QCD')
 ##Multiboson
 #filenames.append('WW_to_L_Nu_2Q');				shortnames.append('Multiboson')
 #filenames.append('WW_to_2L_2Nu');				shortnames.append('Multiboson')
@@ -221,7 +221,7 @@ if 't3' in topologies :
 	cutnames.append('t3 QCD C SR selection'); 	  cutstrings.append(qcdCSRselection); 	prior_cutstrings.append('weight!=0.')
 
 #weight string
-weightstring = '(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF*sf_lep_iso_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH*sf_lep_iso_GH))*weight*sf_pileup*sf_btag_eff*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
+weightstring = '(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF*sf_lep_iso_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH*sf_lep_iso_GH))*weight*sf_pileup*sf_ttag_eff_merged*sf_ttag_eff_semimerged*sf_ttag_eff_notmerged*sf_btag_eff_heavy*sf_btag_eff_light*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas*sf_top_pt_rw_v2'
 
 #print out the number of events in data and the efficiencies for the MC samples
 #first line is just table headings for each cutflow and each sample type

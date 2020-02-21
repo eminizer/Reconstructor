@@ -337,10 +337,10 @@ for event in range(nanalysisevents) :
 		elif options.n_jobs==100 :
 			if (options.i_job==47 and count==1829) or (options.i_job==57 and count==1508) :
 				continue
-	#another veto for splitting the last WJets_HT-800to1200_AK8JESFlav_up job that just won't finish
-	#if count<80000 or count>=120000 :
-	#	continue
-	
+	elif options.name=='QCD_HT-2000toInf' :
+		if options.n_jobs==50 :
+			if (options.i_job==20 and count==4468) or (options.i_job==30 and count==19666) or (options.i_job==47 and count==21334) :
+				continue
 	#analyze event and add to TTree
 	analyzer.analyze(event)
 	#reset analyzer

@@ -26,23 +26,23 @@ inputfileslist = open(inputfileslist,'r')
 qq_plots = []
 qg_plots = []
 gg_plots = []
-qq_c = TH1D('qq_c','; c*; fraction/0.02',100,-1.0,1.0); qq_plots.append(qq_c)
-qg_c = TH1D('qg_c','; c*; fraction/0.02',100,-1.0,1.0); qg_plots.append(qg_c)
-gg_c = TH1D('gg_c','; c*; fraction/0.02',100,-1.0,1.0); gg_plots.append(gg_c)
-qq_x = TH1D('qq_x','; x_{F}; fraction/0.02',100,-1.0,1.0); qq_plots.append(qq_x)
-qg_x = TH1D('qg_x','; x_{F}; fraction/0.02',100,-1.0,1.0); qg_plots.append(qg_x)
-gg_x = TH1D('gg_x','; x_{F}; fraction/0.02',100,-1.0,1.0); gg_plots.append(gg_x)
-qq_M = TH1D('qq_M','; M (GeV); fraction/25 GeV',500,0.,5000.); qq_plots.append(qq_M)
-qg_M = TH1D('qg_M','; M (GeV); fraction/25 GeV',500,0.,5000.); qg_plots.append(qg_M)
-gg_M = TH1D('gg_M','; M (GeV); fraction/25 GeV',500,0.,5000.); gg_plots.append(gg_M)
+qq_c = TH1D('qq_c','; c*; Fraction/0.02',100,-1.0,1.0); qq_plots.append(qq_c)
+qg_c = TH1D('qg_c','; c*; Fraction/0.02',100,-1.0,1.0); qg_plots.append(qg_c)
+gg_c = TH1D('gg_c','; c*; Fraction/0.02',100,-1.0,1.0); gg_plots.append(gg_c)
+qq_x = TH1D('qq_x','; x_{F}; Fraction/0.02',100,-1.0,1.0); qq_plots.append(qq_x)
+qg_x = TH1D('qg_x','; x_{F}; Fraction/0.02',100,-1.0,1.0); qg_plots.append(qg_x)
+gg_x = TH1D('gg_x','; x_{F}; Fraction/0.02',100,-1.0,1.0); gg_plots.append(gg_x)
+qq_M = TH1D('qq_M','; m_{t#bar{t}} [GeV]; Fraction/10 GeV',500,0.,5000.); qq_plots.append(qq_M)
+qg_M = TH1D('qg_M','; m_{t#bar{t}} [GeV]; Fraction/10 GeV',500,0.,5000.); qg_plots.append(qg_M)
+gg_M = TH1D('gg_M','; m_{t#bar{t}} [GeV]; Fraction/10 GeV',500,0.,5000.); gg_plots.append(gg_M)
 all_plots = [qq_plots,qg_plots,gg_plots]
 #plot attributes
 for plot in qq_plots :
-	plot.SetLineWidth(3); plot.SetMarkerStyle(25); plot.SetLineColor(kBlue)
+	plot.SetLineWidth(3); plot.SetMarkerStyle(25); plot.SetLineColor(kBlue); plot.SetLineStyle(1)
 for plot in qg_plots :
-	plot.SetLineWidth(3); plot.SetMarkerStyle(25); plot.SetLineColor(kRed)
+	plot.SetLineWidth(3); plot.SetMarkerStyle(25); plot.SetLineColor(kRed); plot.SetLineStyle(7)
 for plot in gg_plots :
-	plot.SetLineWidth(3); plot.SetMarkerStyle(25); plot.SetLineColor(kBlack)
+	plot.SetLineWidth(3); plot.SetMarkerStyle(25); plot.SetLineColor(kBlack); plot.SetLineStyle(10)
 for plotgroup in all_plots :
 	for plot in plotgroup :
 		plot.SetStats(0)
@@ -86,7 +86,7 @@ x_canv = TCanvas('x_canv','x_canv',1100,900)
 M_canv = TCanvas('M_canv','M_canv',1100,900)
 
 #Make legend
-leg = TLegend(0.62,0.67,0.75,0.8)
+leg = TLegend(0.65,0.53,0.90,0.78)
 leg.AddEntry(qq_plots[0],'q#bar{q}','L')
 leg.AddEntry(qg_plots[0],'qg','L')
 leg.AddEntry(gg_plots[0],'gg','L')
@@ -117,8 +117,13 @@ leg.Draw("SAME")
 iPeriod = 0 #free form since it's only simulation
 iPos = 11 #iPos = 10*(alignment) + position (1/2/3 = left/center/right)
 if iPos==0 : CMS_lumi.relPosX = 0.12
+#CMS_lumi.cmsText = "POWHEG"
+CMS_lumi.cmsText = "CMS"
+#CMS_lumi.cmsTextSize = 0.85
+CMS_lumi.cmsTextSize = 1.1
 CMS_lumi.writeExtraText = 1
-CMS_lumi.extraText = "Simulation Preliminary"
+#CMS_lumi.extraText = "Simulation Preliminary"
+CMS_lumi.extraText = "Simulation"
 #CMS_lumi.lumi_sqrtS = "13 TeV" # used with iPeriod = 0, e.g. for simulation-only plots (default is an empty string)
 CMS_lumi.CMS_lumi(c_canv, iPeriod, iPos)
 CMS_lumi.CMS_lumi(x_canv, iPeriod, iPos)

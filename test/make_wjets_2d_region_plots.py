@@ -46,7 +46,7 @@ wjetschain = fullwjetschain.CopyTree(com_cuts)
 print 'Done.'
 
 #Draw into the histograms
-weights = '(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF*sf_lep_iso_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH*sf_lep_iso_GH))*weight*sf_pileup*sf_btag_eff*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas'
+weights = '(((19690.184*(lepflavor==1)+19171.010*(lepflavor==2))*sf_trig_eff_BtoF*sf_lep_ID_BtoF*sf_lep_iso_BtoF)+((16226.452*(lepflavor==1)+16214.862*(lepflavor==2))*sf_trig_eff_GH*sf_lep_ID_GH*sf_lep_iso_GH))*weight*sf_pileup*sf_ttag_eff_merged*sf_ttag_eff_semimerged*sf_ttag_eff_notmerged*sf_btag_eff_heavy*sf_btag_eff_light*sf_mu_R*sf_mu_F*sf_scale_comb*sf_pdf_alphas*sf_top_pt_rw_v2'
 
 ttbarchain.Draw("scaled_lept_M:chi2>>t1_sig_int(50,-50.,200.,40,50.,450.)",weights+"*("+com_cuts+' && eventTopology==1)',"COLZ")
 wjetschain.Draw("scaled_lept_M:chi2>>t1_bg_int(50,-50.,200.,40,50.,450.)",weights+"*("+com_cuts+' && eventTopology==1)',"COLZ")
