@@ -32,6 +32,9 @@ gg_c = TH1D('gg_c','; c*; Fraction/0.02',100,-1.0,1.0); gg_plots.append(gg_c)
 qq_x = TH1D('qq_x','; x_{F}; Fraction/0.02',100,-1.0,1.0); qq_plots.append(qq_x)
 qg_x = TH1D('qg_x','; x_{F}; Fraction/0.02',100,-1.0,1.0); qg_plots.append(qg_x)
 gg_x = TH1D('gg_x','; x_{F}; Fraction/0.02',100,-1.0,1.0); gg_plots.append(gg_x)
+qq_x_us = TH1D('qq_x_us','; |x_{F}|; Fraction/0.02',50,0.0,1.0); qq_plots.append(qq_x_us)
+qg_x_us = TH1D('qg_x_us','; |x_{F}|; Fraction/0.02',50,0.0,1.0); qg_plots.append(qg_x_us)
+gg_x_us = TH1D('gg_x_us','; |x_{F}|; Fraction/0.02',50,0.0,1.0); gg_plots.append(gg_x_us)
 qq_M = TH1D('qq_M','; m_{t#bar{t}} [GeV]; Fraction/10 GeV',500,0.,5000.); qq_plots.append(qq_M)
 qg_M = TH1D('qg_M','; m_{t#bar{t}} [GeV]; Fraction/10 GeV',500,0.,5000.); qg_plots.append(qg_M)
 gg_M = TH1D('gg_M','; m_{t#bar{t}} [GeV]; Fraction/10 GeV',500,0.,5000.); gg_plots.append(gg_M)
@@ -64,6 +67,20 @@ for inputfile in inputfileslist :
 	new_gg_M = (thisfile.Get('EventCounter/M')).ProjectionY('new_gg_M',3,3); gg_M.Add(new_gg_M)
 	thisfile.Close()
 
+#add to the unsigned Feyman x plots by copyig bin contents
+for bin in range(1,qq_x.GetNbinsX()+1) :
+	signedbincenter = qq_x.GetXaxis().GetBinCenter(bin)
+	unsignedbin = qq_x_us.GetXaxis().FindFixBin(abs(signedbincenter))
+	unsignedbincontent_qq = qq_x_us.GetBinContent(unsignedbin)
+	unsignedbincontent_qg = qg_x_us.GetBinContent(unsignedbin)
+	unsignedbincontent_gg = gg_x_us.GetBinContent(unsignedbin)
+	to_add_qq = qq_x.GetBinContent(bin)
+	to_add_qg = qg_x.GetBinContent(bin)
+	to_add_gg = gg_x.GetBinContent(bin)
+	qq_x_us.SetBinContent(unsignedbin,unsignedbincontent_qq+to_add_qq)
+	qg_x_us.SetBinContent(unsignedbin,unsignedbincontent_qg+to_add_qg)
+	gg_x_us.SetBinContent(unsignedbin,unsignedbincontent_gg+to_add_gg)
+
 #save plots
 outputfile.cd()
 for plotgroup in all_plots :
@@ -83,6 +100,7 @@ for plotgroup in all_plots :
 #Make Canvases
 c_canv = TCanvas('c_canv','c_canv',1100,900)
 x_canv = TCanvas('x_canv','x_canv',1100,900)
+x_canv_unsigned = TCanvas('x_canv_unsigned','x_canv_unsigned',1100,900)
 M_canv = TCanvas('M_canv','M_canv',1100,900)
 
 #Make legend
@@ -94,6 +112,7 @@ leg.AddEntry(gg_plots[0],'gg','L')
 #set axis limits
 qq_c.SetMinimum(0.); qq_c.SetMaximum(0.032)
 qq_x.SetMinimum(0.); qq_x.SetMaximum(0.100)
+qq_x_us.SetMinimum(0.); qq_x_us.SetMaximum(0.155)
 qq_M.SetMinimum(0.); qq_M.SetMaximum(0.058)
 
 #Plot plots
@@ -106,6 +125,11 @@ x_canv.cd()
 qq_x.Draw("HIST")
 qg_x.Draw("SAME HIST")
 gg_x.Draw("SAME HIST")
+leg.Draw("SAME")
+x_canv_unsigned.cd()
+qq_x_us.Draw("HIST")
+qg_x_us.Draw("SAME HIST")
+gg_x_us.Draw("SAME HIST")
 leg.Draw("SAME")
 M_canv.cd()
 qq_M.Draw("HIST")
@@ -127,17 +151,20 @@ CMS_lumi.extraText = "Simulation"
 #CMS_lumi.lumi_sqrtS = "13 TeV" # used with iPeriod = 0, e.g. for simulation-only plots (default is an empty string)
 CMS_lumi.CMS_lumi(c_canv, iPeriod, iPos)
 CMS_lumi.CMS_lumi(x_canv, iPeriod, iPos)
+CMS_lumi.CMS_lumi(x_canv_unsigned, iPeriod, iPos)
 CMS_lumi.CMS_lumi(M_canv, iPeriod, 33)
 
 #update canvases
 c_canv.Update()
 x_canv.Update()
+x_canv_unsigned.Update()
 M_canv.Update()
 
 #save canvases
 outputfile.cd()
 c_canv.Write()
 x_canv.Write()
+x_canv_unsigned.Write()
 M_canv.Write()
 
 #save and close output file
