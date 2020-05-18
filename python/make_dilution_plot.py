@@ -75,13 +75,13 @@ for b in branches.values() :
 pfp = TFile('dilution_plots.root','recreate')
 
 #set up the histograms to fill
-bins = array('d',[0.000,0.025,0.050,0.075,0.100,0.125,0.150,0.175,0.200,0.225,0.250,0.275,0.300,0.325,0.350,0.375,0.400,0.425,0.450,0.475,0.500,
-				  0.525,0.550,0.575,0.600,1.00])
 #bins = array('d',[0.000,0.025,0.050,0.075,0.100,0.125,0.150,0.175,0.200,0.225,0.250,0.275,0.300,0.325,0.350,0.375,0.400,0.425,0.450,0.475,0.500,
-#				  0.525,0.550,0.575,0.600,0.650,0.700,0.800,1.00])
-correct = TH1F('correct','correct assignments as |x_{F}|; |x_{F}|; # correct assignments',25,bins)
-incorrect = TH1F('incorrect','incorrect assignments as |x_{F}|; |x_{F}|; # incorrect assignments',25,bins)
-dilution = TH1F('dilution',';|x_{F}|;Dilution factor',25,bins)
+#				  0.525,0.550,0.575,0.600,1.00])
+bins = array('d',[0.000,0.025,0.050,0.075,0.100,0.125,0.150,0.175,0.200,0.225,0.250,0.275,0.300,0.325,0.350,0.375,0.400,0.425,0.450,0.475,0.500,
+				  0.525,0.550,0.575,0.600,0.650,0.700,0.800,1.00])
+correct = TH1F('correct','correct assignments as |x_{F}|; |x_{F}|; # correct assignments',28,bins)
+incorrect = TH1F('incorrect','incorrect assignments as |x_{F}|; |x_{F}|; # incorrect assignments',28,bins)
+dilution = TH1F('dilution',';|x_{F}|;Dilution factor',28,bins)
 
 setupDoneTime = time()
 
